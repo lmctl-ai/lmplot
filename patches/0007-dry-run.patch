@@ -1,0 +1,86 @@
+diff --git a/src/command.c b/src/command.c
+index 140aec3..9d876d7 100644
+--- a/src/command.c
++++ b/src/command.c
+@@ -2188,7 +2188,7 @@ print_set_output(char *name, TBOOLEAN datablock, TBOOLEAN append_p)
+ #endif
+ 
+     if (!datablock) {
+-	print_out = fopen(name, append_p ? "a" : "w");
++	print_out = lmplot_dry_fopen(name, append_p ? "a" : "w");
+ 	if (!print_out) {
+ 	    perror(name);
+ 	    return;
+@@ -2592,10 +2592,11 @@ save_command()
+     gp_expand_tilde(&save_file);
+ #ifdef _WIN32
+     fp = !strcmp(save_file,"-") ? stdout
++	: lmplot_dry_run ? lmplot_dry_fopen(save_file, append?"a":"w")
+ 	: loadpath_fopen(save_file, append?"a":"w");
+ #else
+     fp = !strcmp(save_file,"-") ? stdout
+-	: fopen(save_file, append?"a":"w");
++	: lmplot_dry_fopen(save_file, append?"a":"w");
+ #endif
+     }
+ 
+diff --git a/src/fit.c b/src/fit.c
+index 3e90768..0974f2a 100644
+--- a/src/fit.c
++++ b/src/fit.c
+@@ -1871,7 +1871,7 @@ fit_main()
+     /* open logfile before we use any Dblfn calls */
+     if (!fit_suppress_log) {
+ 	char *logfile = getfitlogfile();
+-	if ((logfile != NULL) && !log_f && !(log_f = fopen(logfile, "a")))
++	if ((logfile != NULL) && !log_f && !(log_f = lmplot_dry_fopen(logfile, "a")))
+ 	    Eex2("could not open log-file %s", logfile);
+ 	free(logfile);
+     }
+diff --git a/src/plot.h b/src/plot.h
+index d22e392..0990bed 100644
+--- a/src/plot.h
++++ b/src/plot.h
+@@ -81,6 +81,13 @@ int ExecuteMacro(char *, int);
+ 
+ void restrict_popen(void);
+ 
++/* lmplot --dry-run: when set, every file gnuplot would write (set output, set print, save,
++ * set table, the fit log) is reported on stderr and replaced by the null device, and pipes and
++ * shell commands are an error. Defined in cpp/lmplot_embed.inc. */
++#include <stdio.h>
++extern int lmplot_dry_run;
++FILE *lmplot_dry_fopen(const char *name, const char *mode);
++
+ #ifdef GNUPLOT_HISTORY
+ void cancel_history(void);
+ #else
+diff --git a/src/set.c b/src/set.c
+index b680c78..ce104f6 100644
+--- a/src/set.c
++++ b/src/set.c
+@@ -4849,7 +4849,7 @@ set_table()
+ 	    c_token++;
+ 	    append = TRUE;
+ 	}
+-	if (!(table_outfile = fopen(tablefile, (append ? "a" : "w"))))
++	if (!(table_outfile = lmplot_dry_fopen(tablefile, (append ? "a" : "w"))))
+ 	   os_error(filename_token, "cannot open table output file");
+ 	free(tablefile);
+     }
+diff --git a/src/term.c b/src/term.c
+index 230e1b5..594178e 100644
+--- a/src/term.c
++++ b/src/term.c
+@@ -408,9 +408,9 @@ term_set_output(char *dest)
+ 	    }
+ #endif
+ 	    if (term && (term->flags & TERM_BINARY))
+-		f = FOPEN_BINARY(dest);
++		f = lmplot_dry_fopen(dest, "wb");
+ 	    else
+-		f = fopen(dest, "w");
++		f = lmplot_dry_fopen(dest, "w");
+ 
+ 	    if (f == (FILE *) NULL)
+ 		os_error(c_token, "cannot open file; output not changed");

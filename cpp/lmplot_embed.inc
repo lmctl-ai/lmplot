@@ -126,3 +126,18 @@ const char *lmplot_gp_errmsg(void)
 	return u->udv_value.v.string_val;
     return "";
 }
+
+/* --dry-run (see plot.h): files gnuplot would write go to the null device instead. */
+int lmplot_dry_run = 0;
+
+FILE *lmplot_dry_fopen(const char *name, const char *mode)
+{
+    if (!lmplot_dry_run)
+	return fopen(name, mode);
+    fprintf(stderr, "[dry-run] would write %s\n", name);
+#ifdef _WIN32
+    return fopen("NUL", mode);
+#else
+    return fopen("/dev/null", mode);
+#endif
+}

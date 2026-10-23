@@ -106,7 +106,8 @@ and encode them into MP4/GIF animations with `ffmpeg`
 | `echo(s)` / `terminals()` / `version()` | print, list terminals, version |
 
 A failing gnuplot command stops the program with exit code 3 and a JSON error
-line. Details: [durable-memory/03-schema-v0.md](durable-memory/03-schema-v0.md).
+line. `lmplot --dry-run --dsl prog.dslb` runs a program without writing any file
+(it lists what it would write) and refuses shell commands. Details: [durable-memory/03-schema-v0.md](durable-memory/03-schema-v0.md).
 
 ## What is in the box
 

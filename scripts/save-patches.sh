@@ -18,5 +18,6 @@ emit 0003-embed-hook src/plot.c
 emit 0004-version-id src/version.c
 emit 0005-lmpng-terminal term/lmpng.trm
 emit 0006-no-pager-when-scripted src/help.c
+emit 0007-dry-run src/command.c src/fit.c src/plot.h src/set.c src/term.c
 git -C "$DIR" reset -q
 ls -la "$HERE"/patches

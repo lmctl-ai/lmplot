@@ -1,8 +1,17 @@
 diff --git a/src/plot.c b/src/plot.c
-index 99dc898..cab5043 100644
+index 99dc898..9be8639 100644
 --- a/src/plot.c
 +++ b/src/plot.c
-@@ -1074,3 +1074,7 @@ RelativePathToGnuplot(const char * path)
+@@ -1053,6 +1053,8 @@ restrict_popen()
+ {
+     if (!successful_initialization)
+ 	int_error(NO_CARET,"Pipes and shell commands not permitted during initialization");
++    if (lmplot_dry_run)
++	int_error(NO_CARET,"Pipes and shell commands are disabled by --dry-run");
+ }
+ 
+ 
+@@ -1074,3 +1076,7 @@ RelativePathToGnuplot(const char * path)
      return rel_path;
  }
  #endif

@@ -306,6 +306,37 @@ else
   ok "memory budget: runaway loop and png canvas stop at LMPLOT_MAX_MEMORY_MB=64 (default-budget run is Linux-only)"
 fi
 
+# --dry-run: the program runs and returns values, but no file is written and shell commands fail.
+mkdir -p "$WORK/dry"
+cat >"$WORK/dry.lms" <<LMS
+p = _dsl_ cli="lmplot";
+plot.png("dry.png", 200, 100);
+plot.cmd("plot sin(x)");
+plot.close();
+plot.cmd("set print 'dry.txt'; print 1; set print");
+plot.cmd("save 'dry.gp'");
+plot.cmd("set table 'dry.dat'; plot x; unset table");
+plot.echo("v=" + plot.str("1+1"));
+end _dsl_
+savedsl(p, "$WORK/dry.dslb");
+LMS
+"$LMSCRIPT" "$WORK/dry.lms" >/dev/null || fail "dry.lms compile"
+host_abs="$(cd "$(dirname "$HOST")" && pwd)/$(basename "$HOST")"
+out="$(cd "$WORK/dry" && "$host_abs" --dry-run --dsl ../dry.dslb 2>&1)" || fail "dry run: $out"
+echo "$out" | grep -q "v=2" || fail "dry run values: $out"
+for f in dry.png dry.txt dry.gp dry.dat; do
+  echo "$out" | grep -q "\[dry-run\] would write $f" || fail "dry run did not report $f: $out"
+  [ ! -e "$WORK/dry/$f" ] || fail "dry run wrote $f"
+done
+printf 'p = _dsl_ cli="lmplot";\nplot.cmd("x = system(\\"echo hi\\")");\nend _dsl_\nsavedsl(p, "%s");\n' "$WORK/dryshell.dslb" >"$WORK/dryshell.lms"
+"$LMSCRIPT" "$WORK/dryshell.lms" >/dev/null || fail "dryshell compile"
+set +e; out="$("$HOST" --dry-run --dsl "$WORK/dryshell.dslb" 2>/dev/null)"; code=$?; set -e
+[ "$code" = 3 ] || fail "dry run shell command exit $code, expected 3"
+echo "$out" | grep -q "disabled by --dry-run" || fail "dry run shell message: $out"
+set +e; "$HOST" --dry-run >/dev/null 2>&1; code=$?; set -e
+[ "$code" = 2 ] || fail "--dry-run without --dsl exit $code, expected 2"
+ok "--dry-run writes no files, reports them, and refuses shell commands"
+
 set +e; "$HOST" --dsl "$WORK/does-not-exist.dslb" >/dev/null 2>&1; code=$?; set -e
 [ "$code" = 3 ] || fail "missing bytecode exit code $code, expected 3"
 set +e; "$HOST" >/dev/null 2>&1; code=$?; set -e

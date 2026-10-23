@@ -31,6 +31,7 @@ int lmplot_gp_eval(const char *expr, double *num, char **str);
 const char *lmplot_gp_errmsg(void);
 int lmplot_gp_output_ok(void);
 void lmplot_gp_shutdown(void);
+extern int lmplot_dry_run;
 int gnuplot_cli_main(int argc, char **argv);
 }
 
@@ -222,7 +223,7 @@ void register_host(dslvm::Registry &r, Host &h) {
 }
 
 const char *usage =
-    "usage: lmplot --version | --notices | --dsl-schema [--json] | --dsl-signatures | --dsl FILE [FILE ...]\n"
+    "usage: lmplot --version | --notices | --dsl-schema [--json] | --dsl-signatures | [--dry-run] --dsl FILE [FILE ...]\n"
     "       lmplot gnuplot [GNUPLOT-OPTIONS] [FILE ...]   (the embedded gnuplot command line)\n"
     "environment: LMPLOT_MAX_MEMORY_MB  total memory budget in MiB (default 4096, gnuplot included); a\n"
     "             program that needs more stops with a run error (exit 3) instead of allocating\n";
@@ -277,11 +278,21 @@ int main(int argc, char **argv) {
     for (const auto &s : reg.signatures()) std::cout << s << "\n";
     return 0;
   }
-  if (argc < 3 || std::string(argv[1]) != "--dsl") {
+  // --dry-run: run the whole program, but every file gnuplot would write is reported on stderr
+  // ("[dry-run] would write F") and sent to the null device; pipes and shell commands are errors.
+  int first = 2;
+  if (argc >= 2 && std::string(argv[1]) == "--dry-run") {
+    lmplot_dry_run = 1;
+    first = 3;
+    if (argc < 4 || std::string(argv[2]) != "--dsl") {
+      std::cerr << usage;
+      return 2;
+    }
+  } else if (argc < 3 || std::string(argv[1]) != "--dsl") {
     std::cerr << usage;
     return 2;
   }
-  for (int i = 2; i < argc; i++) {
+  for (int i = first; i < argc; i++) {
     if (std::string(argv[i]).empty() || std::string(argv[i]).rfind("--", 0) == 0) {
       std::cerr << usage;
       return 2;
@@ -294,7 +305,7 @@ int main(int argc, char **argv) {
   // Load and verify every file first so a corrupt later file cannot leave
   // earlier output half-written.
   std::vector<dslvm::Program> programs;
-  for (int i = 2; i < argc; i++) {
+  for (int i = first; i < argc; i++) {
     try {
       programs.push_back(dslvm::Program::load(dslvm::read_file(argv[i]), schema, reg));
     } catch (const dslvm::Error &error) {

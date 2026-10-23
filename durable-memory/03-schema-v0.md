@@ -24,6 +24,9 @@ Rules and gotchas:
 - Any gnuplot error stops the program: `RUN_HOST` error `gnuplot: <GPVAL_ERRMSG>`,
   JSON `{"ok": false, "phase": "run", ...}` on stdout, exit code 3. gnuplot's
   own diagnostic with the caret is on stderr.
+- `lmplot --dry-run --dsl F` runs the whole program (values, `stats`, `fit`) but
+  writes no file: each would-be output is reported as `[dry-run] would write F`
+  on stderr and sent to the null device; pipes and `system()` are errors.
 - Every plot writes one complete PNG into the *current output*. For several
   images use one `plot.png(...)`/`plot.close()` pair per image; plotting twice
   into one output concatenates PNG files.

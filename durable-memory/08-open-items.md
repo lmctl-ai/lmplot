@@ -36,8 +36,8 @@
 
 ## From the 2026-10-23 review (fixed items are in git log; these remain)
 
-- No `--dry-run` (PROCEDURE rule 4): gnuplot writes through `set output`, `save`, `print` to
-  files and `system`, so a faithful dry run needs terminal/output interception.
+- `--dry-run` (added, patch 0007) still creates and removes the temporary `.gp` file that
+  `Plot.script`/`Plot.data` load, in the system temp directory.
 - Determinism is checked on one machine (byte-identical reruns); there are no golden image hashes
   across platforms (the rasterizer uses libm sin/cos/sqrt), and `examples/expected.txt` does not
   exist, so the PNG dimension check in `test.sh` is skipped.

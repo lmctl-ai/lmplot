@@ -58,10 +58,11 @@ the available set follows from the macros above plus patch `0002`.
 | --- | --- |
 | `0001-post-deflate-brace.patch` | upstream bug at this commit: `post.trm` has an `} else {` whose `{` is inside `#ifdef HAVE_DEFLATE_ENCODER`; without it the postscript terminal does not compile when no deflate encoder exists. Adds the missing `{`. |
 | `0002-term-list.patch` | `term.h` includes `lmpng.trm` (`#ifdef LMPLOT_EMBED`) and no longer includes the Windows GUI `win.trm` in embedded builds. |
-| `0003-embed-hook.patch` | one line at the end of `plot.c` includes `cpp/lmplot_embed.inc`, giving host code access to `plot.c`'s statics. |
+| `0003-embed-hook.patch` | one line at the end of `plot.c` includes `cpp/lmplot_embed.inc`, giving host code access to `plot.c`'s statics; `restrict_popen()` also refuses pipes and shell commands under `--dry-run`. |
 | `0004-version-id.patch` | `version.c`: patchlevel `0 (lmplot X.Y.Z)`. |
 | `0005-lmpng-terminal.patch` | adds `term/lmpng.trm`, the `png`/`pngcairo` terminal driver (see `04-png-terminal.md`). |
 | `0006-no-pager-when-scripted.patch` | `help.c`: the built-in pager (`set terminal`, `help`) reads stdin for "Press return for more"; skip it unless `interactive`, so a script never blocks. |
+| `0007-dry-run.patch` | `--dry-run`: every file gnuplot opens for writing (`set output`, `set print`, `save`, `set table`, the fit log) goes through `lmplot_dry_fopen()` (in `lmplot_embed.inc`), which, when `lmplot_dry_run` is set, prints `[dry-run] would write F` on stderr and opens the null device instead. Reads are untouched. |
 
 Workflow: `scripts/sync-gnuplot.sh` (checkout + apply), edit files under
 `third_party/gnuplot`, then `scripts/save-patches.sh` regenerates the patch
