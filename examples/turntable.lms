@@ -1,0 +1,39 @@
+# Turntable: render a rotating 3D surface as N PNG frames from a DSL loop.
+# A plain .gp script would need a do-for with `set output sprintf(...)`; here the
+# loop, the file names and the view angle are ordinary typed lmscript code, and
+# each frame is one plot.png / plot.close pair.
+# Writes build/examples/turntable-0.png ... turntable-7.png.
+out = ARGV.len() > 0 ? ARGV[0] : "build/turntable.dslb";
+mkdir("build/examples");
+p = _dsl_ schema="../schema/lmplot.dsl.json";
+
+# scene set up once: identical axes, ranges and colours in every frame
+plot.cmd("set samples 40, 40");
+plot.cmd("set isosamples 40, 40");
+plot.cmd("set xrange [-8:8]");
+plot.cmd("set yrange [-8:8]");
+plot.cmd("set zrange [-0.3:1]");
+plot.cmd("set ticslevel 0");
+plot.cmd("set hidden3d");
+plot.cmd("set pm3d");
+plot.cmd("set palette defined (0 'dark-blue', 0.5 'light-green', 1 'orange-red')");
+plot.cmd("set cbrange [-0.3:1]");
+plot.cmd("unset key");
+plot.cmd("set xlabel 'x'");
+plot.cmd("set ylabel 'y'");
+plot.cmd("set zlabel 'z'");
+
+let frames = 8;
+for (k in range(0, frames)) {
+  let angle = 360 * k / frames;          # azimuth in degrees: 0, 45, ..., 315
+  let file = "build/examples/turntable-" + str(k) + ".png";
+  plot.png(file, 480, 480);
+  plot.cmd("set view 60, " + str(angle));
+  plot.cmd("set title 'sin(r)/r surface, view 60, " + str(angle) + "'");
+  plot.cmd("splot sin(sqrt(x**2+y**2))/sqrt(x**2+y**2) with pm3d");
+  plot.close();
+  plot.echo("frame " + str(k) + " -> " + file);
+}
+end _dsl_
+savedsl(p, out);
+println(f"wrote {out}");

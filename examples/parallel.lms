@@ -1,0 +1,61 @@
+# Parallel axis plots: gnuplot "parallel.dem".
+# Image 1: five axes from silver.dat with per-axis ranges and colour by row group.
+# Image 2: PDB atom data with units (UTF-8 angstrom sign) on the axis tics.
+# Image 3: sampled functions, coloured by a palette.
+out = ARGV.len() > 0 ? ARGV[0] : "build/parallel.dslb";
+mkdir("build/examples");
+p = _dsl_ schema="../schema/lmplot.dsl.json";
+# --- 1: parallel axes with manipulated ranges ---
+plot.png("build/examples/parallel-1.png", 800, 600);
+plot.cmd("set title 'Parallel Axis Plot' font ',15'");
+plot.cmd("set border 0");
+plot.cmd("unset key");
+plot.cmd("set xrange [] noextend");
+plot.cmd("unset ytics");
+plot.cmd("set style data parallelaxes");
+# x-axis tic positions label the parallel axes
+plot.cmd("set xtics 1,1,5 format 'axis %g' scale 0,0");
+plot.cmd("set for [i=1:5] paxis i tics");
+plot.cmd("set paxis 2 range [0:30]");
+plot.cmd("set paxis 4 range [-10:50]");
+plot.cmd("set paxis 5 range [50:*] reverse");
+plot.cmd("set paxis 5 tics left offset 4");
+plot.cmd("plot 'examples/data/silver.dat' using 2:(int($0/25)) lc variable, '' using 3, '' using 1, '' using ($3/2), '' using 2");
+plot.close();
+
+# --- 2: molecule coordinates, axis tic labels with unit suffix ---
+plot.png("build/examples/parallel-2.png", 800, 600);
+plot.cmd("reset");
+plot.cmd("set encoding utf8");
+plot.cmd("set title 'Parallel Axis Plot' font ',15'");
+plot.cmd("set border 0");
+plot.cmd("unset ytics");
+plot.cmd("set xrange [] noextend");
+plot.cmd("unset key");
+plot.cmd("set style data parallelaxes");
+plot.cmd("set paxis 1 tics format '%.0f Å' offset -1");
+plot.cmd("set paxis 4 tics left offset 4 format '%.0f Å^2'");
+plot.cmd("set paxis 4 range [0:40]");
+plot.cmd("plot 'examples/data/GM1_sugar.pdb' using 6:5 lc var lw 2 title 'X', '' using 7 at 1.75 title 'Y', '' using 8 at 2.5 title 'Z', '' using 10 title 'B'");
+plot.close();
+
+# --- 3: generated functions, 'plot sample' over the pseudo-file '+' ---
+plot.png("build/examples/parallel-3.png", 800, 600);
+plot.cmd("reset");
+plot.cmd("set style data parallel");
+plot.cmd("set palette defined (0 'dark-blue', 1 'dark-orange')");
+plot.cmd("set xrange [0.5:7.5]");
+plot.cmd("unset ytics");
+plot.cmd("set xtics font ':Bold,13'");
+plot.cmd("unset border");
+plot.cmd("set bmargin 4");
+plot.cmd("unset colorbox");
+plot.cmd("a = 12.");
+plot.cmd("b = 34.");
+plot.cmd("set title 'Parallel Axis Plot' font ',15'");
+# deterministic stand-in for rand(0): a fixed pseudo-random-looking function
+plot.cmd("plot sample [x=1:20] '+' using (abs(sin(7.3*$1*$1))):0 lc palette title 'random', '' u ($1) title 'x', '' u (-$1) title '-x', '' u (a*$1) title 'a*x', '' u (a*$1+b) title 'a*x+b', '' u (exp($1)) title 'e^x', '' u (1/$1) title '1/x'");
+plot.close();
+end _dsl_
+savedsl(p, out);
+println(f"wrote {out}");

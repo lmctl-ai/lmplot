@@ -5,6 +5,46 @@
 #ifndef LMPLOT_GNUPLOT_CONFIG_H
 #define LMPLOT_GNUPLOT_CONFIG_H
 
+/* Windows: gnuplot's native Windows port is a GUI (GDI+/Direct2D, console
+ * window, help viewer) that lmplot does not use. Instead gnuplot is built with
+ * its portable stdio/POSIX code paths: system headers are pulled in first (they
+ * need _WIN32), then _WIN32 is hidden from gnuplot's own sources. */
+#if defined(_WIN32)
+# define LMPLOT_WINDOWS 1
+# include <stdio.h>
+# include <stdlib.h>
+# include <string.h>
+# include <strings.h>
+# include <math.h>
+# include <time.h>
+# include <io.h>
+# include <fcntl.h>
+# include <direct.h>
+# include <process.h>
+# include <errno.h>
+# include <limits.h>
+# include <ctype.h>
+# include <signal.h>
+# include <setjmp.h>
+# include <stdint.h>
+# include <stdarg.h>
+# include <wchar.h>
+# include <locale.h>
+# include <float.h>
+# include <malloc.h>
+# include <unistd.h>
+# include <dirent.h>
+# include <sys/types.h>
+# include <sys/stat.h>
+# include <sys/timeb.h>
+# include <sys/time.h>
+# undef _WIN32
+# undef WIN32
+# undef __WIN32__
+# undef __MINGW32__
+# undef __MINGW64__
+#endif
+
 #define PACKAGE "gnuplot"
 #define PACKAGE_NAME "gnuplot"
 #define PACKAGE_VERSION "6.1.0"
@@ -72,8 +112,13 @@
 #define HAVE_CSQRT 1
 #define HAVE_JN 1
 
-#if defined(_WIN32)
-/* mingw: sleep is Sleep(), no POSIX terminal/process headers */
+#if defined(LMPLOT_WINDOWS)
+/* mingw: no terminal/socket/process-control headers */
+# define HAVE_DIRENT_H 1
+# define HAVE_UNISTD_H 1
+# define HAVE_SYS_PARAM_H 1
+# define HAVE_POPEN 1
+# define PIPES 1
 # define HAVE_STRNCASECMP 1
 # define HAVE_STRCASECMP 1
 #else
@@ -123,8 +168,11 @@
 # define HAVE_GAMMA 1
 #endif
 
-#define GNUPLOT_HISTORY 1
-#define READLINE 1
+#if !defined(LMPLOT_WINDOWS)
+/* the built-in readline needs termios; the embedded host never reads a terminal on Windows */
+# define GNUPLOT_HISTORY 1
+# define READLINE 1
+#endif
 #define USE_POLAR_GRID 1
 #define USE_STATS 1
 #define USE_WATCHPOINTS 1

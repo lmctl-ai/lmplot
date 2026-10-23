@@ -2,3 +2,5 @@ build*/
 third_party/
 *.dslb
 .DS_Store
+lmplot.lmctl
+p1.txt

@@ -1,0 +1,43 @@
+# Spider (radar) plots: gnuplot "spiderplot.dem".
+# Image 1: default spiderplot of one data row, image 2: filled with a border,
+# image 3: two data arrays on one set of axes with a spider grid (newspiderplot).
+out = ARGV.len() > 0 ? ARGV[0] : "build/spiderplot.dslb";
+mkdir("build/examples");
+p = _dsl_ schema="../schema/lmplot.dsl.json";
+# One data row with a header line: the column heads become the axis names.
+plot.data("DATA", "A\tB\tC\tD\tE\tF\n15\t75\t20\t43\t90\t50\n");
+plot.cmd("set spiderplot");
+plot.cmd("set for [i=1:10] paxis i range [0:100]");
+# leave room for the axis labels above and below the polygon
+plot.cmd("set tmargin 5");
+plot.cmd("set bmargin 4");
+plot.cmd("set title offset 0,1.5");
+
+# --- 1: default style ---
+plot.png("build/examples/spiderplot-1.png", 700, 700);
+plot.cmd("set title 'default spiderplot style'");
+plot.cmd("plot for [i=1:5] $DATA using i title columnhead");
+plot.close();
+
+# --- 2: translucent fill, thick border, smaller tic font ---
+plot.png("build/examples/spiderplot-2.png", 700, 700);
+plot.cmd("set title 'spiderplot fs solid 0.3 border lw 3.0'");
+plot.cmd("set style spiderplot fs solid 0.3 border lw 3.0");
+plot.cmd("set for [i=1:5] paxis i tics font ',9'");
+plot.cmd("plot for [i=1:5] $DATA using i title columnhead");
+plot.close();
+
+# --- 3: two arrays, a spider grid and one key entry per data set ---
+plot.png("build/examples/spiderplot-3.png", 700, 700);
+plot.cmd("array Array1 = [ 15, 75, 20, 43, 90, 50 ]");
+plot.cmd("array Array2 = [ 25, 25, 50, 50, 75, 50 ]");
+plot.cmd("set title 'To plot from 2 different arrays, use newspiderplot'");
+plot.cmd("set style spiderplot fs transparent solid 0.2 border lw 1 pt 6 ps 2");
+plot.cmd("set for [i=2:6] paxis i tics format ''");
+plot.cmd("set grid spider lt black lc 'grey' lw 0.5 back");
+plot.cmd("set key reverse");
+plot.cmd("plot keyentry with spiderplot lc 3 lw 3 title 'Array #1', for [i=1:|Array1|] Array1 using (Array1[i]) lc 3 lw 3 title sprintf('Scale %d',i), newspiderplot, keyentry with spiderplot lc 4 lw 2 title 'Array #2', for [j=1:|Array2|] Array2 using (Array2[j]) lc 4 lw 2 notitle");
+plot.close();
+end _dsl_
+savedsl(p, out);
+println(f"wrote {out}");

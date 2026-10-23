@@ -1,0 +1,33 @@
+# vector.dem: dipole equipotentials (contours saved to a table) plus field vectors.
+out = ARGV.len() > 0 ? ARGV[0] : "build/vector.dslb";
+mkdir("build/examples");
+p = _dsl_ schema="../schema/lmplot.dsl.json";
+plot.script("r(x,y)=sqrt(x*x+y*y)\nx0=1.\nq1=1\nq2=-1\ncoef=.7");
+plot.script("v1(x,y)=q1/(r((x-x0),y))\nv2(x,y)=q2/(r((x+x0),y))\nvtot(x,y)=v1(x,y)+v2(x,y)");
+plot.script("e1x(x,y)=q1*(x-x0)/r(x-x0,y)**3\ne1y(x,y)=q1*y/r(x-x0,y)**3");
+plot.script("e2x(x,y)=q2*(x+x0)/r(x+x0,y)**3\ne2y(x,y)=q2*y/r(x+x0,y)**3");
+plot.script("etotx(x,y)=e1x(x,y)+e2x(x,y)\netoty(x,y)=e1y(x,y)+e2y(x,y)");
+plot.script("enorm(x,y)=sqrt(etotx(x,y)**2+etoty(x,y)**2)");
+plot.script("dx1(x,y)=coef*etotx(x,y)/enorm(x,y)\ndy1(x,y)=coef*etoty(x,y)/enorm(x,y)");
+plot.script("set xr [-10:10]\nset yr [-10:10]\nset samples 31\nset isosam 31,31");
+# Step 1: compute equipotential lines into a datablock using 'set table'.
+plot.script("set view map\nunset surface\nset contour base\nset cntrparam order 4\nset cntrparam linear");
+plot.cmd("set cntrparam levels discrete -3,-2,-1,-0.5,-0.2,-0.1,-0.05,-0.02,0,0.02,0.05,0.1,0.2,0.5,1,2,3");
+plot.cmd("set cntrparam points 5");
+plot.cmd("set table $equipo2");
+plot.cmd("splot vtot(x,y) w l");
+plot.cmd("unset table");
+# Step 2: grid of x/y points for the vector origins.
+plot.script("unset contour\nset surface\nset view 60,30");
+plot.cmd("set table $field2xy");
+plot.cmd("splot vtot(x,y) w l");
+plot.cmd("unset table");
+# Image: unit-direction vectors (scaled by 0.5*coef) over the equipotential lines.
+plot.png("build/examples/vector-1.png", 800, 600);
+plot.script("reset\nset xr [-10:10]\nset yr [-10:10]\nset key under Left reverse");
+plot.cmd("set title 'Dipole: equipotential lines and electric field direction'");
+plot.cmd("plot $field2xy u 1:2:(0.5*dx1($1,$2)):(0.5*dy1($1,$2)) w vec title 'field', $equipo2 w l title 'equipotentials'");
+plot.close();
+end _dsl_
+savedsl(p, out);
+println(f"wrote {out}");

@@ -1,0 +1,26 @@
+# Demo fillbetween.dem: fill the area between two curves (data from silver.dat).
+out = ARGV.len() > 0 ? ARGV[0] : "build/fillbetween.dslb";
+mkdir("build/examples");
+p = _dsl_ schema="../schema/lmplot.dsl.json";
+# Image 1: plain filledcurves between columns 2 and 3, outlined with lines.
+plot.png("build/examples/fillbetween-1.png", 800, 600);
+plot.script("set style data lines\nset xrange [10:*]\nset yrange [0:175]");
+plot.cmd("set title 'Fill area between two curves'");
+plot.cmd("plot 'examples/data/silver.dat' u 1:2:3 '%lf %lf %lf' w filledcu, '' u 1:2 lt -1 notitle, '' u 1:3 lt -1 notitle");
+plot.close();
+# Image 2: same with the pattern fill.
+plot.png("build/examples/fillbetween-2.png", 800, 600);
+plot.cmd("set style fill pattern 2");
+plot.cmd("set title 'Fill area between two curves (pattern fill)'");
+plot.cmd("replot");
+plot.close();
+# Image 3: above/below colouring where the curves cross.
+plot.png("build/examples/fillbetween-3.png", 800, 600);
+plot.cmd("set style fill solid 1.0 noborder");
+plot.script("set xrange [250:500]\nset autoscale y");
+plot.cmd("set title 'Fill area between two curves (above/below)'");
+plot.cmd("plot 'examples/data/silver.dat' u 1:2:($3+$1/50.) w filledcurves above title 'Above', '' u 1:2:($3+$1/50.) w filledcurves below title 'Below', '' u 1:2 lt -1 lw 2 title 'curve 1', '' u 1:($3+$1/50.) lt 3 lw 2 title 'curve 2'");
+plot.close();
+end _dsl_
+savedsl(p, out);
+println(f"wrote {out}");

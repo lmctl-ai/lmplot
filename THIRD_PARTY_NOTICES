@@ -18,8 +18,10 @@ and the contact information is retained. lmplot does all three:
   - Modifications: the files in `patches/` are the complete and only changes
     to the pinned gnuplot source; they ship with every release next to the
     binaries and live at https://github.com/lmctl-ai/lmplot/tree/main/patches.
-    In addition lmplot adds its own native PNG terminal (cpp/term/lmpng.trm) and
-    an embedding hook (cpp/lmplot_embed.inc) that are not gnuplot code.
+    That includes patches/0005-lmpng-terminal.patch, lmplot's native PNG
+    terminal driver, which follows gnuplot's own terminal drivers and is
+    distributed under gnuplot's terms. The rasterizer it calls (cpp/raster) and
+    the embedding hook (cpp/lmplot_embed.inc) are lmplot's own MIT code.
   - Version identification: this build identifies itself as "lmplot" (see
     `lmplot --version`; `show version` reports the lmplot patch level).
   - Contact: for problems with this modified version write to

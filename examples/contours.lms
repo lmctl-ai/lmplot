@@ -1,0 +1,32 @@
+# contours.dem: contour lines on the base grid and on the surface.
+out = ARGV.len() > 0 ? ARGV[0] : "build/contours.dslb";
+mkdir("build/examples");
+p = _dsl_ schema="../schema/lmplot.dsl.json";
+plot.script("set samples 20\nset isosamples 21\nset xlabel 'X axis'\nset ylabel 'Y axis'");
+plot.script("set zlabel 'Z ' offset 1, 0\nset view 60, 30, 0.85, 1.1");
+plot.script("set key at screen 1.0, 0.9\nset style textbox opaque noborder margins 0.5, 0.5");
+# Image 1: default contours (base) under x*y.
+plot.png("build/examples/contours-1.png", 800, 600);
+plot.cmd("set title 'contour plot'");
+plot.cmd("set contour");
+plot.cmd("splot x*y");
+plot.close();
+# Image 2: contour levels drawn with labels, on the base grid.
+plot.png("build/examples/contours-2.png", 800, 600);
+plot.cmd("set cntrparam levels auto 10");
+plot.cmd("set view 60, 30, 1.0, 1.1");
+plot.cmd("set title 'contours on base grid with labels'");
+plot.cmd("set contour base");
+plot.cmd("set cntrlabel font ',7'");
+plot.cmd("splot x**2-y**2 with lines, x**2-y**2 with labels boxed notitle");
+plot.close();
+# Image 3: contours on both base and surface with hidden-line removal.
+plot.png("build/examples/contours-3.png", 800, 600);
+plot.cmd("set title 'contours on both base and surface'");
+plot.cmd("set contour both");
+plot.cmd("set hidden3d");
+plot.cmd("splot x**2-y**2 with lines, x**2-y**2 with labels boxed notitle");
+plot.close();
+end _dsl_
+savedsl(p, out);
+println(f"wrote {out}");

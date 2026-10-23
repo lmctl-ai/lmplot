@@ -1,0 +1,51 @@
+# Enhanced text mode with UTF-8: gnuplot "enhanced_utf8.dem".
+# Image 1: super/subscripts, space-holders, overprint, integral with Greek letters,
+#          alignment of labels, bold/italic markup.
+# Image 2: Greek letters via the {/Symbol ...} font switch and via UTF-8, in titles, labels and tics.
+out = ARGV.len() > 0 ? ARGV[0] : "build/enhanced_utf8.dslb";
+mkdir("build/examples");
+p = _dsl_ schema="../schema/lmplot.dsl.json";
+
+# --- 1: the enhanced text test page ---
+plot.png("build/examples/enhanced_utf8-1.png", 900, 650);
+plot.cmd("set termoption enhanced");
+plot.cmd("set encoding utf8");
+plot.cmd("set title 'Demo of enhanced text mode using a single UTF-8 encoded font\nThere is another demo that shows how to use a separate Symbol font'");
+plot.cmd("set xrange [-1:1]");
+plot.cmd("set yrange [-0.5:1.1]");
+plot.cmd("set format xy '%.1f'");
+plot.cmd("set arrow from  0.5, -0.5 to  0.5, 0.0 nohead");
+plot.cmd("set label 1 'Superscripts and subscripts:' at -0.65, 0.95 tc lt 3");
+plot.cmd("set label 3 'A_{j,k} 10^{-2}  x@^2_k    x@_0^{-3/2}y' at -0.55, 0.85");
+plot.cmd("set label 5 'Space-holders:' at -0.55, 0.7 tc lt 3");
+plot.cmd("set label 6 '<&{{/=20 B}ig}> <&{x@_0^{-3/2}y}> holds space for' at -0.45, 0.6");
+plot.cmd("set label 7 '<{{/=20 B}ig}> <{x@_0^{-3/2}y}>' at -0.45, 0.5");
+plot.cmd("set label 8 'Overprint\n(v should be centred over d)' at -0.9, -0.2 tc lt 3");
+plot.cmd("set label 9 ' ~{abcdefg}{0.8v}' at -0.85, -0.4");
+plot.cmd("set label 10 'UTF-8 encoding does not require Symbol font:' at -.40, 0.35 tc lt 3");
+plot.cmd("set label 11 '{/*1.5 ∫@_{/=9.6 0}^{/=12 ∞}} {e^{-{μ}^2/2} d}{μ=(π/2)^{1/2}}' at -.30, 0.2");
+plot.cmd("set label 21 'Left  ^{centered} ƒ(αβγδεζ)' at 0.5, -.1 left");
+plot.cmd("set label 22 'Right ^{centered} ƒ(αβγδεζ)' at 0.5, -.2 right");
+plot.cmd("set label 23 'Center^{centered} ƒ(αβγδεζ)' at 0.5, -.3 center");
+plot.cmd("set label 30 '{/:Bold Bold} and {/:Italic Italic} markup' at -.9, 0.0");
+plot.cmd("set key title ' '");
+plot.cmd("plot sin(x)**2 lt 2 lw 2 title 'sin^2(x)'");
+plot.close();
+
+# --- 2: Greek via font switch and via unicode in axis labels, key and tic labels ---
+plot.png("build/examples/enhanced_utf8-2.png", 1000, 600);
+plot.cmd("reset");
+plot.cmd("set termoption enhanced");
+plot.cmd("set encoding utf8");
+plot.cmd("set title 'Greek letters: {/Symbol a b g D} (Symbol font switch) and α β γ Δ (unicode)'");
+plot.cmd("set xlabel 'phase φ (rad)   x_{min} = −π, x_{max} = +π'");
+plot.cmd("set ylabel 'amplitude A_0 e^{−t/τ} sin(ωt)'");
+plot.cmd("set xrange [-pi:pi]");
+plot.cmd("set xtics ('−π' -pi, '−π/2' -pi/2, '0' 0, 'π/2' pi/2, 'π' pi)");
+plot.cmd("set key outside right");
+plot.cmd("set samples 300");
+plot.cmd("plot sin(x) title 'sin(φ)', cos(x) title 'cos(φ)', exp(-x**2) title 'e^{−φ^2}', sin(x)**2 title 'sin^2 φ + cos^2 φ = 1' lw 2");
+plot.close();
+end _dsl_
+savedsl(p, out);
+println(f"wrote {out}");

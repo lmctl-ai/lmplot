@@ -1,3 +1,0 @@
-#teamfile: /home/mma/repos/dsl/lmplot/lmplot.lmctl
-
-_MEMBER_ alias=Lead provider=claude model=claude-sonnet-5-5 sessionid=87d141f6-8cbf-40ee-8204-2b289820b060 sessiondir=/home/mma/repos/dsl/lmplot

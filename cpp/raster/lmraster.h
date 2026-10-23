@@ -33,6 +33,9 @@ void lmr_set_pixel(lmr *r, int x, int y, unsigned argb);
 
 /* Fill one closed polygon (xy = n x,y pairs), nonzero winding. */
 void lmr_fill_polygon(lmr *r, const double *xy, int n, unsigned argb);
+/* Same, but not anti-aliased: a pixel is set iff its centre is inside. Adjacent polygons never
+ * leave seams or overlap (pm3d surfaces, boxes). */
+void lmr_fill_polygon_crisp(lmr *r, const double *xy, int n, unsigned argb);
 /* Fill the polygon with a hatch pattern (pattern 0..9, see gnuplot "fill pattern"),
  * hatch lines in argb over an optional background (bg_argb alpha 0 = none). */
 void lmr_fill_polygon_pattern(lmr *r, const double *xy, int n, unsigned argb, unsigned bg_argb, int pattern);

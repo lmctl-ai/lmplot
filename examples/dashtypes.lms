@@ -1,0 +1,48 @@
+# Dash types: gnuplot "dashtypes.dem" (terminal-native and custom dash patterns).
+# Image 1: the ten native dashtypes plus custom string/array patterns.
+# Image 2: the same lines at increasing line widths.
+out = ARGV.len() > 0 ? ARGV[0] : "build/dashtypes.dslb";
+mkdir("build/examples");
+p = _dsl_ schema="../schema/lmplot.dsl.json";
+# One labelled sample line: arrow number n at height y with dash spec dt
+# (the label is placed to its left, 'noenhanced' keeps '_' literal).
+fn sample(n: int, y: float, name: string, dt: string, lt: int) -> void {
+  plot.cmd("set arrow " + str(n) + " from screen 0.25, screen " + str(y) + " to screen 0.8, screen " + str(y) + " nohead lw 1.5 lt " + str(lt) + " dt " + dt);
+  plot.cmd("set label " + str(n) + " '" + name + "' at screen 0.15, screen " + str(y) + " noenhanced");
+}
+
+plot.cmd("set border 0");
+plot.cmd("unset xtics");
+plot.cmd("unset ytics");
+plot.cmd("unset key");
+plot.cmd("set yrange [0:1]");
+
+plot.cmd("set label 101 at screen 0.1, screen 0.9 \"Terminal's native dashtypes\"");
+# ten native dashtypes: a DSL loop computes the y position of each line
+for (i in range(1, 11)) {
+  let y = 0.9 - 0.05 * float(i);
+  sample(i, y, "dt " + str(i), str(i), 2);
+}
+plot.cmd("set label 102 at screen 0.1, screen 0.35 'Custom dashtypes'");
+# custom patterns: a string of ".", "-", "_" and " " characters ...
+sample(11, 0.30, "dt \".\"", "\".\"", 3);
+sample(12, 0.25, "dt \"-\"", "\"-\"", 3);
+sample(13, 0.20, "dt \"._\"", "\"._\"", 3);
+sample(14, 0.15, "dt \"..- \"", "\"..- \"", 3);
+# ... or an explicit array of on/off lengths
+sample(15, 0.10, "dt (50,6,2,6)", "(50,6,2,6)", 1);
+plot.cmd("set arrow 15 lc 'blue'");
+plot.cmd("set label 15 at screen 0.06, screen 0.10");  # long label: move it left
+
+plot.png("build/examples/dashtypes-1.png", 800, 700);
+plot.cmd("plot 0 with lines lt nodraw");
+plot.close();
+
+# --- 2: line width interacts with dash scaling ---
+plot.png("build/examples/dashtypes-2.png", 800, 700);
+plot.cmd("set for [i=1:15] arrow i lw 1+(i-1)%5");
+plot.cmd("plot 0 with lines lt nodraw");
+plot.close();
+end _dsl_
+savedsl(p, out);
+println(f"wrote {out}");

@@ -1,0 +1,22 @@
+diff --git a/src/help.c b/src/help.c
+index 81cd6be..222fa7b 100644
+--- a/src/help.c
++++ b/src/help.c
+@@ -717,7 +717,7 @@ OutLine(const char *line)
+ 
+     /* built-in dumb pager */
+     /* leave room for prompt line */
+-    if (pagelines >= screensize - 2) {
++    if (interactive && pagelines >= screensize - 2) { /* lmplot: never block on stdin when scripted */
+ 	fputs("Press return for more: ", stderr);
+ #if defined(_WIN32) || defined(MSDOS)
+ 	do
+@@ -753,7 +753,7 @@ OutLine_InternalPager(const char *line)
+ 
+     /* built-in dumb pager */
+     /* leave room for prompt line */
+-    if (pagelines >= screensize - 2) {
++    if (interactive && pagelines >= screensize - 2) { /* lmplot: never block on stdin when scripted */
+ 	fputs("Press return for more: ", stderr);
+ #if defined(_WIN32) || defined(MSDOS)
+ 	do

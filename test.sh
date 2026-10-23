@@ -8,6 +8,9 @@ UNAME_S="$(uname -s)"
 case "$UNAME_S" in MINGW*|MSYS*|CYGWIN*) HOST="$HOST.exe";; esac
 WORK="$(mktemp -d "${TMPDIR:-/tmp}/lmplot-test-XXXXXX")"
 trap 'rm -rf "$WORK"' EXIT
+ROOT="$HERE"
+# Native Windows tools (node, the host) cannot address git-bash /tmp or /d/a paths.
+case "$UNAME_S" in MINGW*|MSYS*|CYGWIN*) WORK="$(cd "$WORK" && pwd -W | tr '\\' '/')"; ROOT="$(pwd -W | tr '\\' '/')";; esac
 pass=0
 ok(){ pass=$((pass+1)); echo "ok $pass - $1"; }
 fail(){ echo "FAIL: $*" >&2; exit 1; }
@@ -26,9 +29,10 @@ ok "SDK header matches sdk.lock"
 scripts/sync-gnuplot.sh --verify >/dev/null || fail "gnuplot pin or patches mismatch"
 ok "third_party/gnuplot is gnuplot.lock plus patches/"
 
-GEN=()
-command -v ninja >/dev/null 2>&1 && GEN=(-G Ninja)
-cmake -S . -B "$BUILD_DIR" "${GEN[@]}" -DCMAKE_BUILD_TYPE=Release >/dev/null
+GEN=""
+command -v ninja >/dev/null 2>&1 && GEN="-G Ninja"
+# shellcheck disable=SC2086
+cmake -S . -B "$BUILD_DIR" $GEN -DCMAKE_BUILD_TYPE=Release >/dev/null
 cmake --build "$BUILD_DIR" >"$WORK/build.log" 2>&1 || { tail -40 "$WORK/build.log" >&2; fail "build"; }
 ok "build"
 
@@ -52,11 +56,11 @@ case "$UNAME_S" in
 esac
 
 # Embedded gnuplot, command-line passthrough and the dumb terminal.
-out="$("$HOST" gnuplot -e 'set terminal dumb size 60,15; plot sin(x)')"
+out="$("$HOST" gnuplot -e 'set terminal dumb size 60,15; plot sin(x)' </dev/null)"
 echo "$out" | grep -q "sin(x)" || fail "gnuplot passthrough dumb plot"
 ok "lmplot gnuplot runs the embedded gnuplot"
-"$HOST" gnuplot -e 'set terminal' 2>&1 | grep -q -E "^ +png " || fail "png terminal missing"
-"$HOST" gnuplot -e 'set terminal' 2>&1 | grep -q -E "^ +svg " || fail "svg terminal missing"
+"$HOST" gnuplot -e 'set terminal' </dev/null 2>&1 | grep -q -E "^ +png " || fail "png terminal missing"
+"$HOST" gnuplot -e 'set terminal' </dev/null 2>&1 | grep -q -E "^ +svg " || fail "svg terminal missing"
 ok "png and svg terminals are built in"
 
 # Examples: compile, run, validate the artifacts.
@@ -97,18 +101,19 @@ if [ -f examples/expected.txt ]; then
   ok "example PNG dimensions match examples/expected.txt"
 fi
 
-# Determinism: identical bytes on rerun.
-for name in simple; do
-  [ -f "build/examples/$name.png" ] || continue
-  before="$(sha "build/examples/$name.png")"
-  "$HOST" --dsl "build/$name.dslb" >/dev/null || fail "$name rerun"
-  [ "$before" = "$(sha "build/examples/$name.png")" ] || fail "$name.png differs on rerun"
+# Determinism: identical bytes on rerun, for every image of every example.
+for f in build/examples/*.png; do echo "$(sha "$f") $f"; done >"$WORK/before.txt"
+for src in examples/*.lms; do
+  name="$(basename "$src" .lms)"
+  "$HOST" --dsl "build/$name.dslb" >/dev/null 2>&1 || fail "$name rerun"
 done
-ok "rendering is deterministic"
+for f in build/examples/*.png; do echo "$(sha "$f") $f"; done >"$WORK/after.txt"
+cmp -s "$WORK/before.txt" "$WORK/after.txt" || { diff "$WORK/before.txt" "$WORK/after.txt" >&2 || true; fail "images differ on rerun"; }
+ok "all $(wc -l <"$WORK/after.txt" | tr -d ' ') example images are byte-identical on rerun"
 
 # DSL error paths.
 cat >"$WORK/bad.lms" <<LMS
-p = _dsl_ schema="$HERE/schema/lmplot.dsl.json";
+p = _dsl_ schema="$ROOT/schema/lmplot.dsl.json";
 plot.cmd("this is not a gnuplot command");
 plot.echo("unreachable");
 end _dsl_
@@ -122,7 +127,7 @@ echo "$out" | grep -q 'unreachable' && fail "statements after the failing comman
 ok "a failing gnuplot command stops the program (exit 3, JSON error)"
 
 cat >"$WORK/values.lms" <<LMS
-p = _dsl_ schema="$HERE/schema/lmplot.dsl.json";
+p = _dsl_ schema="$ROOT/schema/lmplot.dsl.json";
 plot.data("d", "1 2\n2 4\n3 6\n4 8");
 plot.cmd("set terminal unknown");
 plot.cmd("stats \$d u 1:2 nooutput");

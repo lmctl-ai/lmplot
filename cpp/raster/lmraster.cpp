@@ -40,9 +40,10 @@ struct Shape {
   double minx = 1e300, miny = 1e300, maxx = -1e300, maxy = -1e300;
   void polygon(const Pt *p, size_t n) {
     if (n < 3) return;
+    for (size_t i = 0; i < n; i++)
+      if (!std::isfinite(p[i].x) || !std::isfinite(p[i].y)) return;  // drop the whole shape, never half of it
     for (size_t i = 0; i < n; i++) {
       const Pt &a = p[i], &b = p[(i + 1) % n];
-      if (!std::isfinite(a.x) || !std::isfinite(a.y)) return;
       minx = std::min(minx, a.x); maxx = std::max(maxx, a.x);
       miny = std::min(miny, a.y); maxy = std::max(maxy, a.y);
       if (a.y == b.y) continue;
@@ -57,7 +58,7 @@ struct Shape {
 };
 
 // Scan-convert into a coverage mask clipped to the canvas.
-Mask rasterize(Shape &s, int W, int H, bool evenodd) {
+Mask rasterize(Shape &s, int W, int H, bool evenodd, bool crisp = false) {
   Mask m;
   if (s.edges.empty()) return m;
   int bx0 = std::max(0, (int)std::floor(s.minx)), bx1 = std::min(W, (int)std::ceil(s.maxx) + 1);
@@ -79,8 +80,9 @@ Mask rasterize(Shape &s, int W, int H, bool evenodd) {
     std::fill(part.begin(), part.end(), 0.f);
     std::fill(delta.begin(), delta.end(), 0.f);
     bool any = false;
-    for (int sub = 0; sub < SS; sub++) {
-      double sy = y + (sub + 0.5) / SS;
+    const int subs = crisp ? 1 : SS;
+    for (int sub = 0; sub < subs; sub++) {
+      double sy = y + (sub + 0.5) / subs;
       xs.clear();
       for (const Edge *e : active)
         if (e->y0 <= sy && sy < e->y1) xs.emplace_back(e->x0 + (sy - e->y0) * e->slope, e->dir);
@@ -95,6 +97,13 @@ Mask rasterize(Shape &s, int W, int H, bool evenodd) {
         if (!was && now) start = xs[i].first;
         else if (was && !now) {
           double xa = std::max(start - m.x0, 0.0), xb = std::min(xs[i].first - m.x0, (double)m.w);
+          if (crisp) {
+            // pixel centres inside [start, end): neighbouring polygons partition the plane, no seams
+            int ca = (int)std::ceil(start - m.x0 - 0.5), cb = (int)std::ceil(xs[i].first - m.x0 - 0.5);
+            ca = std::max(ca, 0); cb = std::min(cb, m.w);
+            if (cb > ca) { any = true; delta[ca] += 1.f; delta[cb] -= 1.f; }
+            continue;
+          }
           if (xb <= xa) continue;
           any = true;
           int ia = (int)xa, ib = (int)xb;
@@ -143,8 +152,8 @@ void composite(lmr *r, const Mask &m, unsigned argb) {
   }
 }
 
-void fill_shape(lmr *r, Shape &s, unsigned argb, bool evenodd = false) {
-  Mask m = rasterize(s, r->w, r->h, evenodd);
+void fill_shape(lmr *r, Shape &s, unsigned argb, bool evenodd = false, bool crisp = false) {
+  Mask m = rasterize(s, r->w, r->h, evenodd, crisp);
   if (!m.empty()) composite(r, m, argb);
 }
 
@@ -175,7 +184,8 @@ std::vector<std::vector<Pt>> dash_polyline(const std::vector<Pt> &pts, const dou
   std::vector<std::vector<Pt>> out;
   double total = 0;
   for (int i = 0; i < ndash; i++) total += dash[i];
-  if (ndash < 2 || total <= 0) { out.push_back(pts); return out; }
+  // a period below a quarter pixel is visually solid and would take forever to walk
+  if (ndash < 2 || !(total >= 0.25)) { out.push_back(pts); return out; }
   int idx = 0;
   double left = dash[0];
   bool on = true;
@@ -417,6 +427,14 @@ void lmr_fill_polygon(lmr *r, const double *xy, int n, unsigned argb) {
   for (int i = 0; i < n; i++) p[i] = {xy[2 * i], xy[2 * i + 1]};
   s.polygon(p);
   fill_shape(r, s, argb);
+}
+
+void lmr_fill_polygon_crisp(lmr *r, const double *xy, int n, unsigned argb) {
+  Shape s;
+  std::vector<Pt> p(n);
+  for (int i = 0; i < n; i++) p[i] = {xy[2 * i], xy[2 * i + 1]};
+  s.polygon(p);
+  fill_shape(r, s, argb, false, true);
 }
 
 void lmr_fill_polygon_pattern(lmr *r, const double *xy, int n, unsigned argb, unsigned bg, int pattern) {

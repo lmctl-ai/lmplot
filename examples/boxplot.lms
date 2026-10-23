@@ -1,0 +1,20 @@
+# Demo boxplot.dem: box plots of silver.dat and of energy usage grouped by factor.
+out = ARGV.len() > 0 ? ARGV[0] : "build/boxplot.dslb";
+mkdir("build/examples");
+p = _dsl_ schema="../schema/lmplot.dsl.json";
+# Image 1: two boxplots with custom x tics.
+plot.png("build/examples/boxplot-1.png", 800, 600);
+plot.script("set style fill solid 0.5 border -1\nset style boxplot outliers pointtype 7\nset style data boxplot\nset boxwidth 0.5\nset pointsize 0.5\nunset key\nset border 2");
+plot.script("set xtics ('A' 1, 'B' 2) scale 0.0\nset xtics nomirror\nset ytics nomirror\nset yrange [0:100]");
+plot.cmd("plot 'examples/data/silver.dat' using (1):2, '' using (2):(5*$3)");
+plot.close();
+# Image 2: boxplot split by factor (column 4), colours from linetypes.
+plot.png("build/examples/boxplot-2.png", 900, 600);
+plot.script("set xtics auto\nset yrange [*:*]\nset ylabel 'Billion Tons of Oil Equivalent'\nset datafile columnheaders");
+plot.script("set linetype 51 lc 'dark-red'\nset linetype 52 lc 'dark-red'\nset linetype 53 lc 'dark-red'\nset linetype 54 lc 'midnight-blue'\nset linetype 55 lc 'sea-green'\nset linetype 56 lc 'sea-green'\nset linetype 57 lc 'sea-green'");
+plot.cmd("set title \"Distribution of energy usage of the continents, grouped by type of energy source\\n\"");
+plot.cmd("plot 'examples/data/energy_circles.dat' using (1):($8/1.e6):(0):4 lt 51 lc variable");
+plot.close();
+end _dsl_
+savedsl(p, out);
+println(f"wrote {out}");

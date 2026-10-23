@@ -1,0 +1,24 @@
+# image.dem: plotting a binary RGB image, and rotated/translated copies.
+out = ARGV.len() > 0 ? ARGV[0] : "build/image.dslb";
+mkdir("build/examples");
+p = _dsl_ schema="../schema/lmplot.dsl.json";
+# Data: examples/data/blutux.rgb, 128x128 RGB bytes (path relative to the repo root).
+# Image 1: the penguin with a label.
+plot.png("build/examples/image-1.png", 800, 600);
+plot.cmd("set title \"Larry Ewing's GIMP penguin on vacation basking in\\nthe balmy waters off the coast of Murmansk\"");
+plot.script("set xrange [-10:137]\nset yrange [-10:157]");
+plot.cmd("set label '\"I flew here... by plane.  Why?  For the halibut.\"' at 64,135 center");
+plot.cmd("plot 'examples/data/blutux.rgb' binary array=(128,128) flipy format='%uchar' with rgbimage");
+plot.close();
+# Image 2: four copies translated and rotated.
+plot.png("build/examples/image-2.png", 800, 600);
+plot.cmd("reset");
+plot.cmd("set title 'Translations of position variables via using'");
+plot.script("set xrange [-10:275]\nset yrange [-10:300]\nunset key");
+plot.cmd("set label '\"Time for a dip...\"' at 132,285 center");
+plot.cmd("f = 'examples/data/blutux.rgb'");
+plot.cmd("plot f binary array=(128,128) flipy center=(64,201) format='%uchar' with rgbimage, f binary array=(128,128) flipy rotation=-90d center=(201,201) format='%uchar' with rgbimage, f binary array=(128,128) flip=y rotate=3.1415 center=(201,64) format='%uchar' with rgbimage, f binary array=(128,128) flip=y rot=0.5pi center=(64,64) format='%uchar' using 1:2:3 with rgbimage");
+plot.close();
+end _dsl_
+savedsl(p, out);
+println(f"wrote {out}");

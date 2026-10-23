@@ -1,0 +1,74 @@
+# lmscript + gnuplot: generate data, analyse it with `stats`, compute in the DSL, plot.
+# What this adds over a plain .gp script: the numbers flow back into the program
+# (plot.num), are combined with ordinary typed arithmetic/strings, printed with
+# plot.echo and fed back to gnuplot for the final figure.
+# Writes build/examples/stats.png.
+out = ARGV.len() > 0 ? ARGV[0] : "build/stats.dslb";
+mkdir("build/examples");
+p = _dsl_ schema="../schema/lmplot.dsl.json";
+
+# 1. Noisy line y = 2.5 + 0.8 x, from a deterministic LCG (no rand(), so reruns are byte-identical).
+let seed = 12345;
+let rows = "";
+for (i in range(0, 60)) {
+  # noise ~ sum of 4 uniforms in [-1,1] (roughly bell shaped, sd ~ 1.15)
+  let noise = 0.0;
+  for (k in range(0, 4)) {
+    seed = (seed * 1103515245 + 12345) % 2147483648;
+    noise = noise + 2.0 * float(seed) / 2147483648.0 - 1.0;
+  }
+  let x = float(i) * 0.5;
+  let y = 2.5 + 0.8 * x + 2.0 * noise;
+  rows = rows + str(x) + " " + str(y) + "\n";
+}
+plot.data("D", rows);
+
+# 2. gnuplot's stats command fills the STATS_* variables (nooutput: no console report)
+plot.cmd("stats $D using 1:2 nooutput");
+let n = plot.num("STATS_records");
+let slope = plot.num("STATS_slope");
+let icpt = plot.num("STATS_intercept");
+let r = plot.num("STATS_correlation");
+let mean_y = plot.num("STATS_mean_y");
+let sd_y = plot.num("STATS_stddev_y");
+let sd_slope = plot.num("STATS_slope_err");
+
+# 3. compute with the results inside the DSL
+let r2 = r * r;
+let x_at_20 = (20.0 - icpt) / slope;     # where does the fit reach y = 20?
+let y_at_40 = icpt + slope * 40.0;        # extrapolation
+let ci = 1.96 * sd_slope;                 # ~95% interval of the slope
+plot.echo("records       " + str(int(n)));
+plot.echo("mean(y)       " + str(mean_y) + "  stddev(y) " + str(sd_y));
+plot.echo("fit           y = " + str(icpt) + " + " + str(slope) + " * x");
+plot.echo("R-squared     " + str(r2));
+plot.echo("x where y=20  " + str(x_at_20));
+plot.echo("y(40)         " + str(y_at_40));
+
+# 4. hand derived numbers back to gnuplot as variables and build the label text there
+plot.cmd("fit_a = " + str(icpt));
+plot.cmd("fit_b = " + str(slope));
+plot.cmd("mu = " + str(mean_y));
+plot.cmd("lo = " + str(slope - ci));
+plot.cmd("hi = " + str(slope + ci));
+let label = plot.str("sprintf('y = %.2f + %.3f x\nR² = %.3f\nslope in [%.3f, %.3f]\nmean y = %.1f', fit_a, fit_b, " + str(r2) + ", lo, hi, mu)");
+plot.echo(label);
+
+plot.png("build/examples/stats.png", 800, 600);
+# unicode superscript instead of enhanced "R^2": a boxed enhanced label gets a too wide box in lmplot
+plot.cmd("set encoding utf8");
+plot.cmd("set title 'stats on generated data, fit computed in lmscript'");
+plot.cmd("set xlabel 'x'");
+plot.cmd("set ylabel 'y'");
+plot.cmd("set key top left");
+plot.cmd("set grid");
+plot.cmd("set label 1 '" + label + "' at graph 0.97, 0.2 right front boxed noenhanced");
+# guide lines to the point where the fitted line reaches y = 20 (value computed above)
+plot.cmd("set arrow 1 from " + str(x_at_20) + ", graph 0 to " + str(x_at_20) + ", 20 nohead dt 2 lc 'grey40'");
+plot.cmd("set arrow 2 from graph 0, first 20 to " + str(x_at_20) + ", 20 nohead dt 2 lc 'grey40'");
+plot.cmd("set label 2 'y = 20 at x = " + plot.str("sprintf('%.1f', " + str(x_at_20) + ")") + "' at 22.5, 16 left");
+plot.cmd("plot $D using 1:2 with points pt 7 ps 1 lc 'dark-violet' title 'data', fit_a + fit_b*x with lines lw 2 lc 'orange-red' title 'fit', mu with lines dt 3 lc 'grey30' title 'mean y'");
+plot.close();
+end _dsl_
+savedsl(p, out);
+println(f"wrote {out}");
