@@ -63,7 +63,8 @@ lmscript examples/video/wave.lms        # -> build/video/wave.mp4
 | `video/ripple.lms` | an expanding pm3d ripple with an orbiting camera, 90 frames |
 | `video/lissajous.lms` | a Lissajous curve drawn progressively with a moving head, 120 frames |
 
-`system` runs a program without a shell: write the ffmpeg command as plain
+`system` runs a program without a shell and returns `{code, stdout, ...}`; the
+programs check it with `assert(r.code == 0)`. Write the ffmpeg command as plain
 words, and the frame names as `frame-%d.png` (no zero padding needed).
 
 `data/` holds the small demo data files the programs read, copied unchanged

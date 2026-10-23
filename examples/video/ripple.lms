@@ -28,6 +28,8 @@ for (k in range(0, frames)) {
 }
 end _dsl_
 savedsl(p, out);
-system ${dsl_cli(p)} --dsl ${out};
-system ffmpeg -y -loglevel error -framerate 30 -i build/video/ripple/frame-%d.png -c:v libx264 -pix_fmt yuv420p build/video/ripple.mp4;
+r = system ${dsl_cli(p)} --dsl ${out};
+assert(r.code == 0);
+r = system ffmpeg -y -loglevel error -framerate 30 -i build/video/ripple/frame-%d.png -c:v libx264 -pix_fmt yuv420p build/video/ripple.mp4;
+assert(r.code == 0);
 println("wrote build/video/ripple.mp4");
