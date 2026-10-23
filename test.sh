@@ -31,12 +31,12 @@ gif_magic(){
 }
 
 # lmscript resolves `cli="lmplot"` on PATH first, so the examples bind to the binary under test.
-export PATH="$(cd "$BUILD_DIR" 2>/dev/null && pwd || echo "$HERE/$BUILD_DIR"):$PATH"
 if [ -d "${HOME:-}/.cache/lmscript/tools/github/lmctl-ai" ]; then
   for tool_dir in "$HOME/.cache/lmscript/tools/github/lmctl-ai"/*/latest; do
     [ -d "$tool_dir" ] && export PATH="$tool_dir:$PATH"
   done
 fi
+export PATH="$(cd "$BUILD_DIR" 2>/dev/null && pwd || echo "$HERE/$BUILD_DIR"):$PATH"
 LMSCRIPT="$(scripts/select-compiler.sh)"
 scripts/sync-sdk.sh --verify >/dev/null || fail "SDK header pin mismatch"
 ok "SDK header matches sdk.lock"
