@@ -128,6 +128,9 @@ const char *lmplot_gp_errmsg(void)
 }
 
 /* --dry-run (see plot.h): files gnuplot would write go to the null device instead. */
+#ifdef _WIN32
+#include <windows.h>
+#endif
 int lmplot_dry_run = 0;
 
 FILE *lmplot_dry_fopen(const char *name, const char *mode)
@@ -137,12 +140,20 @@ FILE *lmplot_dry_fopen(const char *name, const char *mode)
     fprintf(stderr, "[dry-run] would write %s\n", name);
 #ifdef _WIN32
     {
-	/* fopen("NUL") is not reliable through every Windows C runtime/wrapper. */
+	/* fopen("NUL") failed on the windows-x64 CI runner, and tmpfile() writes to the drive
+	 * root. Fall back to a fresh file in %TEMP% opened with 'D' (_O_TEMPORARY): Windows
+	 * deletes it when gnuplot closes the output, so nothing is left behind. */
+	char dir[MAX_PATH], tmpname[MAX_PATH];
+	char m[8];
 	FILE *f = fopen("NUL", mode);
+	if (f)
+	    return f;
+	if (GetTempPathA(MAX_PATH, dir) == 0 || GetTempFileNameA(dir, "lmp", 0, tmpname) == 0)
+	    return NULL;
+	snprintf(m, sizeof m, "%sD", mode);
+	f = fopen(tmpname, m);
 	if (!f)
-	    f = fopen("\\\\.\\NUL", mode);
-	if (!f)
-	    f = tmpfile();
+	    DeleteFileA(tmpname);
 	return f;
     }
 #else
