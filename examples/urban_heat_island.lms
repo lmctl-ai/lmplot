@@ -1,0 +1,116 @@
+# Urban Heat Island (UHI) thermal anomaly field across a 24x24 km metropolitan
+# basin (downtown core, industrial corridor, river cooling channel, and park),
+# paired with West-East and South-North cross-section transects.
+# Writes build/examples/urban_heat_island.png (900x560).
+out = ARGV.len() > 0 ? ARGV[0] : "build/urban_heat_island.dslb";
+mkdir("build/examples");
+p = _dsl_ cli="lmplot" install="github:lmctl-ai/lmplot@latest";
+
+fn exp_neg(u: float) -> float {
+  let res = 0.0;
+  if (u <= 16.0) {
+    let h = u * 0.25;
+    let num = 1.0 - 0.5 * h + 0.107142857 * h * h - 0.011904762 * h * h * h;
+    let den = 1.0 + 0.5 * h + 0.107142857 * h * h + 0.011904762 * h * h * h;
+    if (num > 0.0) {
+      let r = num / den;
+      res = r * r * r * r;
+    }
+  }
+  return res;
+}
+
+# Build a 33x33 grid over [-12, +12] km:
+let grid_rows = "";
+let we_rows = "";
+let sn_rows = "";
+for (iy in range(0, 33)) {
+  let y = -12.0 + 24.0 * float(iy) / 32.0;
+  for (ix in range(0, 33)) {
+    let x = -12.0 + 24.0 * float(ix) / 32.0;
+    let r2_core = (x * x + 1.2 * y * y) / 18.0;
+    let r2_ind = ((x - 4.5) * (x - 4.5) + (y + 2.5) * (y + 2.5)) / 10.0;
+    let r2_sub = (x * x + y * y) / 65.0;
+    let d_river = (y - 0.35 * x + 2.0);
+    let r2_river = (d_river * d_river) / 1.4;
+    let r2_park = ((x + 4.0) * (x + 4.0) + (y - 3.5) * (y - 3.5)) / 5.5;
+    let dt = 4.4 * exp_neg(r2_core) + 2.5 * exp_neg(r2_ind) + 1.4 * exp_neg(r2_sub) - 1.85 * exp_neg(r2_river) - 1.65 * exp_neg(r2_park);
+    grid_rows = grid_rows + str(x) + " " + str(y) + " " + str(dt) + "\n";
+    if (iy == 16) {
+      we_rows = we_rows + str(x) + " " + str(dt) + "\n";
+    }
+    if (ix == 16) {
+      sn_rows = sn_rows + str(y) + " " + str(dt) + "\n";
+    }
+  }
+  grid_rows = grid_rows + "\n";
+}
+plot.data("UHI", grid_rows);
+plot.data("WE", we_rows);
+plot.data("SN", sn_rows);
+
+plot.cmd("set terminal unknown");
+plot.cmd("stats $UHI using 3 nooutput");
+let dt_max = plot.num("STATS_max");
+let dt_min = plot.num("STATS_min");
+let dt_mean = plot.num("STATS_mean");
+plot.echo("Peak downtown anomaly: +" + str(dt_max) + " C");
+plot.echo("Park/river minimum:    " + str(dt_min) + " C");
+plot.echo("Basin mean anomaly:    +" + str(dt_mean) + " C");
+
+plot.png("build/examples/urban_heat_island.png", 900, 560);
+plot.cmd("set encoding utf8");
+plot.cmd("set multiplot");
+
+# Left panel: 2D Urban Heat Island map
+plot.script("set origin 0.0, 0.0\nset size 0.55, 1.0");
+plot.script("set lmargin 7\nset rmargin 8\nset tmargin 3.2\nset bmargin 4.2");
+plot.cmd("set title 'Nocturnal Urban Heat Island ΔT(x, y) [°C]' font ',11.5'");
+plot.cmd("set xlabel 'East–West Distance x (km)'");
+plot.cmd("set ylabel 'South–North Distance y (km)'");
+plot.cmd("set xrange [-11.6:11.6]");
+plot.cmd("set yrange [-11.6:11.6]");
+plot.cmd("set size square");
+plot.cmd("set cbrange [-1.0:5.8]");
+plot.cmd("set cblabel 'ΔT above rural baseline (°C)' offset 0.8,0");
+plot.cmd("set palette defined (0 '#1e3a8a', 0.22 '#38bdf8', 0.42 '#fef08a', 0.70 '#f97316', 1 '#991b1b')");
+plot.cmd("unset key");
+plot.cmd("set arrow 1 from -11.6, 0 to 11.6, 0 nohead dt 2 lw 1.3 lc rgb '#ffffff' front");
+plot.cmd("set arrow 2 from 0, -11.6 to 0, 11.6 nohead dt 3 lw 1.3 lc rgb '#ffffff' front");
+plot.cmd("set label 1 'CBD Core\n+5.9°C' at 0.5, 1.2 left front tc rgb '#ffffff' font ',9'");
+plot.cmd("set label 2 'Park\nSink' at -4.0, 3.8 center front tc rgb '#0f172a' font ',8.5'");
+plot.cmd("set label 3 'Industrial' at 4.5, -2.8 center front tc rgb '#ffffff' font ',8.5'");
+plot.cmd("plot $UHI using 1:2:3 with image");
+
+# Right panel: West-East and South-North cross-section transects
+plot.cmd("unset arrow 1");
+plot.cmd("unset arrow 2");
+plot.cmd("unset label 1");
+plot.cmd("unset label 2");
+plot.cmd("unset label 3");
+plot.cmd("set size nosquare");
+plot.script("set origin 0.56, 0.0\nset size 0.44, 1.0");
+plot.script("set lmargin 7\nset rmargin 2.5\nset tmargin 3.2\nset bmargin 4.2");
+plot.cmd("set title 'Thermal Dome Transects — River Cooling Dip' font ',11.5'");
+plot.cmd("set xlabel 'Transect Coordinate (km from CBD)'");
+plot.cmd("set ylabel 'Temperature Anomaly ΔT (°C)'");
+plot.cmd("set xrange [-12:12]");
+plot.cmd("set yrange [-1.4:7.8]");
+plot.cmd("set grid xtics ytics lc rgb '#e2e8f0' lw 1");
+plot.cmd("set key top right samplen 1.8 spacing 1.1 opaque box lc rgb '#cbd5e1' font ',9'");
+plot.cmd("set style fill transparent solid 0.20 noborder");
+
+let stat_txt = plot.str("sprintf('CBD peak: +%.1f °C\nMean ΔT: +%.2f °C\nRiver dip: -1.7 °C', " + str(dt_max) + ", " + str(dt_mean) + ")");
+plot.cmd("set label 4 '" + stat_txt + "' at -11.5, 4.3 left front boxed noenhanced font ',8'");
+
+plot.cmd("plot $WE using 1:2 with filledcurves y1=0 lc rgb '#ef4444' notitle, $WE using 1:2 with lines lw 2.5 lc rgb '#dc2626' title 'West–East (y = 0)', $SN using 1:2 with lines lw 2.2 dt 2 lc rgb '#2563eb' title 'South–North (x = 0)', " + str(dt_mean) + " with lines dt 3 lw 1.3 lc rgb '#475569' title 'Basin mean ΔT'");
+
+plot.cmd("unset multiplot");
+plot.close();
+end _dsl_
+savedsl(p, out);
+if (ARGV.len() == 0) {
+  r = system ${dsl_cli(p)} --dsl ${out};
+  assert(r.code == 0);
+}
+println(f"wrote {out}");

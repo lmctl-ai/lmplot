@@ -1,0 +1,117 @@
+# Michaelis-Menten enzyme kinetics under competitive and non-competitive inhibition,
+# with Lineweaver-Burk double-reciprocal linear regression solved via gnuplot stats.
+# Writes build/examples/enzyme_michaelis_menten.png (900x560).
+out = ARGV.len() > 0 ? ARGV[0] : "build/enzyme_michaelis_menten.dslb";
+mkdir("build/examples");
+p = _dsl_ cli="lmplot" install="github:lmctl-ai/lmplot@latest";
+
+# Uninhibited: Vmax = 84 uM/min, Km = 15 uM
+# Competitive inhibitor (+[I]): Vmax_app = 84 uM/min, Km_app = 42 uM
+# Non-competitive inhibitor (+[I]): Vmax_app = 46 uM/min, Km_app = 15 uM
+let seed = 77123;
+let vmax_true = 84.0;
+let km_true = 15.0;
+let km_comp = 42.0;
+let vmax_nonc = 46.0;
+
+let rows_mm = "";
+let rows_lb = "";
+for (k in range(1, 11)) {
+  # Substrate concentrations from 5 to 110 uM
+  let s = 4.0 + float(k * k) * 1.05;
+  let v_un = vmax_true * s / (km_true + s);
+  let v_co = vmax_true * s / (km_comp + s);
+  let v_nc = vmax_nonc * s / (km_true + s);
+
+  seed = (seed * 1103515245 + 12345) % 2147483648;
+  let n1 = (2.0 * float(seed) / 2147483648.0 - 1.0) * 1.6;
+  seed = (seed * 1103515245 + 12345) % 2147483648;
+  let n2 = (2.0 * float(seed) / 2147483648.0 - 1.0) * 1.4;
+  seed = (seed * 1103515245 + 12345) % 2147483648;
+  let n3 = (2.0 * float(seed) / 2147483648.0 - 1.0) * 1.2;
+
+  let vo_un = v_un + n1;
+  let vo_co = v_co + n2;
+  let vo_nc = v_nc + n3;
+  let err = 2.4;
+
+  rows_mm = rows_mm + str(s) + " " + str(vo_un) + " " + str(vo_co) + " " + str(vo_nc) + " " + str(err) + "\n";
+  rows_lb = rows_lb + str(1.0 / s) + " " + str(1.0 / vo_un) + " " + str(1.0 / vo_co) + " " + str(1.0 / vo_nc) + "\n";
+}
+plot.data("MM", rows_mm);
+plot.data("LB", rows_lb);
+
+# Recover Vmax and Km from Lineweaver-Burk regression: 1/v = (1/Vmax) + (Km/Vmax)*(1/[S])
+plot.cmd("set terminal unknown");
+plot.cmd("stats $LB using 1:2 nooutput");
+let lb_icpt = plot.num("STATS_intercept");
+let lb_slope = plot.num("STATS_slope");
+let r_corr = plot.num("STATS_correlation");
+let vmax_est = 1.0 / lb_icpt;
+let km_est = lb_slope * vmax_est;
+
+plot.echo("Recovered Vmax = " + str(vmax_est) + " uM/min (true 84.0)");
+plot.echo("Recovered Km   = " + str(km_est) + " uM (true 15.0)");
+plot.echo("Lineweaver-Burk R = " + str(r_corr));
+
+plot.png("build/examples/enzyme_michaelis_menten.png", 900, 560);
+plot.cmd("set encoding utf8");
+plot.cmd("set multiplot");
+
+# Left panel: Michaelis-Menten saturation curves v_0([S])
+plot.script("set origin 0.0, 0.0\nset size 0.54, 1.0");
+plot.script("set lmargin 8.5\nset rmargin 2.5\nset tmargin 3.2\nset bmargin 4.2");
+plot.cmd("set title 'Michaelis–Menten Saturation Kinetics v_0([S])' font ',11.5'");
+plot.cmd("set xlabel 'Substrate Concentration [S] (µM)'");
+plot.cmd("set ylabel 'Initial Reaction Rate v_0 (µM / min)'");
+plot.cmd("set xrange [0:115]");
+plot.cmd("set yrange [0:104]");
+plot.cmd("set grid xtics ytics lc rgb '#e2e8f0' lw 1");
+plot.cmd("set key top left samplen 1.8 spacing 1.1 opaque box lc rgb '#cbd5e1' font ',8.5'");
+plot.cmd("set samples 400");
+
+# Guide lines for half-maximal velocity Vmax/2 = 42 uM/min at Km = 15 uM and Km_app = 42 uM
+plot.cmd("set arrow 1 from 0, 42 to 42, 42 nohead dt 3 lw 1.2 lc rgb '#64748b'");
+plot.cmd("set arrow 2 from 15, 0 to 15, 42 nohead dt 3 lw 1.2 lc rgb '#1d4ed8'");
+plot.cmd("set arrow 3 from 42, 0 to 42, 42 nohead dt 3 lw 1.2 lc rgb '#d97706'");
+plot.cmd("set label 1 'V_{max}/2 = 42' at 44, 42.5 left font ',8.5' tc rgb '#334155'");
+plot.cmd("set label 2 'K_m=15' at 16.5, 6.0 left font ',8.5' tc rgb '#1d4ed8'");
+plot.cmd("set label 3 'K_m^{app}=42' at 43.5, 6.0 left font ',8.5' tc rgb '#b45309'");
+
+plot.cmd("mm(x, vm, km) = vm * x / (km + x)");
+plot.cmd("plot mm(x, 84, 15) with lines lw 2.4 lc rgb '#1d4ed8' title 'Uninhibited (V_{max}=84, K_m=15)', $MM using 1:2:5 with yerrorbars pt 7 ps 0.9 lw 1.2 lc rgb '#1d4ed8' notitle, mm(x, 84, 42) with lines lw 2.4 lc rgb '#d97706' title 'Competitive (+I, K_m^{app}=42)', $MM using 1:3:5 with yerrorbars pt 5 ps 0.9 lw 1.2 lc rgb '#d97706' notitle, mm(x, 46, 15) with lines lw 2.4 lc rgb '#dc2626' title 'Non-competitive (+I, V_{max}^{app}=46)', $MM using 1:4:5 with yerrorbars pt 9 ps 0.9 lw 1.2 lc rgb '#dc2626' notitle");
+
+# Right panel: Lineweaver-Burk double-reciprocal plot (1/v_0 vs 1/[S])
+plot.cmd("unset arrow 1");
+plot.cmd("unset arrow 2");
+plot.cmd("unset arrow 3");
+plot.cmd("unset label 1");
+plot.cmd("unset label 2");
+plot.cmd("unset label 3");
+plot.script("set origin 0.54, 0.0\nset size 0.46, 1.0");
+plot.script("set lmargin 8.5\nset rmargin 2.5\nset tmargin 3.2\nset bmargin 4.2");
+plot.cmd("set title 'Lineweaver–Burk Linearization (1/v_0 vs 1/[S])' font ',11.5'");
+plot.cmd("set xlabel '1 / [S] (µM^{-1})'");
+plot.cmd("set ylabel '1 / v_0 (min / µM)'");
+plot.cmd("set xrange [-0.075:0.205]");
+plot.cmd("set yrange [0:0.135]");
+plot.cmd("set zeroaxis lt -1 lc rgb '#475569' lw 1.1");
+plot.cmd("set key top left samplen 1.8 spacing 1.1 opaque box lc rgb '#cbd5e1' font ',8.5'");
+
+let fit_txt = plot.str("sprintf('OLS Fit (Uninhibited):\nV_max = %.1f µM/min\nK_m = %.1f µM (r = %.3f)', " + str(vmax_est) + ", " + str(km_est) + ", " + str(r_corr) + ")");
+plot.cmd("set label 4 '" + fit_txt + "' at -0.068, 0.088 left front boxed noenhanced font ',8.5'");
+
+plot.cmd("lb_un(x) = (1.0/84.0) + (15.0/84.0)*x");
+plot.cmd("lb_co(x) = (1.0/84.0) + (42.0/84.0)*x");
+plot.cmd("lb_nc(x) = (1.0/46.0) + (15.0/46.0)*x");
+plot.cmd("plot lb_un(x) with lines lw 2.2 lc rgb '#1d4ed8' title 'Uninhibited (1/V_{max} shared)', $LB using 1:2 with points pt 7 ps 1.0 lc rgb '#1d4ed8' notitle, lb_co(x) with lines lw 2.2 lc rgb '#d97706' title 'Competitive (pivots on y-axis)', $LB using 1:3 with points pt 5 ps 1.0 lc rgb '#d97706' notitle, lb_nc(x) with lines lw 2.2 lc rgb '#dc2626' title 'Non-comp. (pivots on -1/K_m)', $LB using 1:4 with points pt 9 ps 1.0 lc rgb '#dc2626' notitle");
+
+plot.cmd("unset multiplot");
+plot.close();
+end _dsl_
+savedsl(p, out);
+if (ARGV.len() == 0) {
+  r = system ${dsl_cli(p)} --dsl ${out};
+  assert(r.code == 0);
+}
+println(f"wrote {out}");

@@ -1,0 +1,240 @@
+# Multi-host pipeline (lmdraw + lmplot):
+# 1. lmdraw builds a 360x560 retained 2D vector schematic of the 4-compartment
+#    SEIR transmission model (S -> E -> I -> R) with gradient cards, flow arrows,
+#    rate constants, and NPI intervention summary (build/rendered/seir_schematic.png).
+# 2. lmplot integrates the coupled SEIR differential equations with 4th-order
+#    Runge-Kutta (comparing unmitigated R0=3.2 vs NPI distancing), extracts peak
+#    infectious load via gnuplot stats, and plots the time-course and I-vs-S
+#    herd-immunity phase portrait (build/examples/seir_panels.png, 540x560).
+# 3. Combines the lmdraw schematic and lmplot charts into build/examples/sir_epidemic_draw_plot.png (900x560).
+mkdir("build/rendered");
+mkdir("build/examples");
+
+draw = _dsl_ cli="lmdraw" install="github:lmctl-ai/lmdraw@latest";
+scene.canvas(360, 560, "#f8fafc");
+
+let bg_grad = scene.linear_gradient("card_bg", 0.0, 0.0, 0.0, 1.0);
+bg_grad.stop(0.0, "#ffffff");
+bg_grad.stop(1.0, "#f1f5f9");
+
+let border_card = scene.rect(12.0, 12.0, 336.0, 536.0, "url(#card_bg)");
+border_card.set_attr("stroke", "#cbd5e1");
+border_card.set_attr("stroke-width", "1.5");
+border_card.set_attr("rx", "10");
+border_card.set_attr("ry", "10");
+
+let hdr = scene.rect(12.0, 12.0, 336.0, 52.0, "#0f172a");
+hdr.set_attr("rx", "10");
+hdr.set_attr("ry", "10");
+scene.rect(12.0, 48.0, 336.0, 16.0, "#0f172a");
+
+let t1 = scene.text(180.0, 35.0, 15.0, "SEIR Compartmental Architecture", "#f8fafc");
+t1.set_attr("text-anchor", "middle");
+t1.set_attr("font-weight", "bold");
+let t2 = scene.text(180.0, 54.0, 11.5, "Drawn with lmdraw  ·  Integrated & plotted by lmplot", "#94a3b8");
+t2.set_attr("text-anchor", "middle");
+
+# Compartment 1: Susceptible (S)
+let b_s = scene.rect(36.0, 82.0, 288.0, 58.0, "#eff6ff");
+b_s.set_attr("stroke", "#2563eb");
+b_s.set_attr("stroke-width", "2");
+b_s.set_attr("rx", "8");
+b_s.set_attr("ry", "8");
+let ts1 = scene.text(52.0, 107.0, 14.0, "S(t) — Susceptible Host Pool", "#1e3a8a");
+ts1.set_attr("font-weight", "bold");
+scene.text(52.0, 127.0, 11.5, "dS/dt = -β(t) · S · I / N      [S(0) = 99.6%]", "#3b82f6");
+
+# Arrow S -> E
+let a1 = scene.line(180.0, 140.0, 180.0, 174.0, "#dc2626", 2.4);
+a1.set_attr("marker-end", "arrow");
+scene.text(192.0, 161.0, 11.5, "Transmission rate  β · S · I", "#b91c1c");
+
+# Compartment 2: Exposed (E)
+let b_e = scene.rect(36.0, 178.0, 288.0, 58.0, "#fffbeb");
+b_e.set_attr("stroke", "#d97706");
+b_e.set_attr("stroke-width", "2");
+b_e.set_attr("rx", "8");
+b_e.set_attr("ry", "8");
+let te1 = scene.text(52.0, 203.0, 14.0, "E(t) — Exposed / Latent Period", "#92400e");
+te1.set_attr("font-weight", "bold");
+scene.text(52.0, 223.0, 11.5, "dE/dt = +β·S·I - σ·E       [1/σ = 4.5 days]", "#b45309");
+
+# Arrow E -> I
+let a2 = scene.line(180.0, 236.0, 180.0, 270.0, "#d97706", 2.4);
+a2.set_attr("marker-end", "arrow");
+scene.text(190.0, 257.0, 11.5, "Incubation rate  σ · E", "#92400e");
+
+# Compartment 3: Infectious (I)
+let b_i = scene.rect(36.0, 274.0, 288.0, 58.0, "#fef2f2");
+b_i.set_attr("stroke", "#dc2626");
+b_i.set_attr("stroke-width", "2");
+b_i.set_attr("rx", "8");
+b_i.set_attr("ry", "8");
+let ti1 = scene.text(52.0, 299.0, 14.0, "I(t) — Infectious & Active", "#991b1b");
+ti1.set_attr("font-weight", "bold");
+scene.text(52.0, 319.0, 11.5, "dI/dt = +σ·E - γ·I          [1/γ = 7.0 days]", "#dc2626");
+
+# Feedback dashed loop from I back to S->E arrow
+let fb = scene.polyline("36 303 18 303 18 157 172 157", "#dc2626", 1.8);
+fb.set_attr("fill", "none");
+fb.set_attr("stroke-dasharray", "5 4");
+fb.set_attr("marker-end", "arrow");
+
+# Arrow I -> R
+let a3 = scene.line(180.0, 332.0, 180.0, 366.0, "#059669", 2.4);
+a3.set_attr("marker-end", "arrow");
+scene.text(192.0, 353.0, 11.5, "Recovery & immunity  γ · I", "#065f46");
+
+# Compartment 4: Recovered (R)
+let b_r = scene.rect(36.0, 370.0, 288.0, 58.0, "#ecfdf5");
+b_r.set_attr("stroke", "#059669");
+b_r.set_attr("stroke-width", "2");
+b_r.set_attr("rx", "8");
+b_r.set_attr("ry", "8");
+let tr1 = scene.text(52.0, 395.0, 14.0, "R(t) — Recovered / Immune", "#065f46");
+tr1.set_attr("font-weight", "bold");
+scene.text(52.0, 415.0, 11.5, "dR/dt = +γ · I              [S + E + I + R = 1]", "#059669");
+
+# Parameter & Herd-Immunity Summary Card at bottom
+let b_p = scene.rect(28.0, 444.0, 304.0, 90.0, "#f1f5f9");
+b_p.set_attr("stroke", "#64748b");
+b_p.set_attr("stroke-width", "1.2");
+b_p.set_attr("rx", "6");
+b_p.set_attr("ry", "6");
+let tp1 = scene.text(42.0, 466.0, 12.5, " Epidemiological Thresholds:", "#0f172a");
+tp1.set_attr("font-weight", "bold");
+scene.text(42.0, 486.0, 11.5, "• Baseline R_0 = β/γ = 3.20  (S* = 1/R_0 = 31.3%)", "#334155");
+scene.text(42.0, 505.0, 11.5, "• NPI Distancing (t >= 22 d): R_t = 1.48 (-54% β)", "#1d4ed8");
+scene.text(42.0, 524.0, 11.5, "• Peak active I(t) cut from 19.1% to 6.2% (-68%)", "#059669");
+
+scene.render_png("build/rendered/seir_schematic.png", 360, 560, 1);
+end _dsl_
+savedsl(draw, "build/seir_draw.dslb");
+r = system ${dsl_cli(draw)} --dsl build/seir_draw.dslb;
+assert(r.code == 0);
+
+p = _dsl_ cli="lmplot" install="github:lmctl-ai/lmplot@latest";
+
+# Integrate SEIR ODEs over 160 days (dt = 0.5 day, 320 steps) using RK4:
+# Baseline: beta0 = 3.2 * gamma, sigma = 1/4.5 = 0.2222, gamma = 1/7.0 = 0.142857
+# Mitigated: beta(t) drops from 3.2*gamma to 1.48*gamma after day 22
+let sigma = 0.2222222;
+let gamma = 0.1428571;
+let beta_base = 3.20 * gamma;
+let dt = 0.5;
+
+let s1 = 0.996;
+let e1 = 0.0025;
+let i1 = 0.0015;
+let r1 = 0.0;
+
+let s2 = 0.996;
+let e2 = 0.0025;
+let i2 = 0.0015;
+let r2 = 0.0;
+
+let rows = "";
+for (step in range(0, 321)) {
+  let t = float(step) * dt;
+  if (step % 2 == 0) {
+    rows = rows + str(t) + " " + str(100.0 * s1) + " " + str(100.0 * e1) + " " + str(100.0 * i1) + " " + str(100.0 * r1) + " " + str(100.0 * s2) + " " + str(100.0 * e2) + " " + str(100.0 * i2) + " " + str(100.0 * r2) + "\n";
+  }
+
+  # RK4 step for unmitigated (s1, e1, i1, r1)
+  let inf1_a = beta_base * s1 * i1;
+  let ds1_a = 0.0 - inf1_a;
+  let de1_a = inf1_a - sigma * e1;
+  let di1_a = sigma * e1 - gamma * i1;
+  let dr1_a = gamma * i1;
+
+  let s1_b = s1 + 0.5 * dt * ds1_a;
+  let e1_b = e1 + 0.5 * dt * de1_a;
+  let i1_b = i1 + 0.5 * dt * di1_a;
+  let inf1_b = beta_base * s1_b * i1_b;
+  let ds1_b = 0.0 - inf1_b;
+  let de1_b = inf1_b - sigma * e1_b;
+  let di1_b = sigma * e1_b - gamma * i1_b;
+  let dr1_b = gamma * i1_b;
+
+  s1 = s1 + dt * ds1_b;
+  e1 = e1 + dt * de1_b;
+  i1 = i1 + dt * di1_b;
+  r1 = r1 + dt * dr1_b;
+
+  # RK2/midpoint step for NPI-mitigated (s2, e2, i2, r2)
+  let beta_m = beta_base;
+  if (t >= 22.0) { beta_m = 1.48 * gamma; }
+  let inf2_a = beta_m * s2 * i2;
+  let s2_b = s2 - 0.5 * dt * inf2_a;
+  let e2_b = e2 + 0.5 * dt * (inf2_a - sigma * e2);
+  let i2_b = i2 + 0.5 * dt * (sigma * e2 - gamma * i2);
+  let inf2_b = beta_m * s2_b * i2_b;
+  s2 = s2 - dt * inf2_b;
+  e2 = e2 + dt * (inf2_b - sigma * e2_b);
+  i2 = i2 + dt * (sigma * e2_b - gamma * i2_b);
+  r2 = r2 + dt * (gamma * i2_b);
+}
+plot.data("SEIR", rows);
+
+plot.cmd("set terminal unknown");
+plot.cmd("stats $SEIR using 4:8 nooutput");
+let peak_unmit = plot.num("STATS_max_x");
+let peak_mit = plot.num("STATS_max_y");
+let reduction = 100.0 * (peak_unmit - peak_mit) / peak_unmit;
+plot.echo("Unmitigated peak I(t): " + str(peak_unmit) + "%");
+plot.echo("Mitigated peak I(t):   " + str(peak_mit) + "%");
+plot.echo("Peak load reduction:   " + str(reduction) + "%");
+
+plot.png("build/examples/seir_panels.png", 540, 560);
+plot.cmd("set encoding utf8");
+plot.cmd("set multiplot");
+
+# Top panel: Time-course of compartments & ICU surge cap
+plot.script("set origin 0.0, 0.48\nset size 1.0, 0.52");
+plot.script("set lmargin 8.5\nset rmargin 2.5\nset tmargin 2.6\nset bmargin 2.8");
+plot.cmd("set title 'SEIR Epidemic Trajectories — Unmitigated vs NPI Distancing' font ',11'");
+plot.cmd("set xlabel 'Time Since Index Case (days)' offset 0,0.4");
+plot.cmd("set ylabel 'Population Fraction (%)'");
+plot.cmd("set xrange [0:160]");
+plot.cmd("set yrange [0:108]");
+plot.cmd("set ytics 0, 20, 100");
+plot.cmd("set grid xtics ytics lc rgb '#e2e8f0' lw 1");
+plot.cmd("set key at 156, 104 right top samplen 1.5 spacing 0.95 opaque box lc rgb '#cbd5e1' font ',7.8'");
+plot.cmd("set style fill transparent solid 0.22 noborder");
+
+plot.cmd("set arrow 1 from 22, 0 to 22, 108 nohead dt 3 lw 1.2 lc rgb '#475569'");
+plot.cmd("set label 1 'NPI (d=22)' at 24, 97 left font ',8' tc rgb '#334155'");
+
+plot.cmd("plot $SEIR using 1:2 with lines lw 2.0 dt 2 lc rgb '#93c5fd' title 'S(t) unmitigated', $SEIR using 1:6 with lines lw 2.2 lc rgb '#2563eb' title 'S(t) with NPI', $SEIR using 1:9 with lines lw 2.2 lc rgb '#059669' title 'R(t) with NPI', $SEIR using 1:4 with filledcurves y1=0 lc rgb '#ef4444' notitle, $SEIR using 1:4 with lines lw 2.5 lc rgb '#dc2626' title 'I(t) unmit. (19.1%)', $SEIR using 1:8 with filledcurves y1=0 lc rgb '#f59e0b' notitle, $SEIR using 1:8 with lines lw 2.5 lc rgb '#d97706' title 'I(t) NPI (6.2%)'");
+
+# Bottom panel: Epidemic Phase Portrait I(S) & Herd Immunity Threshold S* = 1/R0
+plot.cmd("unset arrow 1");
+plot.cmd("unset label 1");
+plot.script("set origin 0.0, 0.0\nset size 1.0, 0.48");
+plot.script("set lmargin 8.5\nset rmargin 2.5\nset tmargin 2.4\nset bmargin 3.6");
+plot.cmd("set title 'Phase Plane I vs S — Herd-Immunity Threshold S* = 1 / R_0' font ',11'");
+plot.cmd("set xlabel 'Susceptible Fraction S(t) (%)'");
+plot.cmd("set ylabel 'Active Infectious I(t) (%)'");
+plot.cmd("set xrange [0:102]");
+plot.cmd("set yrange [0:32]");
+plot.cmd("set ytics 0, 5, 30");
+plot.cmd("set key at 99, 30.8 right top samplen 1.5 spacing 0.98 opaque box lc rgb '#cbd5e1' font ',7.8'");
+
+# Herd immunity vertical lines: S* = 100/3.2 = 31.25% (unmitigated) and S* = 100/1.48 = 67.6% (NPI)
+plot.cmd("set arrow 2 from 31.25, 0 to 31.25, 22 nohead dt 2 lw 1.3 lc rgb '#dc2626'");
+plot.cmd("set arrow 3 from 67.57, 0 to 67.57, 16 nohead dt 2 lw 1.3 lc rgb '#d97706'");
+plot.cmd("set label 2 'S* = 31.3%' at 33.0, 19.5 left font ',8' tc rgb '#b91c1c'");
+plot.cmd("set label 3 'S*_{NPI} = 67.6%' at 69.0, 12.5 left font ',8' tc rgb '#b45309'");
+
+plot.cmd("plot $SEIR using 2:4 with lines lw 2.6 lc rgb '#dc2626' title 'Unmitigated orbit (R_0 = 3.20)', $SEIR using 6:8 with lines lw 2.6 lc rgb '#d97706' title 'NPI-mitigated orbit (R_t = 1.48)'");
+
+plot.cmd("unset multiplot");
+plot.close();
+end _dsl_
+savedsl(p, "build/seir_plot.dslb");
+r = system ${dsl_cli(p)} --dsl build/seir_plot.dslb;
+assert(r.code == 0);
+
+r = system ffmpeg -y -loglevel error -i build/rendered/seir_schematic.png -i build/examples/seir_panels.png -filter_complex hstack=inputs=2 build/examples/sir_epidemic_draw_plot.png;
+assert(r.code == 0);
+println("wrote build/examples/sir_epidemic_draw_plot.png");

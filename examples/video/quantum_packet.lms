@@ -1,0 +1,57 @@
+# Video: dispersive quantum wave packet psi(x, t) encountering a potential
+# barrier V(x), showing the probability density |psi|^2 envelope, Re(psi),
+# and Im(psi) phase oscillations across 60 frames.
+# `lmscript examples/video/quantum_packet.lms` renders 60 PNG frames with lmplot
+# and encodes build/video/quantum_packet.mp4 and build/video/quantum_packet.gif.
+mkdir("build/video/quantum_packet");
+out = ARGV.len() > 0 ? ARGV[0] : "build/video/quantum_packet.dslb";
+p = _dsl_ cli="lmplot" install="github:lmctl-ai/lmplot@latest";
+
+plot.cmd("set encoding utf8");
+plot.cmd("set xrange [-10:10]");
+plot.cmd("set yrange [-1.15:1.45]");
+plot.cmd("set samples 500");
+plot.cmd("set grid xtics ytics lc rgb '#e2e8f0' lw 1");
+plot.cmd("set xlabel 'Position x / x_0'");
+plot.cmd("set ylabel 'Amplitude Re(ψ), Im(ψ)  /  Density |ψ|²'");
+plot.cmd("set key top center horizontal maxrows 2 samplen 1.8 spacing 1.0 opaque box lc rgb '#cbd5e1' font ',8.5'");
+plot.cmd("set style fill transparent solid 0.24 noborder");
+
+# Potential barrier V(x) centered at x = 2.0
+plot.cmd("barrier(x) = 0.85 * exp(-((x - 2.2)/1.1)**2)");
+
+let frames = 60;
+for (k in range(0, frames)) {
+  let tau = float(k) / float(frames - 1);
+  let xc = -5.5 + 10.5 * tau;
+  # Dispersive width broadening sigma(t) = sqrt(1 + 0.8*tau^2)
+  let sig2 = 1.4 + 1.6 * tau * tau;
+  # Reflected packet amplitude grows as incident packet crosses x = 2.2
+  let refl_amp = 0.0;
+  if (tau > 0.42) {
+    let dt_r = tau - 0.42;
+    refl_amp = 0.42 * (1.0 - 1.0 / (1.0 + 18.0 * dt_r * dt_r));
+  }
+  let xr = 2.2 - 10.5 * (tau - 0.42);
+  let trans_scale = 1.0 - 0.32 * refl_amp;
+
+  plot.png("build/video/quantum_packet/frame-" + str(k) + ".png", 800, 450);
+  plot.cmd("set title 'Quantum Wave-Packet Dispersion and Barrier Scattering — Frame " + str(k + 1) + "/60'");
+  plot.cmd("env_inc(x) = " + str(trans_scale) + " * exp(-(x - (" + str(xc) + "))**2 / " + str(2.0 * sig2) + ")");
+  plot.cmd("env_ref(x) = " + str(refl_amp) + " * exp(-(x - (" + str(xr) + "))**2 / 2.6)");
+  plot.cmd("re_psi(x) = env_inc(x)*cos(5.2*(x - (" + str(xc) + "))) + env_ref(x)*cos(-4.8*(x - (" + str(xr) + ")))");
+  plot.cmd("im_psi(x) = env_inc(x)*sin(5.2*(x - (" + str(xc) + "))) + env_ref(x)*sin(-4.8*(x - (" + str(xr) + ")))");
+  plot.cmd("prob(x) = re_psi(x)**2 + im_psi(x)**2");
+
+  plot.cmd("plot barrier(x) with filledcurves y1=0 lc rgb '#fde68a' title 'Potential barrier V(x)', barrier(x) with lines lw 1.8 lc rgb '#d97706' notitle, prob(x) with filledcurves y1=0 lc rgb '#3b82f6' title 'Probability density |ψ(x,t)|²', prob(x) with lines lw 2.4 lc rgb '#1d4ed8' notitle, re_psi(x) with lines lw 1.8 lc rgb '#dc2626' title 'Re ψ(x,t)', im_psi(x) with lines lw 1.5 dt 2 lc rgb '#059669' title 'Im ψ(x,t)'");
+  plot.close();
+}
+end _dsl_
+savedsl(p, out);
+r = system ${dsl_cli(p)} --dsl ${out};
+assert(r.code == 0);
+r = system ffmpeg -y -loglevel error -framerate 24 -i build/video/quantum_packet/frame-%d.png -c:v libx264 -pix_fmt yuv420p build/video/quantum_packet.mp4;
+assert(r.code == 0);
+r = system ffmpeg -y -loglevel error -framerate 20 -i build/video/quantum_packet/frame-%d.png -vf scale=720:-1:flags=lanczos build/video/quantum_packet.gif;
+assert(r.code == 0);
+println("wrote build/video/quantum_packet.mp4 and build/video/quantum_packet.gif");

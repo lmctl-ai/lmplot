@@ -22,9 +22,21 @@ png_size(){
   local b; b=($(od -An -tu1 -j16 -N8 "$1"))
   echo "$(( (b[0]<<24)+(b[1]<<16)+(b[2]<<8)+b[3] ))x$(( (b[4]<<24)+(b[5]<<16)+(b[6]<<8)+b[7] ))"
 }
+gif_magic(){
+  local sig; sig="$(head -c 6 "$1" | od -An -tx1 | tr -d ' \n')"
+  case "$sig" in
+    474946383961|474946383761) echo "gif";;
+    *) echo "notgif";;
+  esac
+}
 
 # lmscript resolves `cli="lmplot"` on PATH first, so the examples bind to the binary under test.
 export PATH="$(cd "$BUILD_DIR" 2>/dev/null && pwd || echo "$HERE/$BUILD_DIR"):$PATH"
+if [ -d "${HOME:-}/.cache/lmscript/tools/github/lmctl-ai" ]; then
+  for tool_dir in "$HOME/.cache/lmscript/tools/github/lmctl-ai"/*/latest; do
+    [ -d "$tool_dir" ] && export PATH="$tool_dir:$PATH"
+  done
+fi
 LMSCRIPT="$(scripts/select-compiler.sh)"
 scripts/sync-sdk.sh --verify >/dev/null || fail "SDK header pin mismatch"
 ok "SDK header matches sdk.lock"
@@ -76,7 +88,38 @@ ok "lmplot gnuplot defaults to the dumb terminal"
 "$HOST" gnuplot -e 'set terminal' </dev/null 2>&1 | grep -q -E "^ +svg " || fail "svg terminal missing"
 ok "png and svg terminals are built in"
 
+# README gallery verification: every linked example .lms and every referenced image in docs/images/ exists and has valid magic bytes.
+readme_lms_count=0
+while read -r lms_path; do
+  [ -z "$lms_path" ] && continue
+  [ -f "$lms_path" ] || fail "README links to missing example: $lms_path"
+  readme_lms_count=$((readme_lms_count+1))
+done < <(grep -oE 'examples/[A-Za-z0-9_/.-]+\.lms' README.md | sort -u)
+[ "$readme_lms_count" -ge 15 ] || fail "expected >= 15 unique example links in README.md, got $readme_lms_count"
+ok "all $readme_lms_count README example .lms links exist"
+
+readme_img_count=0
+while read -r img_path; do
+  [ -z "$img_path" ] && continue
+  [ -s "$img_path" ] || fail "README references missing or empty image: $img_path"
+  bytes="$(wc -c <"$img_path" | tr -d ' ')"
+  case "$img_path" in
+    *.png)
+      [ "$(png_size "$img_path")" != "notpng" ] || fail "$img_path is not a valid PNG"
+      [ "$bytes" -le 307200 ] || fail "$img_path exceeds 300 KB ($bytes bytes)"
+      ;;
+    *.gif)
+      [ "$(gif_magic "$img_path")" = "gif" ] || fail "$img_path is not a valid GIF"
+      [ "$bytes" -le 3145728 ] || fail "$img_path exceeds 3 MB ($bytes bytes)"
+      ;;
+  esac
+  readme_img_count=$((readme_img_count+1))
+done < <(grep -oE 'docs/images/[A-Za-z0-9_.-]+\.(png|gif)' README.md | sort -u)
+[ "$readme_img_count" -ge 15 ] || fail "expected >= 15 gallery images in README.md, got $readme_img_count"
+ok "all $readme_img_count README gallery images in docs/images/ exist and have valid PNG/GIF headers"
+
 # Examples: compile, run, validate the artifacts.
+rm -rf build/examples
 mkdir -p build/examples
 n=0
 for src in examples/*.lms; do
@@ -124,6 +167,25 @@ for f in build/examples/*.png; do echo "$(sha "$f") $f"; done >"$WORK/after.txt"
 cmp -s "$WORK/before.txt" "$WORK/after.txt" || { diff "$WORK/before.txt" "$WORK/after.txt" >&2 || true; fail "images differ on rerun"; }
 ok "all $(wc -l <"$WORK/after.txt" | tr -d ' ') example images are byte-identical on rerun"
 
+# Multi-host combo examples (lmcad + lmplot, lmdraw + lmplot).
+if command -v lmcad >/dev/null 2>&1; then
+  rm -f build/examples/nozzle_cad_plot.png
+  "$LMSCRIPT" examples/combo/nozzle_cad_plot.lms >"$WORK/c-nozzle.log" 2>&1 || { cat "$WORK/c-nozzle.log" >&2; fail "combo nozzle_cad_plot"; }
+  [ "$(png_size build/examples/nozzle_cad_plot.png)" != "notpng" ] || fail "nozzle_cad_plot.png is not a valid PNG"
+  ok "combo example nozzle_cad_plot (lmcad + lmplot) renders valid PNG"
+else
+  ok "combo example nozzle_cad_plot skipped (sibling host lmcad not on PATH)"
+fi
+
+if command -v lmdraw >/dev/null 2>&1 && command -v ffmpeg >/dev/null 2>&1; then
+  rm -f build/examples/sir_epidemic_draw_plot.png
+  "$LMSCRIPT" examples/combo/sir_epidemic_draw_plot.lms >"$WORK/c-seir.log" 2>&1 || { cat "$WORK/c-seir.log" >&2; fail "combo sir_epidemic_draw_plot"; }
+  [ "$(png_size build/examples/sir_epidemic_draw_plot.png)" != "notpng" ] || fail "sir_epidemic_draw_plot.png is not a valid PNG"
+  ok "combo example sir_epidemic_draw_plot (lmdraw + lmplot) renders valid PNG"
+else
+  ok "combo example sir_epidemic_draw_plot skipped (sibling host lmdraw or ffmpeg not on PATH)"
+fi
+
 # Video examples: frames via lmplot, encoding via ffmpeg (skipped when ffmpeg is absent).
 if command -v ffmpeg >/dev/null 2>&1; then
   for src in examples/video/*.lms; do
@@ -132,7 +194,8 @@ if command -v ffmpeg >/dev/null 2>&1; then
     "$LMSCRIPT" "$src" >"$WORK/v-$name.log" 2>&1 || { cat "$WORK/v-$name.log" >&2; fail "video $name"; }
     [ -s "build/video/$name.mp4" ] || fail "video $name wrote no mp4"
   done
-  ok "video examples render frames and encode mp4 with ffmpeg"
+  [ "$(gif_magic build/video/quantum_packet.gif)" = "gif" ] || fail "quantum_packet.gif is not a valid GIF"
+  ok "video examples render frames and encode mp4/gif with ffmpeg"
 else
   ok "video examples skipped (no ffmpeg)"
 fi

@@ -1,0 +1,69 @@
+# Stellar blackbody radiation: Planck spectral radiance B(lambda, T) across UV,
+# visible (380-750 nm) and near-IR, with Wien's displacement law locus and
+# Stefan-Boltzmann integrated flux computed in lmscript.
+# Writes build/examples/blackbody_planck.png (900x560).
+out = ARGV.len() > 0 ? ARGV[0] : "build/blackbody_planck.dslb";
+mkdir("build/examples");
+p = _dsl_ cli="lmplot" install="github:lmctl-ai/lmplot@latest";
+
+let b_wien = 2897771.9;
+let sigma_sb = 0.000000056703744;
+let wien_rows = "";
+for (k in range(0, 7)) {
+  let temp = 3500.0 + float(k) * 500.0;
+  let lam_max = b_wien / temp;
+  let l_um = lam_max / 1000.0;
+  let l5 = l_um * l_um * l_um * l_um * l_um;
+  let b_peak = 119.10429 / (l5 * 142.3249);
+  let flux_mw = sigma_sb * temp * temp * temp * temp / 1000000.0;
+  wien_rows = wien_rows + str(lam_max) + " " + str(b_peak) + " " + str(int(temp)) + " " + str(flux_mw) + "\n";
+}
+plot.data("WIEN", wien_rows);
+
+plot.cmd("set terminal unknown");
+plot.cmd("stats $WIEN using 1:2 nooutput");
+let min_peak_nm = plot.num("STATS_min_x");
+let max_peak_nm = plot.num("STATS_max_x");
+let sun_lam = b_wien / 5778.0;
+let sun_um = sun_lam / 1000.0;
+let sun_um5 = sun_um * sun_um * sun_um * sun_um * sun_um;
+let sun_peak = 119.10429 / (sun_um5 * 142.3249);
+let sun_flux = sigma_sb * 5778.0 * 5778.0 * 5778.0 * 5778.0 / 1000000.0;
+plot.echo("Wien peak range (nm): " + str(min_peak_nm) + " .. " + str(max_peak_nm));
+plot.echo("Solar peak wavelength: " + str(sun_lam) + " nm");
+plot.echo("Solar bolometric flux: " + str(sun_flux) + " MW/m^2");
+
+plot.png("build/examples/blackbody_planck.png", 900, 560);
+plot.cmd("set encoding utf8");
+plot.cmd("set title 'Planck Blackbody Spectral Radiance — Wien Displacement Locus Across Stellar Temperatures' font ',12'");
+plot.cmd("set xlabel 'Wavelength λ (nm)'");
+plot.cmd("set ylabel 'Spectral Radiance B_λ (MW · m^{-2} · sr^{-1} · µm^{-1})'");
+plot.cmd("set xrange [150:2600]");
+plot.cmd("set yrange [0:52]");
+plot.cmd("set samples 600");
+plot.cmd("set grid xtics ytics lc rgb '#e2e8f0' lw 1");
+plot.cmd("set key top right samplen 2.4 spacing 1.2 opaque box lc rgb '#cbd5e1'");
+
+plot.cmd("planck(lam, T) = 119.10429 / ((lam/1000.0)**5 * (exp(14387769.0 / (lam * T)) - 1.0))");
+plot.cmd("wien_locus(lam) = 119.10429 / ((lam/1000.0)**5 * 142.3249)");
+
+# Highlight visible spectrum band (380 nm to 750 nm)
+plot.cmd("set object 1 rect from 380, 0 to 750, 52 behind fc rgb '#fef3c7' fillstyle solid 0.55 noborder");
+plot.cmd("set arrow 1 from 380, 0 to 380, 52 nohead dt 3 lc rgb '#d97706' lw 1");
+plot.cmd("set arrow 2 from 750, 0 to 750, 52 nohead dt 3 lc rgb '#d97706' lw 1");
+plot.cmd("set label 1 'Visible\n380–750 nm' at 615, 47.5 center front font ',9.5' tc rgb '#92400e'");
+
+let sun_note = plot.str("sprintf('Solar Photosphere (T = 5778 K)\nλ_max = %.0f nm (green-yellow peak)\nBolometric σT⁴ = %.1f MW/m²', " + str(sun_lam) + ", " + str(sun_flux) + ")");
+plot.cmd("set label 2 '" + sun_note + "' at 1360, 26.0 left front boxed noenhanced font ',9.5'");
+plot.cmd("set arrow 3 from 1340, 26.2 to " + str(sun_lam) + ", " + str(sun_peak) + " head filled size screen 0.012,18 lc rgb '#b45309' lw 1.4");
+
+plot.cmd("set style fill transparent solid 0.16 noborder");
+plot.cmd("plot planck(x, 6500) with filledcurves y1=0 lc rgb '#2563eb' notitle, planck(x, 6500) with lines lw 2.4 lc rgb '#1d4ed8' title 'F5V Star (6500 K, λ_{max} = 446 nm)', planck(x, 5778) with filledcurves y1=0 lc rgb '#f59e0b' notitle, planck(x, 5778) with lines lw 2.6 lc rgb '#d97706' title 'Sun G2V (5778 K, λ_{max} = 502 nm)', planck(x, 4800) with lines lw 2.2 lc rgb '#ea580c' title 'K2V Star (4800 K, λ_{max} = 604 nm)', planck(x, 3800) with lines lw 2.2 lc rgb '#dc2626' title 'M0V Red Dwarf (3800 K, λ_{max} = 763 nm)', [430:1000] wien_locus(x) with lines dt 2 lw 1.8 lc rgb '#334155' title 'Wien displacement locus (B_{max} ∝ T^5)', $WIEN using 1:2 with points pt 7 ps 1.1 lc rgb '#0f172a' notitle");
+plot.close();
+end _dsl_
+savedsl(p, out);
+if (ARGV.len() == 0) {
+  r = system ${dsl_cli(p)} --dsl ${out};
+  assert(r.code == 0);
+}
+println(f"wrote {out}");

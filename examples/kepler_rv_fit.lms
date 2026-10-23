@@ -1,0 +1,115 @@
+# Exoplanet radial-velocity detection: synthetic Doppler measurements of a star
+# orbited by a warm Jupiter (K = 42.5 m/s, P = 18.4 d), analysed with gnuplot
+# `stats`, orbital mass derived in lmscript, and plotted with O-C residuals.
+# Writes build/examples/kepler_rv_fit.png (900x560).
+out = ARGV.len() > 0 ? ARGV[0] : "build/kepler_rv_fit.dslb";
+mkdir("build/examples");
+p = _dsl_ cli="lmplot" install="github:lmctl-ai/lmplot@latest";
+
+fn sin_approx(x: float) -> float {
+  let pi = 3.141592653589793;
+  let twopi = 6.283185307179586;
+  let k = int((x + pi) / twopi);
+  let u = x - float(k) * twopi;
+  if (u > pi) { u = u - twopi; }
+  if (u < 0.0 - pi) { u = u + twopi; }
+  let u2 = u * u;
+  return u * (1.0 - u2 / 6.0 + (u2 * u2) / 120.0 - (u2 * u2 * u2) / 5040.0);
+}
+
+fn cos_approx(x: float) -> float {
+  return sin_approx(x + 1.5707963267948966);
+}
+
+# 1. Generate 44 phase-folded radial-velocity observations with a deterministic LCG.
+let seed = 918273;
+let k_true = 42.5;
+let e_ecc = 0.14;
+let gamma0 = -3.2;
+let rows = "";
+for (i in range(0, 44)) {
+  let phi = (float(i) + 0.5) / 44.0;
+  let theta = 6.283185307179586 * phi;
+  let v_model = gamma0 + k_true * (cos_approx(theta) + e_ecc * cos_approx(2.0 * theta - 0.6));
+  let noise = 0.0;
+  for (j in range(0, 4)) {
+    seed = (seed * 1103515245 + 12345) % 2147483648;
+    noise = noise + 2.0 * float(seed) / 2147483648.0 - 1.0;
+  }
+  seed = (seed * 1103515245 + 12345) % 2147483648;
+  let sigma = 3.2 + 2.2 * (float(seed) / 2147483648.0);
+  let v_obs = v_model + noise * sigma * 0.72;
+  let resid = v_obs - v_model;
+  let chi_term = (resid / sigma) * (resid / sigma);
+  rows = rows + str(phi) + " " + str(v_obs) + " " + str(sigma) + " " + str(v_model) + " " + str(resid) + " " + str(chi_term) + "\n";
+}
+plot.data("RV", rows);
+
+# 2. Extract summary statistics from gnuplot back into the DSL.
+plot.cmd("set terminal unknown");
+plot.cmd("stats $RV using 2:5 nooutput");
+let n_obs = plot.num("STATS_records");
+let rms_raw = plot.num("STATS_stddev_x");
+let rms_res = plot.num("STATS_stddev_y");
+let vmax = plot.num("STATS_max_x");
+let vmin = plot.num("STATS_min_x");
+
+plot.cmd("stats $RV using 6 nooutput");
+let chi2_sum = plot.num("STATS_sum");
+let dof = n_obs - 4.0;
+let chi2_red = chi2_sum / dof;
+
+let p_yr_cbrt = 0.3693;
+let mp_sini = (k_true / 28.4329) * p_yr_cbrt;
+
+plot.echo("observations   " + str(int(n_obs)));
+plot.echo("raw RV stddev  " + str(rms_raw) + " m/s");
+plot.echo("O-C RMS        " + str(rms_res) + " m/s");
+plot.echo("reduced chi2   " + str(chi2_red));
+plot.echo("Mp sin(i)      " + str(mp_sini) + " M_Jup");
+
+let summary = plot.str("sprintf('P = 18.40 d | K = %.1f m/s | e = 0.14\nM·sin(i) = %.2f M_Jup  (Δv = %.0f m/s)\nO-C RMS = %.2f m/s  (χ²/ν = %.2f)', " + str(k_true) + ", " + str(mp_sini) + ", " + str(vmax - vmin) + ", " + str(rms_res) + ", " + str(chi2_red) + ")");
+
+# 3. Render 2-panel phase-folded radial-velocity figure + O-C residuals.
+plot.png("build/examples/kepler_rv_fit.png", 900, 560);
+plot.cmd("set encoding utf8");
+plot.cmd("set multiplot");
+
+# Top panel: phase-folded RV curve
+plot.script("set origin 0.0, 0.32\nset size 1.0, 0.68");
+plot.script("set lmargin 10\nset rmargin 3\nset tmargin 2.6\nset bmargin 0.6");
+plot.cmd("set title 'Exoplanet Doppler Radial-Velocity Curve — Keplerian Orbital Fit (G2V Host Star)' font ',12'");
+plot.cmd("set ylabel 'Radial Velocity (m/s)'");
+plot.cmd("set xrange [0:1]");
+plot.cmd("set yrange [-64:62]");
+plot.cmd("set format x ''");
+plot.cmd("set grid xtics ytics lc rgb '#d8dee9' lw 1");
+plot.cmd("set key top right samplen 2.2 spacing 1.15 opaque box lc rgb '#cccccc'");
+plot.cmd("set samples 400");
+plot.cmd("rv_model(x) = -3.2 + 42.5 * (cos(2*pi*x) + 0.14*cos(4*pi*x - 0.6))");
+plot.cmd("set style fill transparent solid 0.22 noborder");
+plot.cmd("set label 1 '" + summary + "' at 0.23, 35.0 left front boxed noenhanced font ',8.5'");
+plot.cmd("plot '+' using 1:(rv_model($1)-4.2):(rv_model($1)+4.2) with filledcurves lc rgb '#3b82f6' title '±1σ model band', -3.2 with lines dt 3 lw 1.2 lc rgb '#64748b' title 'systemic γ = -3.2 m/s', rv_model(x) with lines lw 2.6 lc rgb '#1d4ed8' title 'Keplerian fit (P = 18.4 d)', $RV using 1:2:3 with yerrorbars pt 7 ps 0.95 lw 1.3 lc rgb '#dc2626' title 'HARPS-like RV data'");
+
+# Bottom panel: O-C residuals
+plot.cmd("unset label 1");
+plot.cmd("unset title");
+plot.script("set origin 0.0, 0.0\nset size 1.0, 0.32");
+plot.script("set lmargin 10\nset rmargin 3\nset tmargin 0.4\nset bmargin 3.2");
+plot.cmd("set xlabel 'Orbital Phase φ = (t - T_0) / P'");
+plot.cmd("set ylabel 'O - C (m/s)'");
+plot.cmd("set format x '%.1f'");
+plot.cmd("set yrange [-14:14]");
+plot.cmd("set ytics (-10, -5, 0, 5, 10)");
+plot.cmd("unset key");
+plot.cmd("plot '+' using 1:(-" + str(rms_res) + "):(" + str(rms_res) + ") with filledcurves lc rgb '#93c5fd', 0 with lines lw 1.4 lc rgb '#1d4ed8', $RV using 1:5:3 with yerrorbars pt 7 ps 0.85 lw 1.2 lc rgb '#dc2626'");
+
+plot.cmd("unset multiplot");
+plot.close();
+end _dsl_
+savedsl(p, out);
+if (ARGV.len() == 0) {
+  r = system ${dsl_cli(p)} --dsl ${out};
+  assert(r.code == 0);
+}
+println(f"wrote {out}");

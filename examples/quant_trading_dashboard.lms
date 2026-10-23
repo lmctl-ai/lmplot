@@ -1,0 +1,167 @@
+# Quantitative trading regime dashboard: 60 trading days of synthetic OHLC price
+# action with 10-day SMA, +-2 sigma Bollinger Bands, volume histogram, and
+# underwater peak-to-trough drawdown curve analysed via gnuplot stats.
+# Writes build/examples/quant_trading_dashboard.png (900x600).
+out = ARGV.len() > 0 ? ARGV[0] : "build/quant_trading_dashboard.dslb";
+mkdir("build/examples");
+p = _dsl_ cli="lmplot" install="github:lmctl-ai/lmplot@latest";
+
+fn sqrt_pos(v: float) -> float {
+  let g = 1.0;
+  if (v > 0.000001) {
+    g = v * 0.5 + 0.5;
+    for (k in range(0, 8)) {
+      g = 0.5 * (g + v / g);
+    }
+  }
+  return g;
+}
+
+# Simulate 60 trading days (trend rally -> volatility shock -> recovery) with deterministic LCG
+let seed = 410293;
+let price = 100.0;
+let peak = 100.0;
+let rows_up = "";
+let rows_dn = "";
+let rows_band = "";
+
+# Keep a 5-day rolling window in scalar variables for local mean & volatility
+let w0 = 100.0;
+let w1 = 100.0;
+let w2 = 100.0;
+let w3 = 100.0;
+let w4 = 100.0;
+
+for (day in range(1, 61)) {
+  seed = (seed * 1103515245 + 12345) % 2147483648;
+  let u1 = 2.0 * float(seed) / 2147483648.0 - 1.0;
+  seed = (seed * 1103515245 + 12345) % 2147483648;
+  let u2 = 2.0 * float(seed) / 2147483648.0 - 1.0;
+  seed = (seed * 1103515245 + 12345) % 2147483648;
+  let u3 = float(seed) / 2147483648.0;
+
+  # Regime-dependent drift & volatility
+  let drift = 0.45;
+  let vol = 1.65;
+  if (day >= 24) {
+    if (day <= 37) {
+      drift = -0.82;
+      vol = 2.75;
+    }
+  }
+  if (day > 37) {
+    drift = 0.62;
+    vol = 1.85;
+  }
+
+  let open_p = price;
+  let delta = drift + vol * (u1 + 0.5 * u2);
+  let close_p = open_p + delta;
+  let body_hi = open_p;
+  let body_lo = close_p;
+  if (close_p > open_p) {
+    body_hi = close_p;
+    body_lo = open_p;
+  }
+  let high_p = body_hi + vol * (0.35 + 0.85 * u3);
+  seed = (seed * 1103515245 + 12345) % 2147483648;
+  let u4 = float(seed) / 2147483648.0;
+  let low_p = body_lo - vol * (0.35 + 0.85 * u4);
+  price = close_p;
+
+  if (close_p > peak) { peak = close_p; }
+  let dd_pct = 100.0 * (close_p - peak) / peak;
+
+  # Update 5-day rolling window
+  w0 = w1;
+  w1 = w2;
+  w2 = w3;
+  w3 = w4;
+  w4 = close_p;
+  let sma = (w0 + w1 + w2 + w3 + w4) / 5.0;
+  let var5 = ((w0 - sma)*(w0 - sma) + (w1 - sma)*(w1 - sma) + (w2 - sma)*(w2 - sma) + (w3 - sma)*(w3 - sma) + (w4 - sma)*(w4 - sma)) / 5.0;
+  let sd5 = sqrt_pos(var5) + 1.45;
+  let bb_hi = sma + 2.0 * sd5;
+  let bb_lo = sma - 2.0 * sd5;
+
+  let abs_d = delta;
+  if (abs_d < 0.0) { abs_d = 0.0 - abs_d; }
+  let volume_m = 1.8 + 0.95 * abs_d + 1.4 * u3;
+
+  # candlesticks format: x box_min whisker_min whisker_max box_max
+  let line = str(day) + " " + str(open_p) + " " + str(low_p) + " " + str(high_p) + " " + str(close_p) + " " + str(volume_m) + "\n";
+  if (close_p >= open_p) {
+    rows_up = rows_up + line;
+  }
+  if (close_p < open_p) {
+    rows_dn = rows_dn + line;
+  }
+  rows_band = rows_band + str(day) + " " + str(close_p) + " " + str(sma) + " " + str(bb_lo) + " " + str(bb_hi) + " " + str(dd_pct) + " " + str(volume_m) + "\n";
+}
+plot.data("UP", rows_up);
+plot.data("DN", rows_dn);
+plot.data("BAND", rows_band);
+
+plot.cmd("set terminal unknown");
+plot.cmd("stats $BAND using 2:6 nooutput");
+let p_min = plot.num("STATS_min_x");
+let p_max = plot.num("STATS_max_x");
+let max_dd = plot.num("STATS_min_y");
+let total_ret = 100.0 * (price - 100.0) / 100.0;
+plot.echo("Price range:   $" + str(p_min) + " .. $" + str(p_max));
+plot.echo("Total return:  +" + str(total_ret) + "%");
+plot.echo("Max drawdown:  " + str(max_dd) + "%");
+
+plot.png("build/examples/quant_trading_dashboard.png", 900, 600);
+plot.cmd("set encoding utf8");
+plot.cmd("set multiplot");
+plot.cmd("set boxwidth 0.62");
+
+# Top panel: OHLC Candlesticks + Bollinger Bands
+plot.script("set origin 0.0, 0.44\nset size 1.0, 0.56");
+plot.script("set lmargin 9\nset rmargin 3\nset tmargin 2.5\nset bmargin 0.5");
+plot.cmd("set title 'Equity Regime Shift — OHLC Candlesticks, ±2σ Bollinger Envelope and Drawdown' font ',12'");
+plot.cmd("set ylabel 'Price ($)'");
+plot.cmd("set xrange [0:61]");
+plot.cmd("set yrange [84:122]");
+plot.cmd("set format x ''");
+plot.cmd("set grid xtics ytics lc rgb '#e2e8f0' lw 1");
+plot.cmd("set key top left samplen 2.0 spacing 1.1 opaque box lc rgb '#cbd5e1' font ',9'");
+plot.cmd("set style fill transparent solid 0.18 noborder");
+
+let perf_box = plot.str("sprintf('Peak Price: $%.1f  |  60-Day Close: $%.1f\nMax Drawdown: %.1f%% (Days 24–37 shock)', " + str(p_max) + ", " + str(price) + ", " + str(max_dd) + ")");
+plot.cmd("set label 1 '" + perf_box + "' at 35.5, 115.5 left front boxed noenhanced font ',8.5'");
+
+plot.cmd("plot $BAND using 1:4:5 with filledcurves lc rgb '#60a5fa' title '±2σ Bollinger band', $BAND using 1:3 with lines lw 2.0 lc rgb '#1d4ed8' title '5-day moving average', $UP using 1:2:3:4:5 with candlesticks fs solid 0.88 lc rgb '#16a34a' lw 1.2 title 'Bullish close (C ≥ O)', $DN using 1:2:3:4:5 with candlesticks fs solid 0.88 lc rgb '#dc2626' lw 1.2 title 'Bearish close (C < O)'");
+
+# Middle panel: Daily Volume
+plot.cmd("unset label 1");
+plot.cmd("unset title");
+plot.script("set origin 0.0, 0.22\nset size 1.0, 0.22");
+plot.script("set lmargin 9\nset rmargin 3\nset tmargin 0.3\nset bmargin 0.5");
+plot.cmd("set ylabel 'Vol (M)'");
+plot.cmd("set yrange [0:8.2]");
+plot.cmd("set ytics (0, 2, 4, 6, 8)");
+plot.cmd("unset key");
+plot.cmd("plot $UP using 1:6 with boxes fs solid 0.75 lc rgb '#16a34a', $DN using 1:6 with boxes fs solid 0.75 lc rgb '#dc2626'");
+
+# Bottom panel: Underwater Drawdown (%)
+plot.script("set origin 0.0, 0.0\nset size 1.0, 0.22");
+plot.script("set lmargin 9\nset rmargin 3\nset tmargin 0.3\nset bmargin 3.2");
+plot.cmd("set xlabel 'Trading Day'");
+plot.cmd("set ylabel 'Drawdown %'");
+plot.cmd("set format x '%g'");
+plot.cmd("set yrange [" + str(max_dd * 1.25) + ":1.5]");
+plot.cmd("set ytics (-15, -10, -5, 0)");
+plot.cmd("set style fill transparent solid 0.32 noborder");
+plot.cmd("plot $BAND using 1:6 with filledcurves y1=0 lc rgb '#ef4444' notitle, $BAND using 1:6 with lines lw 1.8 lc rgb '#b91c1c' notitle, 0 with lines lw 1.0 lc rgb '#64748b' notitle");
+
+plot.cmd("unset multiplot");
+plot.close();
+end _dsl_
+savedsl(p, out);
+if (ARGV.len() == 0) {
+  r = system ${dsl_cli(p)} --dsl ${out};
+  assert(r.code == 0);
+}
+println(f"wrote {out}");

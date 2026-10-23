@@ -40,7 +40,7 @@ Machine checked 2026-10-22 on x86_64 Linux (WSL2), 4 cores, GCC.
 
 ## Tests
 
-`./test.sh` → 18 checks, ~17 s with a warm build:
+`./test.sh` → 23 checks, ~20 s with a warm build:
 
 1. SDK pin; 2. gnuplot pin plus patches; 3. build; 4. `--version` exact;
 5. embedded schema byte-identical to `schema/lmplot.dsl.json`; 6. host
@@ -48,12 +48,16 @@ registry equals the compiler's `--dsl-signatures`; 7. `--notices` text;
 8. static linking (Linux `ldd`, macOS `otool -L`, Windows `objdump -p` shows
 no MinGW runtime DLLs); 9. `lmplot gnuplot` dumb plot; 10. `lmplot gnuplot`
 defaults to the dumb terminal (no window system exists); 11. png and svg
-terminals listed; 12. all examples compile to bytecode
-v5; 13. all examples run and report ok; 14. every example wrote PNGs with a
-valid signature; 15. rerun gives byte-identical images (all 75);
-16. a failing gnuplot command exits 3 with a `run` error and stops the
-program; 17. `plot.data` / `stats` / `plot.num` / `plot.str` round trip;
-18. usage (2) and load (3) exit codes.
+terminals listed; 12. all README `.lms` links exist; 13. all README
+`docs/images/*` files exist with valid PNG/GIF magic bytes and size budgets;
+14. all 36 standalone examples compile to bytecode v5; 15. all 36 examples run
+and report ok; 16. every example wrote PNGs with a valid signature; 17. rerun
+gives byte-identical images (all 83); 18–19. multi-host combo examples
+(`lmcad` + `lmplot`, `lmdraw` + `lmplot`) run when sibling hosts are on `PATH`
+(or skip with a clear message); 20. video examples render frames and encode
+MP4/GIF with `ffmpeg`; 21. a failing gnuplot command exits 3 with a `run` error
+and stops the program; 22. `plot.data` / `stats` / `plot.num` / `plot.str`
+round trip; 23. usage (2) and load (3) exit codes.
 
 Gotchas found: `lmplot gnuplot -e 'set terminal'` waits on stdin for the
 built-in pager when stdin is open (patch `0006` skips paging unless the

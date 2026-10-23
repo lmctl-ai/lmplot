@@ -1,32 +1,47 @@
 # lmplot
 
-**gnuplot as one static executable, scriptable from lmscript.** No X11, no
-Cairo, no libgd, no fonts to install: the binary carries its own PNG renderer
-and DejaVu fonts, so `lmplot` runs on a bare container, a CI runner or a
-laptop with nothing else installed.
+**gnuplot as one static executable, scriptable from lmscript — zero runtime dependencies, embedded DejaVu fonts, and byte-identical PNG/SVG output.**
 
 [![CI](https://github.com/lmctl-ai/lmplot/actions/workflows/ci.yml/badge.svg)](https://github.com/lmctl-ai/lmplot/actions/workflows/ci.yml)
 [![Latest release](https://img.shields.io/github/v/release/lmctl-ai/lmplot?label=release)](https://github.com/lmctl-ai/lmplot/releases)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
-| Surfaces and colour (pm3d) | Filled curves | Histograms |
+| Exoplanet Doppler RV & O-C residuals | Landau 3D free-energy surface | Equity OHLC, Bollinger & drawdown |
 | --- | --- | --- |
-| <img src="examples/renders/pm3d.png" width="280"> | <img src="examples/renders/fillcrvs.png" width="280"> | <img src="examples/renders/histograms.png" width="280"> |
-| [pm3d.lms](examples/pm3d.lms) | [fillcrvs.lms](examples/fillcrvs.lms) | [histograms.lms](examples/histograms.lms) |
+| <img src="docs/images/kepler_rv_fit.png" width="290"> | <img src="docs/images/potential_vortex_surface.png" width="290"> | <img src="docs/images/quant_trading_dashboard.png" width="290"> |
+| Keplerian fit, mass & χ² in DSL — [kepler_rv_fit.lms](examples/kepler_rv_fit.lms) | Bistable `pm3d` surface & transition path — [potential_vortex_surface.lms](examples/potential_vortex_surface.lms) | Candlesticks, ±2σ band, volume & drawdown — [quant_trading_dashboard.lms](examples/quant_trading_dashboard.lms) |
 
-| Contours | Heat maps | Spider plots |
+| 3D CAD nozzle + supersonic flow (`lmcad` + `lmplot`) | SEIR schematic + ODE phase plane (`lmdraw` + `lmplot`) | Quantum wave-packet scattering (`ffmpeg` GIF) |
 | --- | --- | --- |
-| <img src="examples/renders/contours.png" width="280"> | <img src="examples/renders/heatmaps.png" width="280"> | <img src="examples/renders/spiderplot.png" width="280"> |
-| [contours.lms](examples/contours.lms) | [heatmaps.lms](examples/heatmaps.lms) | [spiderplot.lms](examples/spiderplot.lms) |
+| <img src="docs/images/nozzle_cad_plot.png" width="290"> | <img src="docs/images/sir_epidemic_draw_plot.png" width="290"> | <img src="docs/images/quantum_packet.gif" width="290"> |
+| OpenCASCADE cutaway + Mach/P/T curves — [nozzle_cad_plot.lms](examples/combo/nozzle_cad_plot.lms) | Retained 2D diagram + RK4 trajectories — [sir_epidemic_draw_plot.lms](examples/combo/sir_epidemic_draw_plot.lms) | 60-frame dispersive wave packet — [quantum_packet.lms](examples/video/quantum_packet.lms) |
 
-| Data, fit and label computed in lmscript | Enhanced text | Transparency and patterns |
+| Planck blackbody & Wien locus | Urban heat island & transects | Phased-array polar beamforming |
 | --- | --- | --- |
-| <img src="examples/renders/stats.png" width="280"> | <img src="examples/renders/enhanced.png" width="280"> | <img src="examples/renders/transparent.png" width="280"> |
-| [stats.lms](examples/stats.lms) | [enhanced_utf8.lms](examples/enhanced_utf8.lms) | [transparent.lms](examples/transparent.lms) |
+| <img src="docs/images/blackbody_planck.png" width="290"> | <img src="docs/images/urban_heat_island.png" width="290"> | <img src="docs/images/phased_array_polar.png" width="290"> |
+| Stellar spectra & bolometric flux — [blackbody_planck.lms](examples/blackbody_planck.lms) | 2D anomaly map & river cooling dip — [urban_heat_island.lms](examples/urban_heat_island.lms) | 8-element dB gain & side-lobe taper — [phased_array_polar.lms](examples/phased_array_polar.lms) |
 
-All images are written by the programs in [examples/](examples/), which are
-lmscript versions of demos from the [gnuplot demo
-gallery](https://www.gnuplot.info/screenshots/index.html#demos).
+| Enzyme kinetics & Lineweaver–Burk | Driven damped harmonic resonance | Linear regression & `stats` round-trip |
+| --- | --- | --- |
+| <img src="docs/images/enzyme_michaelis_menten.png" width="290"> | <img src="docs/images/damped_driven_resonance.png" width="290"> | <img src="docs/images/stats.png" width="290"> |
+| Competitive vs non-competitive OLS — [enzyme_michaelis_menten.lms](examples/enzyme_michaelis_menten.lms) | Magnification backbone & phase lag — [damped_driven_resonance.lms](examples/damped_driven_resonance.lms) | LCG data, `stats` & derived labels — [stats.lms](examples/stats.lms) |
+
+| Surfaces and colour (`pm3d`) | Filled curves | Clustered & stacked histograms |
+| --- | --- | --- |
+| <img src="docs/images/pm3d.png" width="290"> | <img src="docs/images/fillcrvs.png" width="290"> | <img src="docs/images/histograms.png" width="290"> |
+| Radial sinc surface & map projection — [pm3d.lms](examples/pm3d.lms) | Parametric & bounded area fills — [fillcrvs.lms](examples/fillcrvs.lms) | Clustered, stacked & row-stacked bars — [histograms.lms](examples/histograms.lms) |
+
+| 3D & base contours | Matrix heat maps | Spider (radar) plots |
+| --- | --- | --- |
+| <img src="docs/images/contours.png" width="290"> | <img src="docs/images/heatmaps.png" width="290"> | <img src="docs/images/spiderplot.png" width="290"> |
+| Surface + base isolines — [contours.lms](examples/contours.lms) | Matrix image with cell labels — [heatmaps.lms](examples/heatmaps.lms) | Multi-axis radar overlay — [spiderplot.lms](examples/spiderplot.lms) |
+
+| Enhanced text & Greek symbols | Transparency & hatch patterns | Polar butterfly curve |
+| --- | --- | --- |
+| <img src="docs/images/enhanced.png" width="290"> | <img src="docs/images/transparent.png" width="290"> | <img src="docs/images/polar.png" width="290"> |
+| Superscripts, Symbol & UTF-8 — [enhanced_utf8.lms](examples/enhanced_utf8.lms) | Alpha blending & pattern fills — [transparent.lms](examples/transparent.lms) | Polar transcendental curve — [polar.lms](examples/polar.lms) |
+
+Every image above is produced by a reproducible `.lms` program in [examples/](examples/) and regenerated by `./examples/render-all.sh`. No X11, no Cairo, no libgd, no external fonts: the binary carries its own PNG rasterizer and DejaVu fonts, so `lmplot` runs on a bare container, a CI runner or a laptop with nothing else installed.
 
 ## Use it
 
@@ -67,9 +82,11 @@ lmscript sine.lms     # downloads lmplot on first use if it is not on PATH
 The script keeps loops, numbers and string building; gnuplot keeps drawing.
 Values come back with `plot.num("STATS_slope")`, so a program can generate
 data, run `stats` or `fit`, compute from the results and plot again (see
-[stats.lms](examples/stats.lms)), or render a series of frames in a loop (see
-[turntable.lms](examples/turntable.lms)) and turn them into video with ffmpeg
-(see [examples/video](examples/video/): `lmscript examples/video/wave.lms`).
+[kepler_rv_fit.lms](examples/kepler_rv_fit.lms) and [stats.lms](examples/stats.lms)),
+combine multiple `_dsl_` hosts such as `lmcad` and `lmdraw` in one script (see
+[examples/combo/](examples/combo/)), or render a series of frames in a loop (see
+[turntable.lms](examples/turntable.lms)) and encode them into MP4/GIF animations with
+`ffmpeg` (see [examples/video/](examples/video/): `lmscript examples/video/quantum_packet.lms`).
 
 | `plot.` | |
 | --- | --- |
@@ -112,11 +129,14 @@ Needs a C11/C++17 compiler, CMake 3.24 and git. No other libraries.
 scripts/sync-gnuplot.sh        # clone gnuplot at gnuplot.lock, apply patches/
 cmake -S . -B build && cmake --build build
 ./test.sh                      # needs lmscript on PATH for the examples
+./examples/render-all.sh       # regenerate all docs/images/* and examples/renders/*
 ```
 
 Linux gets `-static` (turn off with `-DLMPLOT_FULL_STATIC=OFF`). `./test.sh`
-builds, runs the checks (pins, static linking, schema parity, 28 examples,
-byte-identical reruns, error paths), and leaves the images in `build/examples/`.
+builds, runs the checks (pins, static linking, schema parity, README gallery
+links and image magic bytes, 36 standalone examples, byte-identical reruns,
+video and multi-host combo pipelines, error paths), and leaves the images in
+`build/examples/`.
 
 ## License
 
