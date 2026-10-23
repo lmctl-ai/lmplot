@@ -1,0 +1,109 @@
+# Numerical integration, three methods compared on a problem with a known answer:
+#   I = integral of exp(x) cos(x) over [0, pi/2] = (exp(pi/2) - 1) / 2 = 1.905238690482676
+# Composite trapezoid (error ~ h^2), composite Simpson (~ h^4) and n-point Gauss-Legendre
+# (exponential) are run for growing n. gnuplot's `fit` measures the slope of each
+# log-log error line, and the program checks the textbook orders 2 and 4.
+# Writes images/quadrature_convergence.png (900x560).
+out = ARGV.len() > 0 ? ARGV[0] : "build/quadrature_convergence.dslb";
+mkdir("images");
+mkdir("build");
+p = _dsl_ cli="lmplot" install="github:lmctl-ai/lmplot@latest";
+
+let a = 0.0;
+let b = 1.5707963267948966;
+let exact = (pow(2.718281828459045, b) - 1.0) / 2.0;
+
+fn f(x: float) -> float {
+  return pow(2.718281828459045, x) * cos(x);
+}
+
+# Trapezoid and Simpson on n = 2, 4, ..., 1024 panels (the work is n + 1 evaluations).
+let rows = "";
+let n = 2;
+for (k in range(0, 10)) {
+  let h = (b - a) / float(n);
+  let st = 0.5 * (f(a) + f(b));
+  let ss = f(a) + f(b);
+  for (i in range(1, n)) {
+    let fx = f(a + float(i) * h);
+    st = st + fx;
+    if (i % 2 == 1) { ss = ss + 4.0 * fx; } else { ss = ss + 2.0 * fx; }
+  }
+  let e_t = abs(st * h - exact);
+  let e_s = abs(ss * h / 3.0 - exact);
+  rows = rows + str(n + 1) + " " + str(e_t) + " " + str(e_s) + "\n";
+  n = n * 2;
+}
+plot.data("NC", rows);
+
+# Gauss-Legendre: nodes are roots of P_m, found by Newton from the Chebyshev guess;
+# weights 2 / ((1 - x^2) P'_m(x)^2).
+let grows = "";
+for (m in range(1, 9)) {
+  let sum = 0.0;
+  for (j in range(0, m)) {
+    let x = cos(3.141592653589793 * (float(j) + 0.75) / (float(m) + 0.5));
+    let dp = 1.0;
+    for (it in range(0, 30)) {
+      let p0 = 1.0;
+      let p1 = x;
+      for (q in range(2, m + 1)) {
+        let p2 = ((2.0 * float(q) - 1.0) * x * p1 - (float(q) - 1.0) * p0) / float(q);
+        p0 = p1;
+        p1 = p2;
+      }
+      if (m == 1) { p0 = 1.0; p1 = x; }
+      dp = float(m) * (x * p1 - p0) / (x * x - 1.0);
+      x = x - p1 / dp;
+    }
+    let w = 2.0 / ((1.0 - x * x) * dp * dp);
+    let t = 0.5 * (b - a) * x + 0.5 * (b + a);
+    sum = sum + w * f(t);
+  }
+  let e_g = abs(0.5 * (b - a) * sum - exact);
+  if (e_g < 0.0000000000000001) { e_g = 0.0000000000000001; }
+  grows = grows + str(m) + " " + str(e_g) + "\n";
+}
+plot.data("GL", grows);
+
+# Measured orders: fit log10(error) = c - p log10(evaluations) on the asymptotic part.
+plot.cmd("set terminal unknown");
+plot.cmd("set fit quiet nolog");
+plot.cmd("lt(n) = ct - pt*log10(n); ls(n) = cs - ps*log10(n); ct = 1; pt = 1; cs = 1; ps = 1");
+plot.cmd("fit lt(x) $NC every ::3::9 using ($1-1):(log10($2)) via ct, pt");
+plot.cmd("fit ls(x) $NC every ::3::7 using ($1-1):(log10($3)) via cs, ps");
+let order_t = plot.num("pt");
+let order_s = plot.num("ps");
+plot.echo("trapezoid order " + str(order_t) + ", Simpson order " + str(order_s));
+plot.assert_close(order_t, 2.0, 0.05);
+plot.assert_close(order_s, 4.0, 0.1);
+plot.cmd("stats $GL using 2 nooutput");
+let gl8 = plot.num("STATS_min");
+plot.cmd("stats $NC using 3 nooutput");
+let simpson_best = plot.num("STATS_min");
+plot.echo("8-point Gauss error " + str(gl8) + ", Simpson with 1025 points " + str(simpson_best));
+
+plot.png("images/quadrature_convergence.png", 900, 560);
+plot.cmd("set encoding utf8");
+plot.cmd("set title '∫_0^{π/2} e^x cos x dx = (e^{π/2} − 1)/2: error vs. function evaluations' font ',13'");
+plot.cmd("set logscale xy");
+plot.cmd("set xrange [1:2000]");
+plot.cmd("set yrange [1e-17:10]");
+plot.cmd("set format y '10^{%L}'");
+plot.cmd("set ytics 1e-16, 100, 1");
+plot.cmd("set xlabel 'function evaluations'");
+plot.cmd("set ylabel 'absolute error'");
+plot.cmd("set grid xtics ytics mxtics lc rgb '#e2e8f0'");
+plot.cmd("set key top right opaque box lc rgb '#cbd5e1' font ',10' spacing 1.2");
+plot.cmd("set object 1 rect from graph 0, graph 0 to graph 1, first 2.2e-16 behind fc rgb '#f1f5f9' fs solid noborder");
+plot.cmd("set label 1 'below double-precision round-off (2.2·10^{-16})' at 1.2, 4e-17 left font ',9' tc rgb '#64748b'");
+plot.cmd("set label 2 sprintf('slope −%.2f', " + str(order_t) + ") at 140, 3e-4 left font ',11' tc rgb '#2563eb'");
+plot.cmd("set label 3 sprintf('slope −%.2f', " + str(order_s) + ") at 60, 1e-10 left font ',11' tc rgb '#d97706'");
+plot.cmd("set label 4 '8 Gauss points beat\n1025 Simpson points' at 9, 1e-14 left font ',10' tc rgb '#059669'");
+plot.cmd("plot $NC using 1:2 with linespoints lw 2.4 pt 7 ps 1.1 lc rgb '#2563eb' title 'composite trapezoid  (error ∝ h^2)', $NC using 1:3 with linespoints lw 2.4 pt 5 ps 1.1 lc rgb '#d97706' title 'composite Simpson  (error ∝ h^4)', $GL using 1:2 with linespoints lw 2.4 pt 9 ps 1.3 lc rgb '#059669' title 'Gauss–Legendre  (exponential)', 10**ct * x**(-pt) with lines dt 2 lw 1.2 lc rgb '#93c5fd' notitle, 10**cs * x**(-ps) with lines dt 2 lw 1.2 lc rgb '#fcd34d' notitle");
+plot.close();
+end _dsl_
+savedsl(p, out);
+r = system ${dsl_cli(p)} --dsl ${out};
+assert(r.code == 0);
+println("wrote images/quadrature_convergence.png");

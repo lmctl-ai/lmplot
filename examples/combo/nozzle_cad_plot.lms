@@ -1,71 +1,73 @@
-# Multi-host pipeline (lmcad + lmplot):
-# 1. lmcad builds a 3D contoured de Laval supersonic rocket nozzle with external
-#    cooling rings using OpenCASCADE (revolve_y + cutaway boolean cut), checks
-#    its B-rep volume, and renders a 380x420 lit 3D cutaway image (PPM + PNG).
-# 2. lmplot solves the quasi-1D isentropic area-Mach relation A/A*(x) along the
-#    nozzle axis (subsonic inlet -> sonic throat M=1 -> M=3.10 supersonic exit)
-#    and combines the 3D CAD cutaway render with the Mach/pressure/temperature
-#    profiles in a single 900x560 engineering figure (images/nozzle_cad_plot.png).
+# Rocket nozzle, geometry and flow on one axis (lmcad + lmplot).
+# 1. lmcad revolves a de Laval nozzle (inner wall r(x), 3.5 mm wall, inlet flange, copper
+#    cooling band at the throat), cuts away the front half and renders the section with a
+#    narrow, distant camera so 1 pixel = 120/738 mm. The render is written as PPM.
+# 2. lmplot solves the quasi-1D isentropic area-Mach relation A(x)/A* for gamma = 9/7
+#    (subsonic branch before the throat, supersonic after) and draws Mach number, P/P0 and
+#    T/T0 under the section, on the same millimetre axis. The analytic wall r(x) is drawn
+#    over the render, so geometry and flow can be checked against each other.
+# Writes images/nozzle_cad_plot.png (900x880).
 out = ARGV.len() > 0 ? ARGV[0] : "build/nozzle_flow.dslb";
 mkdir("images");
 mkdir("build/examples");
 
 cad = _dsl_ cli="lmcad" install="github:lmctl-ai/lmcad@latest";
-scene.background(0.95, 0.96, 0.98);
+scene.background(0.97, 0.98, 0.99);
 scene.supersample(2);
-scene.ambient(0.28);
-scene.directional_light(-0.55, -0.70, -0.45, 1.15);
-scene.fill_light(0.65, 0.35, 0.55, 0.48);
+scene.ambient(0.30);
+scene.directional_light(-0.35, -0.45, -0.82, 1.1);
+scene.fill_light(0.55, 0.30, -0.60, 0.45);
 
-let alloy = material().color(0.20, 0.46, 0.76).specular(0.55).shininess(36.0);
-let copper = material().color(0.86, 0.46, 0.20).specular(0.65).shininess(42.0);
+let alloy = material().color(0.22, 0.47, 0.78).specular(0.5).shininess(32.0);
+let copper = material().color(0.86, 0.47, 0.22).specular(0.6).shininess(40.0);
 
-# Outer and inner wall cross-section revolved around Y (y in [-55, +55] mm)
+# Inner wall radius (mm) at axial position x in [0, 110]; throat r* = 11 mm at x = 40.
+fn wall(x: float) -> float {
+  let r = 0.0;
+  if (x <= 40.0) {
+    let u = (40.0 - x) / 40.0;
+    r = 11.0 + 11.0 * u * u * (1.2 - 0.2 * u);
+  } else {
+    let v = (x - 40.0) / 70.0;
+    r = 11.0 + 16.0 * v * v * (2.0 - v);
+  }
+  return r;
+}
+
+# Section revolved about Y (y = x - 55): inner wall forward, outer wall back.
 let sk = scene.sketch();
-sk.point(22.0, -55.0);
-sk.point(20.0, -40.0);
-sk.point(14.5, -26.0);
-sk.point(11.0, -15.0);
-sk.point(13.5, -4.0);
-sk.point(18.5, 14.0);
-sk.point(23.5, 34.0);
-sk.point(27.0, 55.0);
-# Outer wall with inlet flange, throat stiffening boss, and exit lip
-sk.point(31.5, 55.0);
-sk.point(31.5, 48.0);
-sk.point(28.5, 48.0);
-sk.point(27.5, 34.0);
-sk.point(22.5, 14.0);
-sk.point(18.5, -4.0);
-sk.point(18.5, -24.0);
-sk.point(24.5, -40.0);
-sk.point(28.5, -48.0);
-sk.point(28.5, -55.0);
+for (i in range(0, 23)) {
+  let x = 5.0 * float(i);
+  sk.point(wall(x), x - 55.0);
+}
+sk.point(wall(110.0) + 3.5, 55.0);
+for (i in range(0, 21)) {
+  let x = 105.0 - 5.0 * float(i);
+  sk.point(wall(x) + 3.5, x - 55.0);
+}
+sk.point(wall(0.0) + 9.0, -49.0);
+sk.point(wall(0.0) + 9.0, -55.0);
 sk.close();
-
 let body = scene.revolve_y(sk, alloy);
 
-# Add a concentric copper regenerative-cooling manifold band around the sonic throat (y in [-22, -8])
-let sk_ring = scene.sketch();
-sk_ring.point(18.5, -22.0);
-sk_ring.point(22.5, -22.0);
-sk_ring.point(22.5, -8.0);
-sk_ring.point(18.5, -8.0);
-sk_ring.close();
-let ring_jacket = scene.revolve_y(sk_ring, copper);
+# Copper regenerative-cooling band around the throat, x in [32, 48].
+let band_sk = scene.sketch();
+band_sk.point(15.3, -23.0);
+band_sk.point(19.5, -23.0);
+band_sk.point(19.5, -7.0);
+band_sk.point(15.3, -7.0);
+band_sk.close();
+let band_full = scene.revolve_y(band_sk, copper);
 
-let cutter = scene.box(60.0, 140.0, 60.0, copper).translate(30.0, 0.0, 30.0);
-
-let nozzle = body.cut(cutter).rotate(22.0, -35.0, 12.0);
-let band = ring_jacket.cut(cutter).rotate(22.0, -35.0, 12.0);
-
+# Remove the front half (z > 0) and turn the axis horizontal (inlet on the left).
+let cutter = scene.box(140.0, 160.0, 80.0, copper).translate(0.0, 0.0, 40.0);
+let nozzle = body.cut(cutter).rotate(0.0, 0.0, 0.0 - 1.5707963267948966);
+let band = band_full.cut(cutter).rotate(0.0, 0.0, 0.0 - 1.5707963267948966);
 cutter.visible(false);
 
-let vol_mm3 = nozzle.volume();
-scene.assert_close(vol_mm3, vol_mm3, 1.0);
-scene.fit_camera(30.0, 1.12);
-scene.render_ppm("build/examples/nozzle_cad.ppm", 380, 420);
-scene.render_png("build/examples/nozzle_cad.png", 380, 420);
+# Narrow field of view from far away: 70 mm of height over 431 pixels at the cut plane.
+scene.camera(4.0, 0.0, 0.0, 1002.3, 0.0, 0.0, 0.0);
+scene.render_ppm("build/examples/nozzle_cad.ppm", 738, 431);
 end _dsl_
 savedsl(cad, "build/nozzle_cad.dslb");
 r = system ${dsl_cli(cad)} --dsl build/nozzle_cad.dslb;
@@ -73,108 +75,93 @@ assert(r.code == 0);
 
 p = _dsl_ cli="lmplot" install="github:lmctl-ai/lmplot@latest";
 
-let r_throat = 11.0;
-let rows = "";
-for (i in range(0, 111)) {
-  let x = float(i);
-  let r_mm = 11.0;
+fn wall(x: float) -> float {
+  let r = 0.0;
   if (x <= 40.0) {
     let u = (40.0 - x) / 40.0;
-    r_mm = 11.0 + 11.0 * u * u * (1.2 - 0.2 * u);
+    r = 11.0 + 11.0 * u * u * (1.2 - 0.2 * u);
+  } else {
+    let v = (x - 40.0) / 70.0;
+    r = 11.0 + 16.0 * v * v * (2.0 - v);
   }
-  if (x > 40.0) {
-    let u = (x - 40.0) / 70.0;
-    r_mm = 11.0 + 16.0 * u * (1.45 - 0.45 * u);
-  }
-  let area_ratio = (r_mm / r_throat) * (r_mm / r_throat);
+  return r;
+}
 
-  let m_lo = 0.05;
+# gamma = 9/7: A/A* = ((1 + M^2/7) / (8/7))^4 / M, T/T0 = 1/(1 + M^2/7), P/P0 = (T/T0)^4.5.
+let rows = "";
+for (i in range(0, 221)) {
+  let x = 0.5 * float(i);
+  let rr = wall(x) / 11.0;
+  let area_ratio = rr * rr;
+  let m_lo = 0.02;
   let m_hi = 1.0;
   if (x > 40.0) {
     m_lo = 1.0;
-    m_hi = 4.2;
+    m_hi = 5.0;
   }
-  for (it in range(0, 22)) {
+  for (it in range(0, 50)) {
     let m_mid = 0.5 * (m_lo + m_hi);
     let term = (7.0 + m_mid * m_mid) / 8.0;
-    let t2 = term * term;
-    let f_ar = (t2 * t2) / m_mid;
-    if (x <= 40.0) {
-      if (f_ar > area_ratio) { m_lo = m_mid; }
-      if (f_ar <= area_ratio) { m_hi = m_mid; }
-    }
-    if (x > 40.0) {
-      if (f_ar < area_ratio) { m_lo = m_mid; }
-      if (f_ar >= area_ratio) { m_hi = m_mid; }
-    }
+    let f_ar = term * term * term * term / m_mid;
+    let go_up = f_ar > area_ratio;
+    if (x > 40.0) { go_up = f_ar < area_ratio; }
+    if (go_up) { m_lo = m_mid; } else { m_hi = m_mid; }
   }
   let mach = 0.5 * (m_lo + m_hi);
-  if (i == 40) { mach = 1.0; }
-
   let t_ratio = 7.0 / (7.0 + mach * mach);
-  let tr2 = t_ratio * t_ratio;
-  let tr4 = tr2 * tr2;
-  let sq = 0.8;
-  for (ks in range(0, 6)) { sq = 0.5 * (sq + t_ratio / sq); }
-  let p_ratio = tr4 * sq;
-
-  rows = rows + str(x) + " " + str(r_mm) + " " + str(area_ratio) + " " + str(mach) + " " + str(p_ratio) + " " + str(t_ratio) + "\n";
+  let p_ratio = pow(t_ratio, 4.5);
+  rows = rows + str(x) + " " + str(wall(x)) + " " + str(area_ratio) + " " + str(mach) + " " + str(p_ratio) + " " + str(t_ratio) + "\n";
 }
 plot.data("NOZZLE", rows);
 
 plot.cmd("set terminal unknown");
-plot.cmd("stats $NOZZLE using 3:4 nooutput");
-let max_ar = plot.num("STATS_max_x");
-let max_mach = plot.num("STATS_max_y");
-plot.echo("Expansion ratio Ae/A* = " + str(max_ar));
-plot.echo("Exit Mach number Me   = " + str(max_mach));
+plot.cmd("stats $NOZZLE using 4 nooutput");
+let m_exit = plot.num("STATS_max");
+let ar_exit = pow(wall(110.0) / 11.0, 2.0);
+let t_exit = 7.0 / (7.0 + m_exit * m_exit);
+let p_exit = pow(t_exit, 4.5);
+plot.echo("Expansion ratio Ae/A* = " + str(ar_exit));
+plot.echo("Exit Mach number Me   = " + str(m_exit));
+plot.echo("Exit Pe/P0 = " + str(p_exit) + ", Te/T0 = " + str(t_exit));
 
-plot.png("images/nozzle_cad_plot.png", 900, 560);
+plot.png("images/nozzle_cad_plot.png", 900, 880);
 plot.cmd("set encoding utf8");
 plot.cmd("set multiplot");
+plot.cmd("set label 1 'De Laval Nozzle: lmcad Section and Isentropic Flow on One Axis (γ = 9/7)' at screen 0.5, 0.968 center font ',13'");
 
-# Left panel: 3D OpenCASCADE Cutaway Render from lmcad
-plot.script("set origin 0.0, 0.04\nset size 0.43, 0.92");
-plot.script("set lmargin 2\nset rmargin 1\nset tmargin 2.8\nset bmargin 3.2");
-plot.cmd("set title '3D OpenCASCADE Cutaway (lmcad)' font ',11.5'");
-plot.cmd("set xrange [0:380]");
-plot.cmd("set yrange [0:420]");
-plot.cmd("set size ratio -1");
-plot.cmd("unset tics");
-plot.cmd("set border 15 lw 1.2 lc rgb '#cbd5e1'");
-plot.cmd("unset key");
-let cad_caption = plot.str("sprintf('Revolved B-rep + 90° boolean cutaway\nThroat r* = 11.0 mm  |  Exit r_e = 27.0 mm\nExpansion ratio A_e / A* = %.2f', " + str(max_ar) + ")");
-plot.cmd("set label 1 '" + cad_caption + "' at 14, 46 left front boxed noenhanced font ',8.5'");
-plot.cmd("plot 'build/examples/nozzle_cad.ppm' binary array=(380,420) skip=15 flipy format='%uchar' using 1:2:3 with rgbimage");
+# Top: the lmcad half-section, placed so that plot x is the axial position in mm.
+plot.script("set lmargin at screen 0.09\nset rmargin at screen 0.91\nset tmargin at screen 0.9432\nset bmargin at screen 0.4534");
+plot.cmd("set xrange [-5:115]");
+plot.cmd("set yrange [-35:35]");
+plot.cmd("unset xtics");
+plot.cmd("set ytics -30, 10, 30 nomirror font ',9'");
+plot.cmd("set ylabel 'radius (mm)'");
+plot.cmd("set border 15 lw 1 lc rgb '#cbd5e1'");
+plot.cmd("set key at graph 0.99, 0.03 right bottom samplen 2 opaque box lc rgb '#cbd5e1' font ',9'");
+plot.cmd("set label 2 sprintf('throat r* = 11 mm\nexit r_e = 27 mm\nA_e / A* = %.2f', " + str(ar_exit) + ") at 46, 32 left front boxed noenhanced font ',9'");
+plot.cmd("set label 3 'lmcad: revolved B-rep, front half cut away' at 0, -31 left front font ',9' tc rgb '#475569'");
+plot.cmd("plot 'build/examples/nozzle_cad.ppm' binary array=(738,431) skip=15 flipy format='%uchar' dx=0.16260162 dy=0.16241299 origin=(-5,-35) using 1:2:3 with rgbimage notitle, $NOZZLE using 1:2 with lines lw 1.6 dt 2 lc rgb '#facc15' title 'analytic wall r(x) (lmplot)', $NOZZLE using 1:(-$2) with lines lw 1.6 dt 2 lc rgb '#facc15' notitle");
+plot.cmd("unset label 2");
+plot.cmd("unset label 3");
 
-# Right panel: Isentropic Supersonic Flow Profiles (lmplot)
-plot.cmd("unset label 1");
-plot.cmd("set size noratio");
-plot.cmd("set border 15 lw 1.0 lc rgb '#1e293b'");
-plot.script("set origin 0.44, 0.0\nset size 0.56, 1.0");
-plot.script("set lmargin 8\nset rmargin 8\nset tmargin 3.2\nset bmargin 4.2");
-plot.cmd("set title 'De Laval Nozzle Isentropic Compressible Flow (γ = 1.29)' font ',11.5'");
-plot.cmd("set xlabel 'Axial Coordinate x from Chamber Inlet (mm)'");
-plot.cmd("set ylabel 'Mach Number M(x)  /  Wall Radius r(x)/r*'");
-plot.cmd("set y2label 'Static Ratios P/P_0 , T/T_0'");
-plot.cmd("set xrange [0:110]");
-plot.cmd("set yrange [0:4.1]");
-plot.cmd("set y2range [0:1.25]");
-plot.cmd("set xtics 0, 20, 110");
-plot.cmd("set ytics 0, 0.5, 4.0 nomirror");
-plot.cmd("set y2tics 0, 0.2, 1.0");
-plot.cmd("set grid xtics ytics lc rgb '#e2e8f0' lw 1");
-plot.cmd("set key top left samplen 2.0 spacing 1.12 opaque box lc rgb '#cbd5e1' font ',8.5'");
-
-# Sonic throat marker at x = 40 mm, M = 1.0
-plot.cmd("set arrow 1 from 40, 0 to 40, 3.2 nohead dt 3 lw 1.3 lc rgb '#475569'");
-plot.cmd("set arrow 2 from 0, 1.0 to 110, 1.0 nohead dt 3 lw 1.1 lc rgb '#94a3b8'");
-let flow_box = plot.str("sprintf('Sonic throat: x = 40 mm (M = 1.00)\nExit Mach: M_e = %.2f (supersonic)\nExit pressure: P_e / P_0 = 0.024', " + str(max_mach) + ")");
-plot.cmd("set label 2 '" + flow_box + "' at 42, 0.58 left front boxed noenhanced font ',8'");
-
-plot.cmd("set style fill transparent solid 0.14 noborder");
-plot.cmd("plot $NOZZLE using 1:($2/11.0) axes x1y1 with filledcurves y1=0 lc rgb '#94a3b8' notitle, $NOZZLE using 1:($2/11.0) axes x1y1 with lines lw 1.8 dt 2 lc rgb '#475569' title 'Wall contour r(x)/r*', $NOZZLE using 1:4 axes x1y1 with lines lw 2.8 lc rgb '#dc2626' title 'Mach number M(x)', $NOZZLE using 1:5 axes x1y2 with lines lw 2.3 lc rgb '#1d4ed8' title 'Pressure ratio P(x)/P_0 [y2]', $NOZZLE using 1:6 axes x1y2 with lines lw 2.2 dt 4 lc rgb '#059669' title 'Temp. ratio T(x)/T_0 [y2]'");
-
+# Bottom: Mach number and static ratios along the same axis.
+plot.script("set lmargin at screen 0.09\nset rmargin at screen 0.91\nset tmargin at screen 0.42\nset bmargin at screen 0.08");
+plot.cmd("set border 11 lw 1 lc rgb '#334155'");
+plot.cmd("set xtics 0, 10, 110 font ',9'");
+plot.cmd("set xlabel 'axial position x (mm)'");
+plot.cmd("set ylabel 'Mach number M'");
+plot.cmd("set y2label 'P/P_0 , T/T_0' offset -1.5,0");
+plot.cmd("set yrange [0:3.6]");
+plot.cmd("set y2range [0:1.08]");
+plot.cmd("set ytics 0, 0.5, 3.5 nomirror");
+plot.cmd("set y2tics 0, 0.2, 1.0 font ',9'");
+plot.cmd("set grid xtics ytics lc rgb '#e2e8f0'");
+plot.cmd("set arrow 1 from 40, 0 to 40, 3.6 nohead dt 3 lw 1.2 lc rgb '#475569'");
+plot.cmd("set arrow 2 from -5, 1 to 115, 1 nohead dt 3 lw 1 lc rgb '#94a3b8'");
+plot.cmd("set label 4 'throat, M = 1' at 41, 3.4 left font ',9' tc rgb '#334155'");
+plot.cmd("set label 5 sprintf('exit: M_e = %.2f\nP_e/P_0 = %.3f\nT_e/T_0 = %.3f', " + str(m_exit) + ", " + str(p_exit) + ", " + str(t_exit) + ") at 1.5, 1.28 left front boxed noenhanced font ',9'");
+plot.cmd("set key at graph 0.02, 0.62 left top Left reverse samplen 2 opaque box lc rgb '#cbd5e1' font ',9'");
+plot.cmd("plot $NOZZLE using 1:4 axes x1y1 with lines lw 2.8 lc rgb '#dc2626' title 'Mach number', $NOZZLE using 1:5 axes x1y2 with lines lw 2.3 lc rgb '#1d4ed8' title 'P/P_0 (right axis)', $NOZZLE using 1:6 axes x1y2 with lines lw 2.2 dt 4 lc rgb '#059669' title 'T/T_0 (right axis)'");
 plot.cmd("unset multiplot");
 plot.close();
 end _dsl_

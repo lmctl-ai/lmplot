@@ -49,7 +49,9 @@ for showcase in \
   phased_array_polar.png \
   quant_trading_dashboard.png \
   enzyme_michaelis_menten.png \
-  damped_driven_resonance.png
+  damped_driven_resonance.png \
+  quadrature_convergence.png \
+  option_greeks_dashboard.png
 do
   cp "$BUILD_DIR/examples/$showcase" "docs/images/$showcase"
 done

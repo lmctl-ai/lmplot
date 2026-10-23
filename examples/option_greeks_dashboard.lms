@@ -1,0 +1,84 @@
+# Black-Scholes option dashboard: a European call priced in closed form with gnuplot's
+# norm() (standard normal CDF), its value surface over spot and maturity, and the Greeks a
+# trader hedges with. The program first reproduces the textbook example (Hull, Options,
+# Futures and Other Derivatives: S = 42, K = 40, r = 10%, sigma = 20%, T = 0.5 y gives
+# call 4.76 and put 0.81) and checks put-call parity C - P = S - K exp(-rT).
+# Writes images/option_greeks_dashboard.png (900x700).
+out = ARGV.len() > 0 ? ARGV[0] : "build/option_greeks_dashboard.dslb";
+mkdir("images");
+mkdir("build");
+p = _dsl_ cli="lmplot" install="github:lmctl-ai/lmplot@latest";
+
+plot.cmd("K = 40.0; r = 0.10; s = 0.20");
+plot.cmd("d1(S,T) = (log(S/K) + (r + 0.5*s*s)*T) / (s*sqrt(T)); d2(S,T) = d1(S,T) - s*sqrt(T)");
+plot.cmd("call(S,T) = S*norm(d1(S,T)) - K*exp(-r*T)*norm(d2(S,T))");
+plot.cmd("put(S,T) = K*exp(-r*T)*norm(-d2(S,T)) - S*norm(-d1(S,T))");
+plot.cmd("phi(x) = exp(-0.5*x*x)/sqrt(2*pi)");
+plot.cmd("delta(S,T) = norm(d1(S,T)); gam(S,T) = phi(d1(S,T))/(S*s*sqrt(T)); vega(S,T) = S*phi(d1(S,T))*sqrt(T)/100");
+
+let c = plot.num("call(42, 0.5)");
+let pp = plot.num("put(42, 0.5)");
+let parity = plot.num("call(42,0.5) - put(42,0.5) - (42 - K*exp(-r*0.5))");
+plot.echo("call " + str(c) + ", put " + str(pp) + ", parity residual " + str(parity));
+plot.assert_close(c, 4.76, 0.005);
+plot.assert_close(pp, 0.81, 0.005);
+plot.assert_close(parity, 0.0, 0.000000001);
+
+plot.png("images/option_greeks_dashboard.png", 900, 700);
+plot.cmd("set encoding utf8");
+plot.cmd("set multiplot");
+plot.cmd("set label 99 'European Call, Black–Scholes (K = 40, r = 10%, σ = 20%)' at screen 0.5, 0.972 center font ',13'");
+plot.cmd("set style line 1 lw 2.4 lc rgb '#1d4ed8'");
+plot.cmd("set style line 2 lw 2.4 lc rgb '#d97706'");
+plot.cmd("set style line 3 lw 2.4 lc rgb '#dc2626'");
+plot.cmd("set style line 4 lw 1.4 dt 2 lc rgb '#64748b'");
+
+# (a) value surface C(S, T)
+plot.script("set origin 0.0, 0.47\nset size 0.5, 0.48");
+plot.cmd("set title '(a) value surface C(S, T)' font ',11'");
+plot.cmd("set xrange [25:55]; set yrange [0.02:1]; set zrange [0:20]");
+plot.cmd("set xlabel 'spot S' offset 0,-0.5; set ylabel 'maturity T (y)' offset 1,-0.5; unset zlabel");
+plot.cmd("set xtics 30, 10, 50 font ',8'; set ytics 0, 0.5, 1 font ',8'; set ztics 0, 10, 20 font ',8'");
+plot.cmd("set view 55, 300, 1.0, 1.1");
+plot.cmd("set isosamples 31, 25; set samples 31, 25");
+plot.cmd("set pm3d at s depthorder border lc rgb '#1e293b' lw 0.2");
+plot.cmd("set cbrange [0:20]");
+plot.cmd("set palette defined (0 '#1e3a8a', 0.3 '#2563eb', 0.6 '#38bdf8', 0.85 '#fde68a', 1 '#f59e0b')");
+plot.cmd("unset colorbox; unset key");
+plot.cmd("splot call(x, y) with pm3d");
+plot.cmd("unset pm3d; set samples 300; set xtics autofreq font ',9'; set ytics autofreq font ',9'");
+
+# (b) price against spot for three maturities, with the payoff at expiry
+plot.script("set origin 0.5, 0.47\nset size 0.5, 0.48");
+plot.cmd("set title '(b) price vs. spot' font ',11'");
+plot.cmd("set xrange [25:55]; set yrange [0:20]");
+plot.cmd("set xlabel 'spot S' offset 0,0; set ylabel 'call value C' offset 0,0");
+plot.cmd("set grid lc rgb '#e2e8f0'");
+plot.cmd("set key top left opaque box lc rgb '#cbd5e1' font ',9'");
+plot.cmd("set arrow 1 from 42, 4.76 to 42, 4.76 front");
+plot.cmd("plot (x > K ? x - K : 0) ls 4 title 'payoff at expiry', call(x, 0.1) ls 1 title 'T = 0.1 y', call(x, 0.5) ls 2 title 'T = 0.5 y', call(x, 1.0) ls 3 title 'T = 1.0 y', '+' using (42):(call(42,0.5)) every ::0::0 with points pt 7 ps 1.4 lc rgb '#0f172a' notitle");
+plot.cmd("unset arrow 1");
+
+# (c) delta: the hedge ratio
+plot.script("set origin 0.0, 0.0\nset size 0.5, 0.47");
+plot.cmd("set title '(c) delta ∂C/∂S (shares to hedge one call)' font ',11'");
+plot.cmd("set yrange [0:1.05]; set ylabel 'delta'");
+plot.cmd("set key bottom right");
+plot.cmd("set label 1 sprintf('Hull: S = 42, T = 0.5\nC = %.2f, P = %.2f\nparity error %.0e', " + str(c) + ", " + str(pp) + ", " + str(parity) + ") at 25.8, 0.98 left front boxed noenhanced font ',8.5'");
+plot.cmd("plot delta(x, 0.1) ls 1 title 'T = 0.1 y', delta(x, 0.5) ls 2 title 'T = 0.5 y', delta(x, 1.0) ls 3 title 'T = 1.0 y'");
+plot.cmd("unset label 1");
+
+# (d) gamma and vega near expiry vs. far
+plot.script("set origin 0.5, 0.0\nset size 0.5, 0.47");
+plot.cmd("set title '(d) gamma (left) and vega per vol point (right)' font ',11'");
+plot.cmd("set yrange [0:0.4]; set ylabel 'gamma ∂²C/∂S²'");
+plot.cmd("set y2range [0:0.3]; set y2tics 0, 0.05, 0.3 font ',9'; set ytics 0, 0.05, 0.25 nomirror");
+plot.cmd("set key top right");
+plot.cmd("plot gam(x, 0.1) ls 1 title 'gamma, T = 0.1', gam(x, 1.0) ls 3 title 'gamma, T = 1.0', vega(x, 0.1) axes x1y2 ls 1 dt 3 title 'vega, T = 0.1', vega(x, 1.0) axes x1y2 ls 3 dt 3 title 'vega, T = 1.0'");
+plot.cmd("unset multiplot");
+plot.close();
+end _dsl_
+savedsl(p, out);
+r = system ${dsl_cli(p)} --dsl ${out};
+assert(r.code == 0);
+println("wrote images/option_greeks_dashboard.png");

@@ -32,6 +32,8 @@ second run produces identical bytes, and moves the rendered outputs into
 | `lmctl autorun https://raw.githubusercontent.com/lmctl-ai/lmplot/main/examples/quant_trading_dashboard.lms` | Quantitative Finance | 60-day equity regime shift: OHLC candlesticks, 5-day moving average, $\pm 2\sigma$ Bollinger Band envelope, daily volume bars and underwater peak-to-trough drawdown |
 | `lmctl autorun https://raw.githubusercontent.com/lmctl-ai/lmplot/main/examples/enzyme_michaelis_menten.lms` | Biochemistry / Regression | Michaelis–Menten enzyme saturation curves under competitive and non-competitive inhibition paired with Lineweaver–Burk double-reciprocal OLS regression (`stats`) |
 | `lmctl autorun https://raw.githubusercontent.com/lmctl-ai/lmplot/main/examples/damped_driven_resonance.lms` | Nonlinear Dynamics | Driven damped harmonic oscillator steady-state magnification $M(\omega/\omega_0)$, resonance peak backbone locus, half-power bandwidth and quadrature phase lag $\phi(\omega/\omega_0)$ |
+| `lmctl autorun https://raw.githubusercontent.com/lmctl-ai/lmplot/main/examples/quadrature_convergence.lms` | Numerical analysis | Trapezoid, Simpson and Gauss–Legendre on $\int_0^{\pi/2} e^x\cos x\,dx$; `fit` measures orders 2 and 4 (asserted with `plot.assert_close`) and 8 Gauss points beat 1025 Simpson points |
+| `lmctl autorun https://raw.githubusercontent.com/lmctl-ai/lmplot/main/examples/option_greeks_dashboard.lms` | Quantitative Finance | Black–Scholes call via gnuplot `norm()`: value surface, price vs spot, delta, gamma and vega; reproduces Hull's textbook 4.76 / 0.81 and put–call parity |
 
 ## Multi-host combo examples (`examples/combo/`)
 
@@ -45,7 +47,7 @@ lmctl autorun https://raw.githubusercontent.com/lmctl-ai/lmplot/main/examples/co
 | Command | Hosts | Shows |
 | --- | --- | --- |
 | `lmctl autorun https://raw.githubusercontent.com/lmctl-ai/lmplot/main/examples/combo/nozzle_cad_plot.lms` | `lmcad` + `lmplot` | OpenCASCADE revolved de Laval supersonic nozzle with boolean 90° cutaway (`render_ppm`) embedded alongside quasi-1D isentropic Mach, pressure and temperature curves |
-| `lmctl autorun https://raw.githubusercontent.com/lmctl-ai/lmplot/main/examples/combo/sir_epidemic_draw_plot.lms` | `lmdraw` + `lmplot` | Retained 2D vector compartmental schematic ($S \to E \to I \to R$) paired with RK4 epidemic trajectories and $I$-vs-$S$ herd-immunity phase portrait |
+| `lmctl autorun https://raw.githubusercontent.com/lmctl-ai/lmplot/main/examples/combo/sir_epidemic_draw_plot.lms` | `lmdraw` + `lmplot` | Retained 2D vector compartmental schematic ($S \to E \to I \to R$) paired with midpoint-method (RK2) epidemic trajectories and $I$-vs-$S$ herd-immunity phase portrait |
 
 ## Classic gnuplot gallery examples
 

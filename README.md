@@ -11,20 +11,25 @@
 | <img src="docs/images/kepler_rv_fit.png" width="290"> | <img src="docs/images/potential_vortex_surface.png" width="290"> | <img src="docs/images/quant_trading_dashboard.png" width="290"> |
 | Keplerian fit, mass & χ² in DSL<br>`lmctl autorun https://raw.githubusercontent.com/lmctl-ai/lmplot/main/examples/kepler_rv_fit.lms` | Bistable `pm3d` surface & transition path<br>`lmctl autorun https://raw.githubusercontent.com/lmctl-ai/lmplot/main/examples/potential_vortex_surface.lms` | Candlesticks, ±2σ band, volume & drawdown<br>`lmctl autorun https://raw.githubusercontent.com/lmctl-ai/lmplot/main/examples/quant_trading_dashboard.lms` |
 
-| 3D CAD nozzle + supersonic flow (`lmcad` + `lmplot`) | SEIR schematic + ODE phase plane (`lmdraw` + `lmplot`) | Quantum wave-packet scattering (`ffmpeg` GIF) |
+| Rocket nozzle: geometry meets flow (`lmcad` + `lmplot`) | SEIR schematic + ODE phase plane (`lmdraw` + `lmplot`) | Quantum wave-packet scattering (`ffmpeg` GIF) |
 | --- | --- | --- |
 | <img src="docs/images/nozzle_cad_plot.png" width="290"> | <img src="docs/images/sir_epidemic_draw_plot.png" width="290"> | <img src="docs/images/quantum_packet.gif" width="290"> |
-| OpenCASCADE cutaway + Mach/P/T curves<br>`lmctl autorun https://raw.githubusercontent.com/lmctl-ai/lmplot/main/examples/combo/nozzle_cad_plot.lms` | Retained 2D diagram + RK4 trajectories<br>`lmctl autorun https://raw.githubusercontent.com/lmctl-ai/lmplot/main/examples/combo/sir_epidemic_draw_plot.lms` | 60-frame dispersive wave packet<br>`lmctl autorun https://raw.githubusercontent.com/lmctl-ai/lmplot/main/examples/video/quantum_packet.lms` |
+| lmcad section and Mach, P, T on one mm axis<br>`lmctl autorun https://raw.githubusercontent.com/lmctl-ai/lmplot/main/examples/combo/nozzle_cad_plot.lms` | lmdraw model diagram + SEIR runs: peak cut 19% → 6%<br>`lmctl autorun https://raw.githubusercontent.com/lmctl-ai/lmplot/main/examples/combo/sir_epidemic_draw_plot.lms` | 60-frame dispersive wave packet<br>`lmctl autorun https://raw.githubusercontent.com/lmctl-ai/lmplot/main/examples/video/quantum_packet.lms` |
 
 | Planck blackbody & Wien locus | Urban heat island & transects | Phased-array beam steering |
 | --- | --- | --- |
 | <img src="docs/images/blackbody_planck.png" width="290"> | <img src="docs/images/urban_heat_island.png" width="290"> | <img src="docs/images/phased_array_polar.png" width="290"> |
 | Stellar spectra & bolometric flux<br>`lmctl autorun https://raw.githubusercontent.com/lmctl-ai/lmplot/main/examples/blackbody_planck.lms` | 2D anomaly map & river cooling dip<br>`lmctl autorun https://raw.githubusercontent.com/lmctl-ai/lmplot/main/examples/urban_heat_island.lms` | Measured nulls & −12.8 dB side lobe vs taper<br>`lmctl autorun https://raw.githubusercontent.com/lmctl-ai/lmplot/main/examples/phased_array_polar.lms` |
 
-| Enzyme kinetics & Lineweaver–Burk | Driven damped harmonic resonance | Linear regression & `stats` round-trip |
+| Enzyme kinetics & Lineweaver–Burk | Driven damped harmonic resonance | Quadrature: three methods, one integral |
 | --- | --- | --- |
-| <img src="docs/images/enzyme_michaelis_menten.png" width="290"> | <img src="docs/images/damped_driven_resonance.png" width="290"> | <img src="docs/images/stats.png" width="290"> |
-| Competitive vs non-competitive OLS<br>`lmctl autorun https://raw.githubusercontent.com/lmctl-ai/lmplot/main/examples/enzyme_michaelis_menten.lms` | Magnification backbone & phase lag<br>`lmctl autorun https://raw.githubusercontent.com/lmctl-ai/lmplot/main/examples/damped_driven_resonance.lms` | LCG data, `stats` & derived labels<br>`lmctl autorun https://raw.githubusercontent.com/lmctl-ai/lmplot/main/examples/stats.lms` |
+| <img src="docs/images/enzyme_michaelis_menten.png" width="290"> | <img src="docs/images/damped_driven_resonance.png" width="290"> | <img src="docs/images/quadrature_convergence.png" width="290"> |
+| Competitive vs non-competitive OLS<br>`lmctl autorun https://raw.githubusercontent.com/lmctl-ai/lmplot/main/examples/enzyme_michaelis_menten.lms` | Magnification backbone & phase lag<br>`lmctl autorun https://raw.githubusercontent.com/lmctl-ai/lmplot/main/examples/damped_driven_resonance.lms` | Fitted orders 2 and 4, Gauss wins at 8 points<br>`lmctl autorun https://raw.githubusercontent.com/lmctl-ai/lmplot/main/examples/quadrature_convergence.lms` |
+
+| Black–Scholes call & Greeks dashboard | Linear regression & `stats` round-trip | |
+| --- | --- | --- |
+| <img src="docs/images/option_greeks_dashboard.png" width="290"> | <img src="docs/images/stats.png" width="290"> | |
+| Reproduces Hull's 4.76 / 0.81, parity to 1e-14<br>`lmctl autorun https://raw.githubusercontent.com/lmctl-ai/lmplot/main/examples/option_greeks_dashboard.lms` | LCG data, `stats` & derived labels<br>`lmctl autorun https://raw.githubusercontent.com/lmctl-ai/lmplot/main/examples/stats.lms` | |
 
 | Surfaces and colour (`pm3d`) | Filled curves | Clustered & stacked histograms |
 | --- | --- | --- |

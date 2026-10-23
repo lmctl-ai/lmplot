@@ -2,8 +2,8 @@
 # 1. lmdraw builds a 360x560 retained 2D vector schematic of the 4-compartment
 #    SEIR transmission model (S -> E -> I -> R) with gradient cards, flow arrows,
 #    rate constants, and NPI intervention summary (build/rendered/seir_schematic.png).
-# 2. lmplot integrates the coupled SEIR differential equations with 4th-order
-#    Runge-Kutta (comparing unmitigated R0=3.2 vs NPI distancing), extracts peak
+# 2. lmplot integrates the coupled SEIR differential equations with the midpoint
+#    (2nd-order Runge-Kutta) method (comparing unmitigated R0=3.2 vs NPI distancing), extracts peak
 #    infectious load via gnuplot stats, and plots the time-course and I-vs-S
 #    herd-immunity phase portrait (build/examples/seir_panels.png, 540x560).
 # 3. Combines the lmdraw schematic and lmplot charts into images/sir_epidemic_draw_plot.png (900x560).
@@ -117,7 +117,7 @@ assert(r.code == 0);
 
 p = _dsl_ cli="lmplot" install="github:lmctl-ai/lmplot@latest";
 
-# Integrate SEIR ODEs over 160 days (dt = 0.5 day, 320 steps) using RK4:
+# Integrate SEIR ODEs over 160 days (dt = 0.5 day, 320 steps) with the midpoint method:
 # Baseline: beta0 = 3.2 * gamma, sigma = 1/4.5 = 0.2222, gamma = 1/7.0 = 0.142857
 # Mitigated: beta(t) drops from 3.2*gamma to 1.48*gamma after day 22
 let sigma = 0.2222222;
@@ -142,7 +142,7 @@ for (step in range(0, 321)) {
     rows = rows + str(t) + " " + str(100.0 * s1) + " " + str(100.0 * e1) + " " + str(100.0 * i1) + " " + str(100.0 * r1) + " " + str(100.0 * s2) + " " + str(100.0 * e2) + " " + str(100.0 * i2) + " " + str(100.0 * r2) + "\n";
   }
 
-  # RK4 step for unmitigated (s1, e1, i1, r1)
+  # Midpoint (RK2) step for unmitigated (s1, e1, i1, r1)
   let inf1_a = beta_base * s1 * i1;
   let ds1_a = 0.0 - inf1_a;
   let de1_a = inf1_a - sigma * e1;
@@ -198,14 +198,14 @@ plot.cmd("set title 'SEIR Epidemic Trajectories — Unmitigated vs NPI Distancin
 plot.cmd("set xlabel 'Time Since Index Case (days)' offset 0,0.4");
 plot.cmd("set ylabel 'Population Fraction (%)'");
 plot.cmd("set xrange [0:160]");
-plot.cmd("set yrange [0:108]");
+plot.cmd("set yrange [0:132]");
 plot.cmd("set ytics 0, 20, 100");
 plot.cmd("set grid xtics ytics lc rgb '#e2e8f0' lw 1");
-plot.cmd("set key at 156, 104 right top samplen 1.5 spacing 0.95 opaque box lc rgb '#cbd5e1' font ',7.8'");
+plot.cmd("set key at 158, 130 right top horizontal maxrows 2 width -2 samplen 1.5 spacing 0.95 opaque box lc rgb '#cbd5e1' font ',7.8'");
 plot.cmd("set style fill transparent solid 0.22 noborder");
 
-plot.cmd("set arrow 1 from 22, 0 to 22, 108 nohead dt 3 lw 1.2 lc rgb '#475569'");
-plot.cmd("set label 1 'NPI (d=22)' at 24, 97 left font ',8' tc rgb '#334155'");
+plot.cmd("set arrow 1 from 22, 0 to 22, 100 nohead dt 3 lw 1.2 lc rgb '#475569'");
+plot.cmd("set label 1 'NPI from day 22' at 24, 72 left font ',8' tc rgb '#334155'");
 
 plot.cmd("plot $SEIR using 1:2 with lines lw 2.0 dt 2 lc rgb '#93c5fd' title 'S(t) unmitigated', $SEIR using 1:6 with lines lw 2.2 lc rgb '#2563eb' title 'S(t) with NPI', $SEIR using 1:9 with lines lw 2.2 lc rgb '#059669' title 'R(t) with NPI', $SEIR using 1:4 with filledcurves y1=0 lc rgb '#ef4444' notitle, $SEIR using 1:4 with lines lw 2.5 lc rgb '#dc2626' title 'I(t) unmit. (19.1%)', $SEIR using 1:8 with filledcurves y1=0 lc rgb '#f59e0b' notitle, $SEIR using 1:8 with lines lw 2.5 lc rgb '#d97706' title 'I(t) NPI (6.2%)'");
 
