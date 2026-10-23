@@ -16,10 +16,10 @@
 | <img src="docs/images/nozzle_cad_plot.png" width="290"> | <img src="docs/images/sir_epidemic_draw_plot.png" width="290"> | <img src="docs/images/quantum_packet.gif" width="290"> |
 | OpenCASCADE cutaway + Mach/P/T curves<br>`lmctl autorun https://raw.githubusercontent.com/lmctl-ai/lmplot/main/examples/combo/nozzle_cad_plot.lms` | Retained 2D diagram + RK4 trajectories<br>`lmctl autorun https://raw.githubusercontent.com/lmctl-ai/lmplot/main/examples/combo/sir_epidemic_draw_plot.lms` | 60-frame dispersive wave packet<br>`lmctl autorun https://raw.githubusercontent.com/lmctl-ai/lmplot/main/examples/video/quantum_packet.lms` |
 
-| Planck blackbody & Wien locus | Urban heat island & transects | Phased-array polar beamforming |
+| Planck blackbody & Wien locus | Urban heat island & transects | Phased-array beam steering |
 | --- | --- | --- |
 | <img src="docs/images/blackbody_planck.png" width="290"> | <img src="docs/images/urban_heat_island.png" width="290"> | <img src="docs/images/phased_array_polar.png" width="290"> |
-| Stellar spectra & bolometric flux<br>`lmctl autorun https://raw.githubusercontent.com/lmctl-ai/lmplot/main/examples/blackbody_planck.lms` | 2D anomaly map & river cooling dip<br>`lmctl autorun https://raw.githubusercontent.com/lmctl-ai/lmplot/main/examples/urban_heat_island.lms` | 8-element dB gain & side-lobe taper<br>`lmctl autorun https://raw.githubusercontent.com/lmctl-ai/lmplot/main/examples/phased_array_polar.lms` |
+| Stellar spectra & bolometric flux<br>`lmctl autorun https://raw.githubusercontent.com/lmctl-ai/lmplot/main/examples/blackbody_planck.lms` | 2D anomaly map & river cooling dip<br>`lmctl autorun https://raw.githubusercontent.com/lmctl-ai/lmplot/main/examples/urban_heat_island.lms` | Measured nulls & −12.8 dB side lobe vs taper<br>`lmctl autorun https://raw.githubusercontent.com/lmctl-ai/lmplot/main/examples/phased_array_polar.lms` |
 
 | Enzyme kinetics & Lineweaver–Burk | Driven damped harmonic resonance | Linear regression & `stats` round-trip |
 | --- | --- | --- |
@@ -104,6 +104,7 @@ and encode them into MP4/GIF animations with `ffmpeg`
 | `png(f, w, h)` / `svg(f, w, h)` / `close()` | choose the output file and flush it |
 | `num(expr)` / `str(expr)` | evaluate a gnuplot expression back into the script |
 | `echo(s)` / `terminals()` / `version()` | print, list terminals, version |
+| `assert_close(actual, expected, tol)` | stop with exit 3 unless `|actual - expected| <= tol` (known-answer checks) |
 
 A failing gnuplot command stops the program with exit code 3 and a JSON error
 line. `lmplot --dry-run --dsl prog.dslb` runs a program without writing any file

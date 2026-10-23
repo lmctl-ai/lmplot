@@ -1,112 +1,78 @@
-# 8-element uniform linear antenna array (d = lambda/2) steered to theta_0 = 30 deg:
-# compares uniform illumination vs raised-cosine pedestal tapering in polar dB gain.
+# Phased-array beam steering: an 8-element linear array (d = lambda/2) steered to
+# theta_0 = 30 degrees from broadside. Uniform excitation is compared with a raised-cosine
+# cosine-on-pedestal taper; the program measures each pattern's main-lobe nulls and peak side-lobe level (SLL)
+# and checks the textbook values (uniform N = 8: first side lobe -12.8 dB, first nulls at
+# sin(theta) = sin(theta_0) +- 1/(N d/lambda) = 0.25 and 0.75).
 # Writes images/phased_array_polar.png (900x600).
 out = ARGV.len() > 0 ? ARGV[0] : "build/phased_array_polar.dslb";
 mkdir("images");
 mkdir("build");
 p = _dsl_ cli="lmplot" install="github:lmctl-ai/lmplot@latest";
 
-fn sin_approx(x: float) -> float {
-  let pi = 3.141592653589793;
-  let twopi = 6.283185307179586;
-  let k = int((x + pi) / twopi);
-  let u = x - float(k) * twopi;
-  if (u > pi) { u = u - twopi; }
-  if (u < 0.0 - pi) { u = u + twopi; }
-  let u2 = u * u;
-  return u * (1.0 - u2 / 6.0 + (u2 * u2) / 120.0 - (u2 * u2 * u2) / 5040.0);
-}
+# Array factor, evaluated by gnuplot (complex arithmetic and sum[] are built in).
+# t = angle from broadside (radians). psi = k d (sin t - sin t0) with k d = pi.
+plot.cmd("N = 8; t0 = pi/6");
+plot.cmd("psi(t) = pi*(sin(t) - sin(t0))");
+plot.cmd("w(n) = 0.3 + 0.7*cos(pi*(n - 3.5)/8)");
+plot.cmd("W = sum [n=0:7] w(n)");
+plot.cmd("AFu(t) = abs(sum [n=0:7] exp({0,1}*(n - 3.5)*psi(t)))/N");
+plot.cmd("AFt(t) = abs(sum [n=0:7] w(n)*exp({0,1}*(n - 3.5)*psi(t)))/W");
+plot.cmd("dB(a) = (a < 1e-4 ? -80 : 20*log10(a))");
 
-fn cos_approx(x: float) -> float {
-  return sin_approx(x + 1.5707963267948966);
-}
+# Sample the visible region -90..90 degrees at 0.25 degree steps into gnuplot arrays; find each
+# pattern's main-lobe nulls by walking down from the steering angle, then the largest lobe outside.
+plot.script("array GU[721]\narray GT[721]\ndeg(i) = -90.0 + (i - 1)*0.25\ndo for [i=1:721] { GU[i] = dB(AFu(deg(i)*pi/180)); GT[i] = dB(AFt(deg(i)*pi/180)) }\npk = 481\nul = pk; while (ul > 1 && GU[ul-1] < GU[ul]) { ul = ul - 1 }\nur = pk; while (ur < 721 && GU[ur+1] < GU[ur]) { ur = ur + 1 }\ntl = pk; while (tl > 1 && GT[tl-1] < GT[tl]) { tl = tl - 1 }\ntr = pk; while (tr < 721 && GT[tr+1] < GT[tr]) { tr = tr + 1 }\nsu = -80; st = -80\ndo for [i=1:721] { if ((i < ul || i > ur) && GU[i] > su) { su = GU[i] }; if ((i < tl || i > tr) && GT[i] > st) { st = GT[i] } }");
+let null_u_lo = plot.num("deg(ul)");
+let null_u_hi = plot.num("deg(ur)");
+let bw_u = null_u_hi - null_u_lo;
+let bw_t = plot.num("deg(tr) - deg(tl)");
+let sll_u = plot.num("su");
+let sll_t = plot.num("st");
+plot.echo("uniform: nulls at " + str(null_u_lo) + " and " + str(null_u_hi) + " deg, SLL " + str(sll_u) + " dB");
+plot.echo("tapered: null-to-null width " + str(bw_t) + " deg, SLL " + str(sll_t) + " dB");
+# Known answers: first nulls at asin(0.25) = 14.48 and asin(0.75) = 48.59 degrees, and the
+# 8-element uniform array's first side lobe at -12.8 dB.
+plot.assert_close(null_u_lo, 14.48, 0.25);
+plot.assert_close(null_u_hi, 48.59, 0.25);
+plot.assert_close(sll_u, -12.8, 0.1);
 
-fn log10_pos(v: float) -> float {
-  let x = v;
-  let k = 0;
-  if (x < 0.0001) { x = 0.0001; }
-  for (iter in range(0, 16)) {
-    if (x < 0.70710678) {
-      x = x * 2.0;
-      k = k - 1;
-    }
-    if (x > 1.41421356) {
-      x = x * 0.5;
-      k = k + 1;
-    }
-  }
-  let y = (x - 1.0) / (x + 1.0);
-  let y2 = y * y;
-  let lnx = 2.0 * y * (1.0 + y2 / 3.0 + (y2 * y2) / 5.0 + (y2 * y2 * y2) / 7.0) + float(k) * 0.69314718056;
-  return lnx * 0.4342944819;
-}
-
-let pi = 3.141592653589793;
-let rows = "";
-for (deg in range(0, 361)) {
-  let th = float(deg) * pi / 180.0;
-  let psi = pi * (sin_approx(th) - 0.5);
-  let re_u = 0.0;
-  let im_u = 0.0;
-  let re_t = 0.0;
-  let im_t = 0.0;
-  let w_sum = 0.0;
-  for (n in range(0, 8)) {
-    let phase = (float(n) - 3.5) * psi;
-    let c = cos_approx(phase);
-    let s = sin_approx(phase);
-    re_u = re_u + c;
-    im_u = im_u + s;
-    let wn = 0.42 + 0.58 * cos_approx(pi * (float(n) - 3.5) / 4.2);
-    re_t = re_t + wn * c;
-    im_t = im_t + wn * s;
-    w_sum = w_sum + wn;
-  }
-  let mag_u2 = (re_u * re_u + im_u * im_u) / 64.0;
-  let mag_t2 = (re_t * re_t + im_t * im_t) / (w_sum * w_sum);
-  let db_u = 10.0 * log10_pos(mag_u2);
-  let db_t = 10.0 * log10_pos(mag_t2);
-  if (db_u < -35.0) { db_u = -35.0; }
-  if (db_t < -35.0) { db_t = -35.0; }
-  rows = rows + str(th) + " " + str(db_u) + " " + str(db_t) + " " + str(deg) + "\n";
-}
-plot.data("ARRAY", rows);
-
-# Measure side-lobe level outside the main beam ([200, 340] deg) via gnuplot stats
-plot.cmd("set terminal unknown");
-plot.cmd("stats $ARRAY using ($4 >= 200 && $4 <= 340 ? $2 : 1/0):($4 >= 200 && $4 <= 340 ? $3 : 1/0) nooutput");
-let sll_uniform = plot.num("STATS_max_x");
-let sll_tapered = plot.num("STATS_max_y");
-let sll_gain = sll_uniform - sll_tapered;
-plot.echo("Uniform 1st side-lobe: " + str(sll_uniform) + " dB");
-plot.echo("Tapered 1st side-lobe: " + str(sll_tapered) + " dB");
-plot.echo("Side-lobe suppression: " + str(sll_gain) + " dB");
-
-plot.png("images/phased_array_polar.png", 900, 600);
+plot.png("images/phased_array_polar.png", 900, 500);
 plot.cmd("set encoding utf8");
 plot.cmd("set polar");
 plot.cmd("set angles radians");
-plot.cmd("set size ratio 1");
-plot.script("set lmargin 5\nset rmargin 36\nset tmargin 4.0\nset bmargin 3.0");
-plot.cmd("set label 10 '8-Element Phased Array Beamforming (d = λ/2, Steered θ_0 = 30°) — Uniform vs Tapered Gain' at screen 0.50, 0.955 center front font ',12'");
-plot.cmd("set rrange [-35:0]");
-plot.cmd("set rtics (-30, -20, -10, 0)");
-plot.cmd("set grid polar pi/6 lc rgb '#cbd5e1' lw 1");
-plot.cmd("unset border");
-plot.cmd("unset xtics");
-plot.cmd("unset ytics");
-plot.cmd("set ttics 0, 30 format '%g°' font ',9.5'");
-plot.cmd("set key at screen 0.97, 0.84 right top samplen 2.2 spacing 1.25 opaque box lc rgb '#cbd5e1' font ',9.5'");
+plot.cmd("set size ratio -1");
+plot.script("set lmargin at screen 0.01\nset rmargin at screen 0.67\nset tmargin at screen 0.86\nset bmargin at screen 0.10");
+plot.cmd("set label 10 '8-Element Phased Array Steered to θ_0 = 30°: Uniform vs Tapered Excitation' at screen 0.5, 0.95 center front font ',12'");
+plot.cmd("set rrange [-40:0]");
+plot.cmd("set xrange [-47:47]");
+plot.cmd("set yrange [-3:47]");
+plot.cmd("set rtics -30, 10, 0 format '%g dB' font ',8.5'");
+plot.cmd("set grid polar pi/12 lc rgb '#cbd5e1' lw 1");
+plot.cmd("unset border; unset xtics; unset ytics; unset key");
 plot.cmd("set style fill transparent solid 0.20 noborder");
+# Angle labels from broadside (every 30 degrees), outside the outer ring.
+for (k in range(0, 7)) {
+  let deg = -90 + 30 * k;
+  let a = (90.0 - float(deg)) * 3.141592653589793 / 180.0;
+  let tag = str(deg) + "°";
+  if (deg == 0) { tag = "0° (broadside)"; }
+  plot.cmd("set label " + str(20 + k) + " '" + tag + "' at 43.5*cos(" + str(a) + "), 43.5*sin(" + str(a) + ") center font ',9' tc rgb '#475569'");
+}
+# Steering direction.
+plot.cmd("set arrow 1 from 0, 0 to 40*cos(pi/3), 40*sin(pi/3) head filled size screen 0.014,18 lw 1.8 lc rgb '#059669' front");
+plot.cmd("set label 2 'steer θ_0 = 30°' at 31*cos(pi/3) + 2, 31*sin(pi/3) left front tc rgb '#065f46' font ',9'");
 
-let box_txt = plot.str("sprintf('Linear Array: N = 8, spacing d = λ/2\nElectronic beam steering: θ_0 = 30°\nUniform 1st side-lobe: %.1f dB\nTapered 1st side-lobe: %.1f dB\nSide-lobe suppression: +%.1f dB', " + str(sll_uniform) + ", " + str(sll_tapered) + ", " + str(sll_gain) + ")");
-plot.cmd("set label 1 '" + box_txt + "' at screen 0.63, 0.34 left front boxed noenhanced font ',9.5'");
+let box = plot.str("sprintf('N = 8 elements, spacing d = λ/2\nsteered to θ₀ = 30°\n(phase step π/2 between elements)\n\nUniform weights\n  nulls at %.1f° and %.1f°\n  peak side lobe %.1f dB\n  (textbook: -12.8 dB)\n\nTaper 0.3 + 0.7 cos(π n / 8)\n  peak side lobe %.1f dB, i.e. %.1f dB lower\n  main lobe %.0f%% wider\n  (%.1f° vs %.1f° null to null)', " + str(null_u_lo) + ", " + str(null_u_hi) + ", " + str(sll_u) + ", " + str(sll_t) + ", " + str(sll_u - sll_t) + ", " + str(100.0 * (bw_t / bw_u - 1.0)) + ", " + str(bw_t) + ", " + str(bw_u) + ")");
+plot.cmd("set label 1 '" + box + "' at screen 0.69, 0.83 left front noenhanced font ',9.5'");
+# Manual legend under the text.
+plot.cmd("set object 5 rect from screen 0.69, 0.20 to screen 0.73, 0.225 fc rgb '#93c5fd' fs solid 0.6 border lc rgb '#1d4ed8' lw 2");
+plot.cmd("set label 6 'tapered (filled)' at screen 0.745, 0.212 left font ',9.5'");
+plot.cmd("set arrow 7 from screen 0.69, 0.15 to screen 0.73, 0.15 nohead lw 2 dt 2 lc rgb '#dc2626'");
+plot.cmd("set label 8 'uniform (dashed)' at screen 0.745, 0.15 left font ',9.5'");
 
-# Steering direction indicator at theta = 30 deg (radius 35 in plot coords)
-plot.cmd("set arrow 1 from 0, 0 to 30.31, 17.5 head filled size screen 0.014,18 lw 1.8 lc rgb '#059669' front");
-plot.cmd("set label 2 'Main Beam\nθ_0 = 30°' at 39.5, 24.5 center front tc rgb '#065f46' font ',9'");
-
-plot.cmd("plot $ARRAY using 1:2 with lines lw 1.8 dt 2 lc rgb '#dc2626' title 'Uniform excitation (SLL = -13.1 dB)', $ARRAY using 1:3 with filledcurve r=-35 lc rgb '#2563eb' notitle, $ARRAY using 1:3 with lines lw 2.6 lc rgb '#1d4ed8' title 'Cosine-pedestal taper (SLL = -20.5 dB)'");
+# Polar angle 90 - theta puts broadside up; radius is the gain in dB, clipped at -40.
+plot.cmd("ang(i) = (90.0 - deg(i))*pi/180; clip(v) = (v < -40 ? -40 : v)");
+plot.cmd("plot GT using (ang($1)):(clip($2)) with filledcurve r=-40 lc rgb '#3b82f6', GT using (ang($1)):(clip($2)) with lines lw 2.6 lc rgb '#1d4ed8', GU using (ang($1)):(clip($2)) with lines lw 1.8 dt 2 lc rgb '#dc2626'");
 plot.close();
 end _dsl_
 savedsl(p, out);

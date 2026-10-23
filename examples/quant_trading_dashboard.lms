@@ -119,26 +119,27 @@ plot.cmd("set multiplot");
 plot.cmd("set boxwidth 0.62");
 
 # Top panel: OHLC Candlesticks + Bollinger Bands
-plot.script("set origin 0.0, 0.44\nset size 1.0, 0.56");
+plot.script("set origin 0.0, 0.47\nset size 1.0, 0.53");
 plot.script("set lmargin 9\nset rmargin 3\nset tmargin 2.5\nset bmargin 0.5");
 plot.cmd("set title 'Equity Regime Shift — OHLC Candlesticks, ±2σ Bollinger Envelope and Drawdown' font ',12'");
 plot.cmd("set ylabel 'Price ($)'");
 plot.cmd("set xrange [0:61]");
-plot.cmd("set yrange [84:122]");
+plot.cmd("set yrange [84:131]");
+plot.cmd("set ytics 85, 5, 120");
 plot.cmd("set format x ''");
 plot.cmd("set grid xtics ytics lc rgb '#e2e8f0' lw 1");
-plot.cmd("set key top left samplen 2.0 spacing 1.1 opaque box lc rgb '#cbd5e1' font ',9'");
+plot.cmd("set key top left horizontal maxrows 2 width -1 samplen 2.0 spacing 1.1 opaque box lc rgb '#cbd5e1' font ',9'");
 plot.cmd("set style fill transparent solid 0.18 noborder");
 
 let perf_box = plot.str("sprintf('Peak Price: $%.1f  |  60-Day Close: $%.1f\nMax Drawdown: %.1f%% (Days 24–37 shock)', " + str(p_max) + ", " + str(price) + ", " + str(max_dd) + ")");
-plot.cmd("set label 1 '" + perf_box + "' at 35.5, 115.5 left front boxed noenhanced font ',8.5'");
+plot.cmd("set label 1 '" + perf_box + "' at 40.5, 113.0 left front boxed noenhanced font ',8.5'");
 
 plot.cmd("plot $BAND using 1:4:5 with filledcurves lc rgb '#60a5fa' title '±2σ Bollinger band', $BAND using 1:3 with lines lw 2.0 lc rgb '#1d4ed8' title '5-day moving average', $UP using 1:2:3:4:5 with candlesticks fs solid 0.88 lc rgb '#16a34a' lw 1.2 title 'Bullish close (C ≥ O)', $DN using 1:2:3:4:5 with candlesticks fs solid 0.88 lc rgb '#dc2626' lw 1.2 title 'Bearish close (C < O)'");
 
 # Middle panel: Daily Volume
 plot.cmd("unset label 1");
 plot.cmd("unset title");
-plot.script("set origin 0.0, 0.22\nset size 1.0, 0.22");
+plot.script("set origin 0.0, 0.28\nset size 1.0, 0.19");
 plot.script("set lmargin 9\nset rmargin 3\nset tmargin 0.3\nset bmargin 0.5");
 plot.cmd("set ylabel 'Vol (M)'");
 plot.cmd("set yrange [0:8.2]");
@@ -147,13 +148,13 @@ plot.cmd("unset key");
 plot.cmd("plot $UP using 1:6 with boxes fs solid 0.75 lc rgb '#16a34a', $DN using 1:6 with boxes fs solid 0.75 lc rgb '#dc2626'");
 
 # Bottom panel: Underwater Drawdown (%)
-plot.script("set origin 0.0, 0.0\nset size 1.0, 0.22");
+plot.script("set origin 0.0, 0.0\nset size 1.0, 0.28");
 plot.script("set lmargin 9\nset rmargin 3\nset tmargin 0.3\nset bmargin 3.2");
 plot.cmd("set xlabel 'Trading Day'");
-plot.cmd("set ylabel 'Drawdown %'");
+plot.cmd("set ylabel 'Drawdown (%)'");
 plot.cmd("set format x '%g'");
 plot.cmd("set yrange [" + str(max_dd * 1.25) + ":1.5]");
-plot.cmd("set ytics (-15, -10, -5, 0)");
+plot.cmd("set ytics (-20, -10, 0)");
 plot.cmd("set style fill transparent solid 0.32 noborder");
 plot.cmd("plot $BAND using 1:6 with filledcurves y1=0 lc rgb '#ef4444' notitle, $BAND using 1:6 with lines lw 1.8 lc rgb '#b91c1c' notitle, 0 with lines lw 1.0 lc rgb '#64748b' notitle");
 

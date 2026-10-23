@@ -33,6 +33,7 @@ gif_magic(){
 # lmscript resolves `cli="lmplot"` on PATH first, so the examples bind to the binary under test.
 if [ -d "${HOME:-}/.cache/lmscript/tools/github/lmctl-ai" ]; then
   for tool_dir in "$HOME/.cache/lmscript/tools/github/lmctl-ai"/*/latest; do
+    case "$tool_dir" in */lmplot/latest) continue;; esac  # the binary under test stays first
     [ -d "$tool_dir" ] && export PATH="$tool_dir:$PATH"
   done
 fi
@@ -265,11 +266,13 @@ expect_run_error() { # name, snippet, expected message fragment
 }
 expect_run_error complex 'let x = plot.num("sqrt(-1)");' "complex"
 expect_run_error array 'plot.cmd("array A[2] = [1, 2]"); let x = plot.num("A");' "not a number"
+expect_run_error assertfail 'plot.assert_close(1.0, 1.0, 0.0); plot.assert_close(2.5, 2.0, 0.1);' "assert_close failed: actual=2.5"
+expect_run_error asserttol 'plot.assert_close(1.0, 1.0, -1.0);' "tolerance is negative"
 expect_run_error dataname 'plot.data("1x", "1 2");' "Plot.data: name"
 if [ "$UNAME_S" = Linux ] && [ -w /dev/full ]; then
   expect_run_error writefail 'plot.png("/dev/full", 200, 100); plot.cmd("plot x");' "error writing the output"
 fi
-ok "Plot.num rejects complex/array values, datablocks keep EOD lines, write errors stop the program"
+ok "Plot.num rejects complex/array values, assert_close checks known answers, datablocks keep EOD lines, write errors stop the program"
 
 # Memory budget: a runaway loop stops with a run error (exit 3, message on stderr and in the JSON
 # line) instead of exhausting the machine. Each iteration makes a gnuplot array of 1e6 values

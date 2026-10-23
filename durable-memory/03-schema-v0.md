@@ -18,6 +18,7 @@ runs immediately.
 | `terminals()` | string | gnuplot's `GPVAL_TERMINALS` |
 | `echo(string)` | void | print a line on stdout |
 | `version()` | string | `lmplot X.Y.Z` |
+| `assert_close(actual, expected, tol)` | void | run error (exit 3) `assert_close failed: actual=…, expected=…, tol=…` when `|actual-expected| > tol`; non-finite arguments or a negative tolerance are errors |
 
 Rules and gotchas:
 

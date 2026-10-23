@@ -7,6 +7,7 @@
 #include "schema_embedded.hpp"
 
 #include <cctype>
+#include <cmath>
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
@@ -220,6 +221,18 @@ void register_host(dslvm::Registry &r, Host &h) {
   });
   checked(r, "echo", {"string"}, "void", [](void *, Args &a) { std::fflush(stdout); std::cout << a[0].s << std::endl; return Value::none(); });
   checked(r, "version", {}, "string", [](void *, Args &) { return Value::string("lmplot " LMPLOT_VERSION); });
+  // assert_close(actual, expected, tol): the family's known-answer check (lmnum, lmphysics, lmcad).
+  checked(r, "assert_close", {"float", "float", "float"}, "void", [](void *, Args &a) {
+    for (int i = 0; i < 3; i++)
+      if (!std::isfinite(a[i].f)) throw dslvm::Error("Plot.assert_close: argument " + std::to_string(i + 1) + " is not finite");
+    if (a[2].f < 0) throw dslvm::Error("Plot.assert_close: tolerance is negative");
+    if (std::fabs(a[0].f - a[1].f) > a[2].f) {
+      char buf[160];
+      std::snprintf(buf, sizeof buf, "assert_close failed: actual=%.17g, expected=%.17g, tol=%.17g", a[0].f, a[1].f, a[2].f);
+      throw dslvm::Error(buf);
+    }
+    return Value::none();
+  });
 }
 
 const char *usage =

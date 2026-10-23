@@ -82,14 +82,15 @@ plot.script("set lmargin 10\nset rmargin 3\nset tmargin 2.6\nset bmargin 0.6");
 plot.cmd("set title 'Exoplanet Doppler Radial-Velocity Curve — Keplerian Orbital Fit (G2V Host Star)' font ',12'");
 plot.cmd("set ylabel 'Radial Velocity (m/s)'");
 plot.cmd("set xrange [0:1]");
-plot.cmd("set yrange [-64:62]");
+plot.cmd("set yrange [-64:84]");
+plot.cmd("set ytics -60, 20, 60");
 plot.cmd("set format x ''");
 plot.cmd("set grid xtics ytics lc rgb '#d8dee9' lw 1");
-plot.cmd("set key top right samplen 2.2 spacing 1.15 opaque box lc rgb '#cccccc'");
+plot.cmd("set key top right horizontal maxrows 2 width -2 samplen 2.2 spacing 1.1 opaque box lc rgb '#cccccc'");
 plot.cmd("set samples 400");
 plot.cmd("rv_model(x) = -3.2 + 42.5 * (cos(2*pi*x) + 0.14*cos(4*pi*x - 0.6))");
 plot.cmd("set style fill transparent solid 0.22 noborder");
-plot.cmd("set label 1 '" + summary + "' at 0.23, 35.0 left front boxed noenhanced font ',8.5'");
+plot.cmd("set label 1 '" + summary + "' at 0.24, 38.0 left front boxed noenhanced font ',8.5'");
 plot.cmd("plot '+' using 1:(rv_model($1)-4.2):(rv_model($1)+4.2) with filledcurves lc rgb '#3b82f6' title '±1σ model band', -3.2 with lines dt 3 lw 1.2 lc rgb '#64748b' title 'systemic γ = -3.2 m/s', rv_model(x) with lines lw 2.6 lc rgb '#1d4ed8' title 'Keplerian fit (P = 18.4 d)', $RV using 1:2:3 with yerrorbars pt 7 ps 0.95 lw 1.3 lc rgb '#dc2626' title 'HARPS-like RV data'");
 
 # Bottom panel: O-C residuals

@@ -52,7 +52,7 @@ plot.cmd("wien_locus(lam) = 119.10429 / ((lam/1000.0)**5 * 142.3249)");
 plot.cmd("set object 1 rect from 380, 0 to 750, 52 behind fc rgb '#fef3c7' fillstyle solid 0.55 noborder");
 plot.cmd("set arrow 1 from 380, 0 to 380, 52 nohead dt 3 lc rgb '#d97706' lw 1");
 plot.cmd("set arrow 2 from 750, 0 to 750, 52 nohead dt 3 lc rgb '#d97706' lw 1");
-plot.cmd("set label 1 'Visible\n380–750 nm' at 615, 47.5 center front font ',9.5' tc rgb '#92400e'");
+plot.cmd("set label 1 'Visible 380–750 nm' at 744, 50.4 right front font ',8.5' tc rgb '#92400e'");
 
 let sun_note = plot.str("sprintf('Solar Photosphere (T = 5778 K)\nλ_max = %.0f nm (green-yellow peak)\nBolometric σT⁴ = %.1f MW/m²', " + str(sun_lam) + ", " + str(sun_flux) + ")");
 plot.cmd("set label 2 '" + sun_note + "' at 1360, 26.0 left front boxed noenhanced font ',9.5'");

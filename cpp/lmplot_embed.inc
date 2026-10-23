@@ -136,7 +136,15 @@ FILE *lmplot_dry_fopen(const char *name, const char *mode)
 	return fopen(name, mode);
     fprintf(stderr, "[dry-run] would write %s\n", name);
 #ifdef _WIN32
-    return fopen("NUL", mode);
+    {
+	/* fopen("NUL") is not reliable through every Windows C runtime/wrapper. */
+	FILE *f = fopen("NUL", mode);
+	if (!f)
+	    f = fopen("\\\\.\\NUL", mode);
+	if (!f)
+	    f = tmpfile();
+	return f;
+    }
 #else
     return fopen("/dev/null", mode);
 #endif

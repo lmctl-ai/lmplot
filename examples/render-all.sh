@@ -13,6 +13,7 @@ trap 'rm -rf "$HERE/images"' EXIT
 # Put the local build and any cached sibling tools on PATH first.
 export PATH="$(cd "$BUILD_DIR" 2>/dev/null && pwd || echo "$HERE/$BUILD_DIR"):$PATH"
 for tool_dir in "$HOME/.cache/lmscript/tools/github/lmctl-ai"/*/latest; do
+  case "$tool_dir" in */lmplot/latest) continue;; esac
   [ -d "$tool_dir" ] && export PATH="$tool_dir:$PATH"
 done
 
