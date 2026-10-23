@@ -40,7 +40,7 @@ Machine checked 2026-10-22 on x86_64 Linux (WSL2), 4 cores, GCC.
 
 ## Tests
 
-`./test.sh` → 26 checks, ~20 s with a warm build:
+`./test.sh` → 27 checks, ~20 s with a warm build:
 
 1. SDK pin; 2. gnuplot pin plus patches; 3. build; 4. `--version` exact;
 5. embedded schema byte-identical to `schema/lmplot.dsl.json`; 6. host
@@ -60,9 +60,11 @@ and stops the program; 22. `plot.data` / `stats` / `plot.num` / `plot.str`
 round trip; 23. `Plot.num` complex/array rejection, `EOD` datablock lines, and
 write error handling; 24. memory budget (runaway loop and an oversized png canvas
 at `LMPLOT_MAX_MEMORY_MB=64`, bad value exits 2, default 4096 MiB under
-`ulimit -v` on Linux; see `09-resource-limits.md`); 25. `--dry-run` runs the program, reports
+`ulimit -v` on Linux; see `09-resource-limits.md`); 25. PNG input: an lmplot PNG read back with
+`binary filetype=png` (pixel values via `set table`) and placed with `set
+pixmap`, a non-image file is a run error; 26. `--dry-run` runs the program, reports
 and writes no files (`set output`/`print`/`save`/`table`), and refuses
-`system()`; 26. usage (2) and load (3) exit codes.
+`system()`; 27. usage (2) and load (3) exit codes.
 
 Gotchas found: `lmplot gnuplot -e 'set terminal'` waits on stdin for the
 built-in pager when stdin is open (patch `0006` skips paging unless the

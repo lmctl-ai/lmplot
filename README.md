@@ -122,6 +122,9 @@ line. `lmplot --dry-run --dsl prog.dslb` runs a program without writing any file
   any size and angle, enhanced text (`x_1^2`, `{/Symbol a}`) and DejaVu Sans,
   Serif and Mono built in. See
   [durable-memory/04-png-terminal.md](durable-memory/04-png-terminal.md).
+- **Images in, too.** `set pixmap` and `binary filetype=png|jpg|gif` read
+  images (stb_image instead of libgd), so a render from `lmcad`, `lmdraw` or
+  `lmblender` can sit inside an lmplot dashboard.
 - **No installation, no runtime files.** Linux builds are fully static; macOS
   links only system libraries; Windows links the MinGW runtime statically.
   `lmplot --notices` prints the licenses of everything inside.
@@ -161,8 +164,8 @@ lmplot's own code is [MIT](LICENSE). It embeds gnuplot, which is distributed
 under its own permissive license (copyright retained; modified versions are
 distributed as patches and marked). The `patches/` directory is that patch
 set, it ships with every release, and nothing of gnuplot is committed to this
-repository. DejaVu fonts (Bitstream Vera license) and stb_truetype (MIT) are
-also included. The full texts are in [THIRD_PARTY_NOTICES](THIRD_PARTY_NOTICES)
+repository. DejaVu fonts (Bitstream Vera license), stb_truetype and stb_image (MIT)
+are also included. The full texts are in [THIRD_PARTY_NOTICES](THIRD_PARTY_NOTICES)
 and in the binary (`lmplot --notices`); rationale in
 [durable-memory/02-gnuplot-embedding.md](durable-memory/02-gnuplot-embedding.md).
 

@@ -58,7 +58,7 @@ cmp -s "$WORK/schema.json" schema/lmplot.dsl.json || fail "embedded schema diffe
 ok "--dsl-schema --json prints byte-identical embedded schema bytes"
 diff -u <("$LMSCRIPT" --dsl-signatures schema/lmplot.dsl.json) <("$HOST" --dsl-signatures) || fail "host/compiler signatures differ"
 ok "host registry matches compiler signatures"
-"$HOST" --notices | grep -q "stb_truetype" || fail "--notices missing third-party text"
+"$HOST" --notices | grep -q "stb_truetype" && "$HOST" --notices | grep -q "stb_image" || fail "--notices missing third-party text"
 ok "--notices prints the third-party license texts"
 
 # Static linking: nothing but the executable itself.
@@ -305,6 +305,34 @@ if [ "$UNAME_S" = Linux ]; then
 else
   ok "memory budget: runaway loop and png canvas stop at LMPLOT_MAX_MEMORY_MB=64 (default-budget run is Linux-only)"
 fi
+
+# Image input (stb_image in place of libgd): a PNG written by lmplot is read back as data
+# (filetype=png: 4 columns r g b a per pixel) and placed as a pixmap; a non-image is an error.
+cat >"$WORK/imgin.lms" <<LMS
+p = _dsl_ cli="lmplot";
+plot.png("$WORK/imgsrc.png", 200, 150);
+plot.cmd("set object 1 rect from screen 0,0 to screen 1,1 behind fc rgb '#ff0000' fs solid noborder");
+plot.cmd("unset border; unset tics; unset key; set xrange [0:1]; set yrange [0:1]; plot 2");
+plot.close();
+plot.cmd("set terminal unknown; set autoscale");
+plot.cmd("set table \$px; plot '$WORK/imgsrc.png' binary filetype=png with rgbimage; unset table");
+plot.cmd("stats \$px using 3:4 nooutput");
+plot.echo("px=" + plot.str("STATS_records") + " r=" + plot.str("STATS_median_x") + " g=" + plot.str("STATS_median_y"));
+plot.cmd("unset object 1");
+plot.png("$WORK/imgdst.png", 120, 90);
+plot.cmd("set pixmap 1 '$WORK/imgsrc.png' at screen 0.1,0.1 width screen 0.5");
+plot.cmd("plot x");
+plot.close();
+end _dsl_
+savedsl(p, "$WORK/imgin.dslb");
+LMS
+"$LMSCRIPT" "$WORK/imgin.lms" >/dev/null || fail "imgin.lms compile"
+out="$("$HOST" --dsl "$WORK/imgin.dslb" 2>&1)" || fail "image input: $out"
+echo "$out" | grep -q "px=30000 r=255 g=0" || fail "PNG read back as 200x150 mostly red pixels: $out"
+[ "$(png_size "$WORK/imgdst.png")" = 120x90 ] || fail "pixmap output"
+printf 'not an image' >"$WORK/notimg.png"
+expect_run_error notimg "plot.cmd(\"set terminal unknown; plot '$WORK/notimg.png' binary filetype=png with rgbimage\");" "cannot read image"
+ok "PNG input: filetype=png data and set pixmap read images (stb_image), bad files are errors"
 
 # --dry-run: the program runs and returns values, but no file is written and shell commands fail.
 mkdir -p "$WORK/dry"

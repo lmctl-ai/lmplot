@@ -1,0 +1,24 @@
+diff --git a/src/breaders.c b/src/breaders.c
+index ba2483e..ce3f3cc 100644
+--- a/src/breaders.c
++++ b/src/breaders.c
+@@ -287,6 +287,11 @@ jpeg_filetype_function(void)
+ 
+ #ifndef HAVE_GD_PNG
+ 
++#ifdef LMPLOT_EMBED
++/* lmplot: read images with stb_image instead of libgd. */
++#include "lmplot_image.inc"
++#else
++
+ void
+ gd_filetype_function(int type, char *filename)
+ {
+@@ -302,6 +307,7 @@ df_read_pixmap( t_pixmap *pixmap )
+     int_warn(NO_CARET, "This copy of gnuplot cannot read png/gif/jpeg images");
+     return FALSE;
+ }
++#endif /* LMPLOT_EMBED */
+ 
+ #else
+ 

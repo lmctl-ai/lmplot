@@ -27,6 +27,11 @@ Rules and gotchas:
 - `lmplot --dry-run --dsl F` runs the whole program (values, `stats`, `fit`) but
   writes no file: each would-be output is reported as `[dry-run] would write F`
   on stderr and sent to the null device; pipes and `system()` are errors.
+- Images are inputs too: `plot 'r.png' binary filetype=png with rgbimage` (or
+  `rgbalpha`) and `set pixmap N 'r.png' at screen X,Y width screen W` read PNG,
+  JPEG, GIF (first frame), BMP, TGA and PNM. A sibling host's render can be
+  placed into an lmplot multiplot dashboard this way. `stats` on an image file
+  does not see the pixel columns (a gnuplot quirk); go through `set table $T`.
 - Every plot writes one complete PNG into the *current output*. For several
   images use one `plot.png(...)`/`plot.close()` pair per image; plotting twice
   into one output concatenates PNG files.
