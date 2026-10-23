@@ -145,15 +145,22 @@ FILE *lmplot_dry_fopen(const char *name, const char *mode)
 	 * deletes it when gnuplot closes the output, so nothing is left behind. */
 	char dir[MAX_PATH], tmpname[MAX_PATH];
 	char m[8];
+	int e1, e2 = 0;
 	FILE *f = fopen("NUL", mode);
 	if (f)
 	    return f;
-	if (GetTempPathA(MAX_PATH, dir) == 0 || GetTempFileNameA(dir, "lmp", 0, tmpname) == 0)
-	    return NULL;
-	snprintf(m, sizeof m, "%sD", mode);
-	f = fopen(tmpname, m);
+	e1 = errno;
+	tmpname[0] = 0;
+	if (GetTempPathA(MAX_PATH, dir) != 0 && GetTempFileNameA(dir, "lmp", 0, tmpname) != 0) {
+	    snprintf(m, sizeof m, "%sD", mode);
+	    f = fopen(tmpname, m);
+	    e2 = errno;
+	    if (!f)
+		DeleteFileA(tmpname);
+	}
 	if (!f)
-	    DeleteFileA(tmpname);
+	    fprintf(stderr, "[dry-run] no null sink: NUL errno %d, temp '%s' errno %d, GetLastError %lu\n",
+		    e1, tmpname, e2, (unsigned long) GetLastError());
 	return f;
     }
 #else
