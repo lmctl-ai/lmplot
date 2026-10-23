@@ -52,6 +52,14 @@ case "$UNAME_S" in
   Linux) if ldd "$HOST" >/dev/null 2>&1; then fail "executable is dynamically linked"; fi; ok "executable is fully static (no dynamic loader)";;
   Darwin) bad="$(otool -L "$HOST" | tail -n +2 | grep -v -E '/usr/lib/(libSystem|libc\+\+|libresolv)' || true)"
           [ -z "$bad" ] || fail "non-system dylib dependencies: $bad"; ok "only system libraries linked";;
+  MINGW*|MSYS*|CYGWIN*)
+    if command -v objdump >/dev/null 2>&1; then
+      bad="$(objdump -p "$HOST" | grep 'DLL Name' | grep -i -E 'libstdc|libgcc|winpthread|libgomp' || true)"
+      [ -z "$bad" ] || fail "MinGW runtime DLLs are imported: $bad"
+      ok "no MinGW runtime DLL imports"
+    else
+      ok "static-link check skipped (no objdump)"
+    fi;;
   *) ok "static-link check skipped on $UNAME_S";;
 esac
 
@@ -59,6 +67,9 @@ esac
 out="$("$HOST" gnuplot -e 'set terminal dumb size 60,15; plot sin(x)' </dev/null)"
 echo "$out" | grep -q "sin(x)" || fail "gnuplot passthrough dumb plot"
 ok "lmplot gnuplot runs the embedded gnuplot"
+out="$("$HOST" gnuplot -e 'plot cos(x)' </dev/null 2>/dev/null)"
+echo "$out" | grep -q -- "+-----" || fail "lmplot gnuplot default terminal is not dumb"
+ok "lmplot gnuplot defaults to the dumb terminal"
 "$HOST" gnuplot -e 'set terminal' </dev/null 2>&1 | grep -q -E "^ +png " || fail "png terminal missing"
 "$HOST" gnuplot -e 'set terminal' </dev/null 2>&1 | grep -q -E "^ +svg " || fail "svg terminal missing"
 ok "png and svg terminals are built in"

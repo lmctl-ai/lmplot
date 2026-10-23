@@ -182,6 +182,13 @@ int main(int argc, char **argv) {
   _setmode(_fileno(stderr), _O_BINARY);
 #endif
   if (argc >= 2 && std::string(argv[1]) == "gnuplot") {
+    // No window system exists, so without a choice plots would go nowhere; text is the useful default.
+    if (!std::getenv("GNUTERM"))
+#ifdef _WIN32
+      _putenv_s("GNUTERM", "dumb");
+#else
+      setenv("GNUTERM", "dumb", 0);
+#endif
     std::vector<char *> args;
     args.push_back(argv[0]);
     for (int i = 2; i < argc; i++) args.push_back(argv[i]);
