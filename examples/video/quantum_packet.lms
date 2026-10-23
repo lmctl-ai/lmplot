@@ -2,7 +2,8 @@
 # barrier V(x), showing the probability density |psi|^2 envelope, Re(psi),
 # and Im(psi) phase oscillations across 60 frames.
 # `lmscript examples/video/quantum_packet.lms` renders 60 PNG frames with lmplot
-# and encodes build/video/quantum_packet.mp4 and build/video/quantum_packet.gif.
+# and encodes images/quantum_packet.mp4 and images/quantum_packet.gif.
+mkdir("images");
 mkdir("build/video/quantum_packet");
 out = ARGV.len() > 0 ? ARGV[0] : "build/video/quantum_packet.dslb";
 p = _dsl_ cli="lmplot" install="github:lmctl-ai/lmplot@latest";
@@ -50,8 +51,10 @@ end _dsl_
 savedsl(p, out);
 r = system ${dsl_cli(p)} --dsl ${out};
 assert(r.code == 0);
-r = system ffmpeg -y -loglevel error -framerate 24 -i build/video/quantum_packet/frame-%d.png -c:v libx264 -pix_fmt yuv420p build/video/quantum_packet.mp4;
+r = system ffmpeg -y -loglevel error -framerate 24 -i build/video/quantum_packet/frame-%d.png -c:v libx264 -pix_fmt yuv420p images/quantum_packet.mp4;
 assert(r.code == 0);
-r = system ffmpeg -y -loglevel error -framerate 20 -i build/video/quantum_packet/frame-%d.png -vf scale=720:-1:flags=lanczos build/video/quantum_packet.gif;
+r = system ffmpeg -y -loglevel error -framerate 20 -i build/video/quantum_packet/frame-%d.png -vf scale=720:-1:flags=lanczos images/quantum_packet.gif;
 assert(r.code == 0);
-println("wrote build/video/quantum_packet.mp4 and build/video/quantum_packet.gif");
+cp = system cp build/video/quantum_packet/frame-32.png images/quantum_packet.png;
+assert(cp.code == 0);
+println("wrote images/quantum_packet.mp4, images/quantum_packet.gif and images/quantum_packet.png");

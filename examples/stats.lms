@@ -2,9 +2,10 @@
 # What this adds over a plain .gp script: the numbers flow back into the program
 # (plot.num), are combined with ordinary typed arithmetic/strings, printed with
 # plot.echo and fed back to gnuplot for the final figure.
-# Writes build/examples/stats.png.
+# Writes images/stats.png.
 out = ARGV.len() > 0 ? ARGV[0] : "build/stats.dslb";
-mkdir("build/examples");
+mkdir("images");
+mkdir("build");
 p = _dsl_ cli="lmplot" install="github:lmctl-ai/lmplot@latest";
 
 # 1. Noisy line y = 2.5 + 0.8 x, from a deterministic LCG (no rand(), so reruns are byte-identical).
@@ -54,7 +55,7 @@ plot.cmd("hi = " + str(slope + ci));
 let label = plot.str("sprintf('y = %.2f + %.3f x\nR² = %.3f\nslope in [%.3f, %.3f]\nmean y = %.1f', fit_a, fit_b, " + str(r2) + ", lo, hi, mu)");
 plot.echo(label);
 
-plot.png("build/examples/stats.png", 800, 600);
+plot.png("images/stats.png", 800, 600);
 # unicode superscript instead of enhanced "R^2": a boxed enhanced label gets a too wide box in lmplot
 plot.cmd("set encoding utf8");
 plot.cmd("set title 'stats on generated data, fit computed in lmscript'");
@@ -71,4 +72,6 @@ plot.cmd("plot $D using 1:2 with points pt 7 ps 1 lc 'dark-violet' title 'data',
 plot.close();
 end _dsl_
 savedsl(p, out);
-println(f"wrote {out}");
+r = system ${dsl_cli(p)} --dsl ${out};
+assert(r.code == 0);
+println("wrote images/stats.png");

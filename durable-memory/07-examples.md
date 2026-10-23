@@ -1,18 +1,24 @@
 # Examples
 
-36 standalone programs in `examples/` (83 PNG images), 2 multi-host combo
-programs in `examples/combo/` (`lmcad` + `lmplot`, `lmdraw` + `lmplot`), and 4
-video/animation programs in `examples/video/` (`lmplot` + `ffmpeg`). All are
-checked by `./test.sh` (valid PNG/GIF magic bytes, size budgets, byte-identical
-reruns). `./examples/render-all.sh` regenerates the 22 checked-in gallery
-assets in `docs/images/` and `examples/renders/`.
+36 standalone programs in `examples/`, 2 multi-host combo programs in
+`examples/combo/` (`lmcad` + `lmplot`, `lmdraw` + `lmplot`), and 4
+video/animation programs in `examples/video/` (`lmplot` + `ffmpeg`). Every
+`.lms` program is self-contained and self-executing: after `savedsl(p, out);`,
+it runs `r = system ${dsl_cli(p)} --dsl ${out}; assert(r.code == 0);` and writes
+its output image(s)/video(s) into `images/<name>.png` (plus any numbered frames
+or `.mp4`/`.gif`) in the current working directory, so
+`lmctl autorun https://raw.githubusercontent.com/lmctl-ai/lmplot/main/examples/<name>.lms`
+works from an empty directory. All are checked by `./test.sh` (valid PNG/GIF
+magic bytes, size budgets, byte-identical reruns, and moving outputs to
+`build/examples/`). `./examples/render-all.sh` regenerates the 22 checked-in
+gallery assets in `docs/images/` and `examples/renders/`.
 
 ## Showcase examples (`examples/*.lms`)
 
 Eight story-driven showcase programs compute domain results in the DSL, round-trip
 summary statistics via gnuplot's `stats` and `plot.num`/`plot.str`, and render
-900-px wide publication figures (`<= 300 KB` each) into `build/examples/` and
-`docs/images/`:
+900-px wide publication figures (`<= 300 KB` each) into `images/<name>.png` (copied
+to `docs/images/` by `examples/render-all.sh`):
 
 1. `kepler_rv_fit.lms` — 44 synthetic HARPS-like Doppler radial-velocity
    measurements of a warm-Jupiter host star ($P = 18.4\text{ d}$, $K = 42.5\text{ m/s}$,
@@ -89,7 +95,8 @@ complete table is in `examples/README.md`.
 
 `quantum_packet.lms`, `wave.lms`, `ripple.lms`, `lissajous.lms`: a `_dsl_` loop
 writes `build/video/<name>/frame-<k>.png`, then plain lmscript runs
-`system ${dsl_cli(p)} --dsl out.dslb;` and `ffmpeg` to produce
-`build/video/<name>.mp4` (and `build/video/quantum_packet.gif`, copied to
-`docs/images/quantum_packet.gif` by `examples/render-all.sh`). `test.sh` runs
-them when `ffmpeg` is installed and verifies GIF/MP4 outputs.
+`r = system ${dsl_cli(p)} --dsl ${out}; assert(r.code == 0);` and `ffmpeg` to
+produce `images/<name>.mp4` and `images/<name>.png` (plus
+`images/quantum_packet.gif`, copied to `docs/images/quantum_packet.gif` by
+`examples/render-all.sh`). `test.sh` runs them when `ffmpeg` is installed,
+verifies GIF/MP4 outputs, and moves them into `build/video/`.

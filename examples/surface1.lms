@@ -1,9 +1,10 @@
 # surface1.dem: 3D surfaces from a matrix (hidden3d) and from functions, with labels and arrows.
 out = ARGV.len() > 0 ? ARGV[0] : "build/surface1.dslb";
-mkdir("build/examples");
+mkdir("images");
+mkdir("build");
 p = _dsl_ cli="lmplot" install="github:lmctl-ai/lmplot@latest";
 # Image 1: a 5x5 matrix of Z values drawn as a hidden-line wireframe.
-plot.png("build/examples/surface1-1.png", 800, 600);
+plot.png("images/surface1-1.png", 800, 600);
 plot.cmd("set title '3D surface from a grid (matrix) of Z values'");
 plot.cmd("set xrange [-0.5:4.5]");
 plot.cmd("set yrange [-0.5:4.5]");
@@ -13,7 +14,7 @@ plot.data("grid", "5 4 3 1 0\n2 2 0 0 1\n0 0 0 1 0\n0 0 0 2 3\n0 1 2 4 3\n");
 plot.cmd("splot '$grid' matrix with lines notitle");
 plot.close();
 # Image 2: a function surface with axis labels, a text label and arrows.
-plot.png("build/examples/surface1-2.png", 800, 600);
+plot.png("images/surface1-2.png", 800, 600);
 plot.script("reset\nset samples 21\nset isosamples 11");
 plot.script("set xlabel 'X axis' offset -3,-2\nset ylabel 'Y axis' offset 3,-2\nset zlabel 'Z axis' offset -5");
 plot.cmd("set title '3D surface from a function'");
@@ -24,11 +25,15 @@ plot.script("set xrange [-10:10]\nset yrange [-10:10]\nset grid");
 plot.cmd("splot x*y");
 plot.close();
 # Image 3: several surfaces at once, with a modified ticslevel.
-plot.png("build/examples/surface1-3.png", 800, 600);
+plot.png("images/surface1-3.png", 800, 600);
 plot.script("unset arrow\nunset label\nset ticslevel 0.0");
 plot.cmd("set title '3D gnuplot demo ( ticslevel = 0.0 )'");
 plot.cmd("splot x**2+y**2, x**2-y**2, x*y");
 plot.close();
 end _dsl_
 savedsl(p, out);
-println(f"wrote {out}");
+r = system ${dsl_cli(p)} --dsl ${out};
+assert(r.code == 0);
+cp = system cp images/surface1-2.png images/surface1.png;
+assert(cp.code == 0);
+println("wrote images/surface1.png (and images/surface1-1.png .. images/surface1-3.png)");

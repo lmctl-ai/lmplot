@@ -1,8 +1,9 @@
 # 8-element uniform linear antenna array (d = lambda/2) steered to theta_0 = 30 deg:
 # compares uniform illumination vs raised-cosine pedestal tapering in polar dB gain.
-# Writes build/examples/phased_array_polar.png (900x600).
+# Writes images/phased_array_polar.png (900x600).
 out = ARGV.len() > 0 ? ARGV[0] : "build/phased_array_polar.dslb";
-mkdir("build/examples");
+mkdir("images");
+mkdir("build");
 p = _dsl_ cli="lmplot" install="github:lmctl-ai/lmplot@latest";
 
 fn sin_approx(x: float) -> float {
@@ -81,7 +82,7 @@ plot.echo("Uniform 1st side-lobe: " + str(sll_uniform) + " dB");
 plot.echo("Tapered 1st side-lobe: " + str(sll_tapered) + " dB");
 plot.echo("Side-lobe suppression: " + str(sll_gain) + " dB");
 
-plot.png("build/examples/phased_array_polar.png", 900, 600);
+plot.png("images/phased_array_polar.png", 900, 600);
 plot.cmd("set encoding utf8");
 plot.cmd("set polar");
 plot.cmd("set angles radians");
@@ -109,8 +110,6 @@ plot.cmd("plot $ARRAY using 1:2 with lines lw 1.8 dt 2 lc rgb '#dc2626' title 'U
 plot.close();
 end _dsl_
 savedsl(p, out);
-if (ARGV.len() == 0) {
-  r = system ${dsl_cli(p)} --dsl ${out};
-  assert(r.code == 0);
-}
-println(f"wrote {out}");
+r = system ${dsl_cli(p)} --dsl ${out};
+assert(r.code == 0);
+println("wrote images/phased_array_polar.png");

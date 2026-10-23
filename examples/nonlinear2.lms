@@ -3,7 +3,8 @@
 # 'set logscale', once with the equivalent 'set nonlinear ... via ... inverse ...'.
 # Image 1: logscale.  Image 2: nonlinear axes (identical output expected).
 out = ARGV.len() > 0 ? ARGV[0] : "build/nonlinear2.dslb";
-mkdir("build/examples");
+mkdir("images");
+mkdir("build");
 p = _dsl_ cli="lmplot" install="github:lmctl-ai/lmplot@latest";
 
 # common setup: complex transfer function A(jw), a second y axis for the phase
@@ -27,7 +28,7 @@ plot.cmd("p1 = 10");
 plot.cmd("p2 = 10000");
 
 # --- 1: classic logscale ---
-plot.png("build/examples/nonlinear2-1.png", 800, 600);
+plot.png("images/nonlinear2-1.png", 800, 600);
 plot.cmd("set title 'Log-scaled axes defined using \"set log\"'");
 plot.cmd("set label 1 'This version of the plot uses\nset logscale x\nset logscale y' at graph 0.5, 0.85, 0 center norotate back nopoint");
 plot.cmd("set log x");
@@ -37,7 +38,7 @@ plot.cmd("plot abs(A(jw)) lt 1, 180/pi*arg(A(jw)) axes x1y2 lt 3");
 plot.close();
 
 # --- 2: the same through set nonlinear ---
-plot.png("build/examples/nonlinear2-2.png", 800, 600);
+plot.png("images/nonlinear2-2.png", 800, 600);
 plot.cmd("unset log");
 plot.cmd("set title 'Log-scaled axes defined using \"set nonlinear\"'");
 plot.cmd("set label 1 'The same plot except that \"set logscale\" is replaced by\nset nonlinear x via log10(x) inverse 10**x\nset nonlinear y via log10(y) inverse 10**y'");
@@ -49,4 +50,8 @@ plot.cmd("plot abs(A(jw)) lt 1, 180/pi*arg(A(jw)) axes x1y2 lt 3");
 plot.close();
 end _dsl_
 savedsl(p, out);
-println(f"wrote {out}");
+r = system ${dsl_cli(p)} --dsl ${out};
+assert(r.code == 0);
+cp = system cp images/nonlinear2-1.png images/nonlinear2.png;
+assert(cp.code == 0);
+println("wrote images/nonlinear2.png (and images/nonlinear2-1.png .. images/nonlinear2-2.png)");

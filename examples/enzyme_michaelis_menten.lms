@@ -1,8 +1,9 @@
 # Michaelis-Menten enzyme kinetics under competitive and non-competitive inhibition,
 # with Lineweaver-Burk double-reciprocal linear regression solved via gnuplot stats.
-# Writes build/examples/enzyme_michaelis_menten.png (900x560).
+# Writes images/enzyme_michaelis_menten.png (900x560).
 out = ARGV.len() > 0 ? ARGV[0] : "build/enzyme_michaelis_menten.dslb";
-mkdir("build/examples");
+mkdir("images");
+mkdir("build");
 p = _dsl_ cli="lmplot" install="github:lmctl-ai/lmplot@latest";
 
 # Uninhibited: Vmax = 84 uM/min, Km = 15 uM
@@ -54,7 +55,7 @@ plot.echo("Recovered Vmax = " + str(vmax_est) + " uM/min (true 84.0)");
 plot.echo("Recovered Km   = " + str(km_est) + " uM (true 15.0)");
 plot.echo("Lineweaver-Burk R = " + str(r_corr));
 
-plot.png("build/examples/enzyme_michaelis_menten.png", 900, 560);
+plot.png("images/enzyme_michaelis_menten.png", 900, 560);
 plot.cmd("set encoding utf8");
 plot.cmd("set multiplot");
 
@@ -110,8 +111,6 @@ plot.cmd("unset multiplot");
 plot.close();
 end _dsl_
 savedsl(p, out);
-if (ARGV.len() == 0) {
-  r = system ${dsl_cli(p)} --dsl ${out};
-  assert(r.code == 0);
-}
-println(f"wrote {out}");
+r = system ${dsl_cli(p)} --dsl ${out};
+assert(r.code == 0);
+println("wrote images/enzyme_michaelis_menten.png");

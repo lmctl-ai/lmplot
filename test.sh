@@ -7,7 +7,7 @@ HOST="$BUILD_DIR/lmplot"
 UNAME_S="$(uname -s)"
 case "$UNAME_S" in MINGW*|MSYS*|CYGWIN*) HOST="$HOST.exe";; esac
 WORK="$(mktemp -d "${TMPDIR:-/tmp}/lmplot-test-XXXXXX")"
-trap 'rm -rf "$WORK"' EXIT
+trap 'rm -rf "$WORK" "$HERE/images"' EXIT
 ROOT="$HERE"
 # Native Windows tools (node, the host) cannot address git-bash /tmp or /d/a paths.
 case "$UNAME_S" in MINGW*|MSYS*|CYGWIN*) WORK="$(cd "$WORK" && pwd -W | tr '\\' '/')"; ROOT="$(pwd -W | tr '\\' '/')";; esac
@@ -88,15 +88,17 @@ ok "lmplot gnuplot defaults to the dumb terminal"
 "$HOST" gnuplot -e 'set terminal' </dev/null 2>&1 | grep -q -E "^ +svg " || fail "svg terminal missing"
 ok "png and svg terminals are built in"
 
-# README gallery verification: every linked example .lms and every referenced image in docs/images/ exists and has valid magic bytes.
+# README gallery verification: every autorun .lms URL and every referenced image in docs/images/ exists and has valid magic bytes.
 readme_lms_count=0
 while read -r lms_path; do
   [ -z "$lms_path" ] && continue
-  [ -f "$lms_path" ] || fail "README links to missing example: $lms_path"
+  [ -f "$lms_path" ] || fail "README references missing example: $lms_path"
   readme_lms_count=$((readme_lms_count+1))
 done < <(grep -oE 'examples/[A-Za-z0-9_/.-]+\.lms' README.md | sort -u)
-[ "$readme_lms_count" -ge 15 ] || fail "expected >= 15 unique example links in README.md, got $readme_lms_count"
-ok "all $readme_lms_count README example .lms links exist"
+[ "$readme_lms_count" -ge 15 ] || fail "expected >= 15 unique example URLs in README.md, got $readme_lms_count"
+autorun_count="$(grep -o 'lmctl autorun https://raw.githubusercontent.com/lmctl-ai/lmplot/main/examples/' README.md | wc -l | tr -d ' ')"
+[ "$autorun_count" -ge 21 ] || fail "expected >= 21 lmctl autorun commands in README.md, got $autorun_count"
+ok "all $readme_lms_count README autorun .lms URLs map to existing examples"
 
 readme_img_count=0
 while read -r img_path; do
@@ -118,26 +120,21 @@ done < <(grep -oE 'docs/images/[A-Za-z0-9_.-]+\.(png|gif)' README.md | sort -u)
 [ "$readme_img_count" -ge 15 ] || fail "expected >= 15 gallery images in README.md, got $readme_img_count"
 ok "all $readme_img_count README gallery images in docs/images/ exist and have valid PNG/GIF headers"
 
-# Examples: compile, run, validate the artifacts.
-rm -rf build/examples
-mkdir -p build/examples
+# Examples: compile + self-execute into images/, validate the artifacts, and check byte-identical rerun.
+rm -rf build/examples images
+mkdir -p build/examples images
 n=0
 for src in examples/*.lms; do
   name="$(basename "$src" .lms)"
-  "$LMSCRIPT" "$src" "build/$name.dslb" >"$WORK/$name.log" 2>&1 || { cat "$WORK/$name.log" >&2; fail "$name compile"; }
+  "$LMSCRIPT" "$src" "build/$name.dslb" >"$WORK/$name.log" 2>&1 || { cat "$WORK/$name.log" >&2; fail "$name compile/autorun"; }
   n=$((n+1))
 done
-ok "$n examples compile as bytecode v5"
+ok "$n examples compile as bytecode v5 and self-execute"
 for src in examples/*.lms; do
   name="$(basename "$src" .lms)"
-  "$HOST" --dsl "build/$name.dslb" >"$WORK/$name.out" 2>"$WORK/$name.err" || { cat "$WORK/$name.out" "$WORK/$name.err" >&2; fail "$name run"; }
-  grep -q '"ok": true' "$WORK/$name.out" || { cat "$WORK/$name.out" >&2; fail "$name did not report ok"; }
-done
-ok "$n examples run"
-for src in examples/*.lms; do
-  name="$(basename "$src" .lms)"
+  [ -f "images/$name.png" ] || fail "$name did not write images/$name.png"
   found=0
-  for f in build/examples/"$name"*.png; do
+  for f in images/"$name"*.png; do
     [ -f "$f" ] || continue
     found=1
     size="$(png_size "$f")"
@@ -145,7 +142,21 @@ for src in examples/*.lms; do
   done
   [ "$found" = 1 ] || fail "$name wrote no PNG"
 done
-ok "every example wrote valid PNG files"
+ok "every example wrote valid PNG files into images/"
+
+# Determinism: identical bytes on rerun, for every image of every example.
+for f in images/*.png; do echo "$(sha "$f") $f"; done >"$WORK/before.txt"
+for src in examples/*.lms; do
+  name="$(basename "$src" .lms)"
+  "$HOST" --dsl "build/$name.dslb" >"$WORK/$name.out" 2>"$WORK/$name.err" || { cat "$WORK/$name.out" "$WORK/$name.err" >&2; fail "$name run"; }
+  grep -q '"ok": true' "$WORK/$name.out" || { cat "$WORK/$name.out" >&2; fail "$name did not report ok"; }
+done
+ok "$n examples run directly via --dsl"
+for f in images/*.png; do echo "$(sha "$f") $f"; done >"$WORK/after.txt"
+cmp -s "$WORK/before.txt" "$WORK/after.txt" || { diff "$WORK/before.txt" "$WORK/after.txt" >&2 || true; fail "images differ on rerun"; }
+ok "all $(wc -l <"$WORK/after.txt" | tr -d ' ') example images are byte-identical on rerun"
+
+mv images/*.png build/examples/
 if [ -f examples/expected.txt ]; then
   while read -r file want; do
     [ -z "${file:-}" ] && continue
@@ -157,30 +168,22 @@ if [ -f examples/expected.txt ]; then
   ok "example PNG dimensions match examples/expected.txt"
 fi
 
-# Determinism: identical bytes on rerun, for every image of every example.
-for f in build/examples/*.png; do echo "$(sha "$f") $f"; done >"$WORK/before.txt"
-for src in examples/*.lms; do
-  name="$(basename "$src" .lms)"
-  "$HOST" --dsl "build/$name.dslb" >/dev/null 2>&1 || fail "$name rerun"
-done
-for f in build/examples/*.png; do echo "$(sha "$f") $f"; done >"$WORK/after.txt"
-cmp -s "$WORK/before.txt" "$WORK/after.txt" || { diff "$WORK/before.txt" "$WORK/after.txt" >&2 || true; fail "images differ on rerun"; }
-ok "all $(wc -l <"$WORK/after.txt" | tr -d ' ') example images are byte-identical on rerun"
-
 # Multi-host combo examples (lmcad + lmplot, lmdraw + lmplot).
 if command -v lmcad >/dev/null 2>&1; then
-  rm -f build/examples/nozzle_cad_plot.png
+  rm -f images/nozzle_cad_plot.png build/examples/nozzle_cad_plot.png
   "$LMSCRIPT" examples/combo/nozzle_cad_plot.lms >"$WORK/c-nozzle.log" 2>&1 || { cat "$WORK/c-nozzle.log" >&2; fail "combo nozzle_cad_plot"; }
-  [ "$(png_size build/examples/nozzle_cad_plot.png)" != "notpng" ] || fail "nozzle_cad_plot.png is not a valid PNG"
+  [ "$(png_size images/nozzle_cad_plot.png)" != "notpng" ] || fail "nozzle_cad_plot.png is not a valid PNG"
+  mv images/nozzle_cad_plot.png build/examples/nozzle_cad_plot.png
   ok "combo example nozzle_cad_plot (lmcad + lmplot) renders valid PNG"
 else
   ok "combo example nozzle_cad_plot skipped (sibling host lmcad not on PATH)"
 fi
 
 if command -v lmdraw >/dev/null 2>&1 && command -v ffmpeg >/dev/null 2>&1; then
-  rm -f build/examples/sir_epidemic_draw_plot.png
+  rm -f images/sir_epidemic_draw_plot.png build/examples/sir_epidemic_draw_plot.png
   "$LMSCRIPT" examples/combo/sir_epidemic_draw_plot.lms >"$WORK/c-seir.log" 2>&1 || { cat "$WORK/c-seir.log" >&2; fail "combo sir_epidemic_draw_plot"; }
-  [ "$(png_size build/examples/sir_epidemic_draw_plot.png)" != "notpng" ] || fail "sir_epidemic_draw_plot.png is not a valid PNG"
+  [ "$(png_size images/sir_epidemic_draw_plot.png)" != "notpng" ] || fail "sir_epidemic_draw_plot.png is not a valid PNG"
+  mv images/sir_epidemic_draw_plot.png build/examples/sir_epidemic_draw_plot.png
   ok "combo example sir_epidemic_draw_plot (lmdraw + lmplot) renders valid PNG"
 else
   ok "combo example sir_epidemic_draw_plot skipped (sibling host lmdraw or ffmpeg not on PATH)"
@@ -188,17 +191,23 @@ fi
 
 # Video examples: frames via lmplot, encoding via ffmpeg (skipped when ffmpeg is absent).
 if command -v ffmpeg >/dev/null 2>&1; then
+  mkdir -p build/video
   for src in examples/video/*.lms; do
     name="$(basename "$src" .lms)"
-    rm -f "build/video/$name.mp4"
+    rm -f "images/$name.mp4" "images/$name.png" "build/video/$name.mp4"
     "$LMSCRIPT" "$src" >"$WORK/v-$name.log" 2>&1 || { cat "$WORK/v-$name.log" >&2; fail "video $name"; }
-    [ -s "build/video/$name.mp4" ] || fail "video $name wrote no mp4"
+    [ -s "images/$name.mp4" ] || fail "video $name wrote no mp4"
+    [ "$(png_size "images/$name.png")" != "notpng" ] || fail "video $name wrote no preview PNG"
+    mv "images/$name.mp4" "build/video/$name.mp4"
+    mv "images/$name.png" "build/video/$name.png"
   done
-  [ "$(gif_magic build/video/quantum_packet.gif)" = "gif" ] || fail "quantum_packet.gif is not a valid GIF"
+  [ "$(gif_magic images/quantum_packet.gif)" = "gif" ] || fail "quantum_packet.gif is not a valid GIF"
+  mv images/quantum_packet.gif build/video/quantum_packet.gif
   ok "video examples render frames and encode mp4/gif with ffmpeg"
 else
   ok "video examples skipped (no ffmpeg)"
 fi
+rm -rf images
 
 # DSL error paths.
 cat >"$WORK/bad.lms" <<LMS

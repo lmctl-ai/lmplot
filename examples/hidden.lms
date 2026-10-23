@@ -1,25 +1,30 @@
 # hidden.dem: hidden-line removal on explicit surfaces.
 out = ARGV.len() > 0 ? ARGV[0] : "build/hidden.dslb";
-mkdir("build/examples");
+mkdir("images");
+mkdir("build");
 p = _dsl_ cli="lmplot" install="github:lmctl-ai/lmplot@latest";
 plot.script("set samples 20\nset isosamples 20\nset hidden3d");
 # Image 1: a bell-shaped surface.
-plot.png("build/examples/hidden-1.png", 800, 600);
+plot.png("images/hidden-1.png", 800, 600);
 plot.cmd("set title 'Hidden line removal of explicit surfaces'");
 plot.script("set xrange [-3:3]\nset yrange [-2:2]");
 plot.cmd("splot 1 / (x*x + y*y + 1)");
 plot.close();
 # Image 2: sin*cos with a z grid, full border, and contours from above.
-plot.png("build/examples/hidden-2.png", 800, 600);
+plot.png("images/hidden-2.png", 800, 600);
 plot.script("set view 60,30\nset xrange [-3:3]\nset yrange [-3:3]\nset zrange [-1:1]");
 plot.script("set ztics -1,0.5,1\nset grid z\nset border 4095");
 plot.cmd("splot sin(x) * cos(y)");
 plot.close();
 # Image 3: same surface viewed from behind with contours.
-plot.png("build/examples/hidden-3.png", 800, 600);
+plot.png("images/hidden-3.png", 800, 600);
 plot.script("unset grid\nset ztics autofreq\nset border 31\nset view 75,230\nset contour");
 plot.cmd("splot sin(x) * cos(y)");
 plot.close();
 end _dsl_
 savedsl(p, out);
-println(f"wrote {out}");
+r = system ${dsl_cli(p)} --dsl ${out};
+assert(r.code == 0);
+cp = system cp images/hidden-2.png images/hidden.png;
+assert(cp.code == 0);
+println("wrote images/hidden.png (and images/hidden-1.png .. images/hidden-3.png)");

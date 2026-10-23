@@ -2,13 +2,22 @@
 # Image 1: layout 3,1 (rows).  Image 2: layout 1,3 with rotated tics.
 # Image 3: stacked plots sharing one x axis (zero top/bottom margins).
 out = ARGV.len() > 0 ? ARGV[0] : "build/layout.dslb";
-mkdir("build/examples");
+mkdir("images");
+mkdir("build");
+if (!file_exists("examples/data/immigration.dat")) {
+  mkdir("examples/data");
+  write_file("examples/data/immigration.dat", http_get("https://raw.githubusercontent.com/lmctl-ai/lmplot/main/examples/data/immigration.dat"));
+}
+if (!file_exists("examples/data/silver.dat")) {
+  mkdir("examples/data");
+  write_file("examples/data/silver.dat", http_get("https://raw.githubusercontent.com/lmctl-ai/lmplot/main/examples/data/silver.dat"));
+}
 p = _dsl_ cli="lmplot" install="github:lmctl-ai/lmplot@latest";
 # The histogram/line data files live in examples/data (paths relative to repo root).
 let hist = "plot 'examples/data/immigration.dat' using 2 with histograms, '' using 7 with histograms, '' using 8 with histograms, '' using 11 with histograms";
 
 # --- 1: three plots stacked vertically via "multiplot layout 3,1" ---
-plot.png("build/examples/layout-1.png", 800, 800);
+plot.png("images/layout-1.png", 800, 800);
 plot.cmd("set multiplot layout 3, 1 title 'Multiplot layout 3, 1' font ',14'");
 plot.cmd("set tmargin 3");
 plot.cmd("unset key");
@@ -28,7 +37,7 @@ plot.cmd("unset multiplot");
 plot.close();
 
 # --- 2: the same three plots side by side, layout 1,3 ---
-plot.png("build/examples/layout-2.png", 1000, 450);
+plot.png("images/layout-2.png", 1000, 450);
 plot.cmd("reset");
 plot.cmd("set multiplot layout 1,3 title 'Multiplot layout 1, 3' font ',14'");
 plot.cmd("set xtics rotate");
@@ -50,7 +59,7 @@ plot.cmd("unset multiplot");
 plot.close();
 
 # --- 3: stacked plots, zero vertical margins; the 4th slot holds the axis labels ---
-plot.png("build/examples/layout-3.png", 800, 600);
+plot.png("images/layout-3.png", 800, 600);
 plot.cmd("reset");
 plot.cmd("set tmargin 0");
 plot.cmd("set bmargin 0");
@@ -73,4 +82,8 @@ plot.cmd("unset multiplot");
 plot.close();
 end _dsl_
 savedsl(p, out);
-println(f"wrote {out}");
+r = system ${dsl_cli(p)} --dsl ${out};
+assert(r.code == 0);
+cp = system cp images/layout-1.png images/layout.png;
+assert(cp.code == 0);
+println("wrote images/layout.png (and images/layout-1.png .. images/layout-3.png)");

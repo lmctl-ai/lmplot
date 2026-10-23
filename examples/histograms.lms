@@ -1,22 +1,27 @@
 # Demo histograms.dem: clustered, stacked and multi-group histograms (immigration.dat).
 out = ARGV.len() > 0 ? ARGV[0] : "build/histograms.dslb";
-mkdir("build/examples");
+mkdir("images");
+mkdir("build");
+if (!file_exists("examples/data/immigration.dat")) {
+  mkdir("examples/data");
+  write_file("examples/data/immigration.dat", http_get("https://raw.githubusercontent.com/lmctl-ai/lmplot/main/examples/data/immigration.dat"));
+}
 p = _dsl_ cli="lmplot" install="github:lmctl-ai/lmplot@latest";
 plot.cmd("set datafile missing '-'");
 plot.cmd("set key noenhanced");  # keep underscores in names like United_Kingdom literal
 plot.script("set style data histogram\nset style fill solid border -1\nset boxwidth 0.9");
 # Image 1: clustered histogram of four columns.
-plot.png("build/examples/histograms-1.png", 800, 600);
+plot.png("images/histograms-1.png", 800, 600);
 plot.script("set title \"US immigration from Northern Europe\\nPlot selected data columns as histogram of clustered boxes\"\nset yrange [0:300000]\nset style histogram cluster gap 1\nset xtic rotate by -45 scale 0");
 plot.cmd("plot 'examples/data/immigration.dat' using 6:xtic(1) ti col, '' u 12 ti col, '' u 13 ti col, '' u 14 ti col");
 plot.close();
 # Image 2: all countries as a row-stacked histogram.
-plot.png("build/examples/histograms-2.png", 900, 600);
+plot.png("images/histograms-2.png", 900, 600);
 plot.script("set title \"US immigration from Europe by decade\\nPlot as stacked histogram\"\nset key invert reverse Left outside\nset key autotitle columnheader\nset yrange [0:7e6]\nset style histogram rowstacked\nset boxwidth 0.75");
 plot.cmd("plot 'examples/data/immigration.dat' using 2:xtic(1), for [i=3:22] '' using i");
 plot.close();
 # Image 3: several histogram groups with newhistogram.
-plot.png("build/examples/histograms-3.png", 800, 600);
+plot.png("images/histograms-3.png", 800, 600);
 plot.script("reset\nset key noenhanced\nset datafile missing '-'\nset style data histogram\nset style fill solid noborder\nset boxwidth 0.95");
 plot.script("set title \"Immigration from different regions\\n(give each histogram a separate title)\"\nset key under nobox\nset style histogram clustered gap 1 title offset 2,0.25");
 plot.script("set xtics nomirror rotate by -45 scale 0 font ',8'\nset ytics font ',8'\nset grid y");
@@ -25,4 +30,8 @@ plot.cmd("plot newhistogram 'Northern Europe', 'examples/data/immigration.dat' u
 plot.close();
 end _dsl_
 savedsl(p, out);
-println(f"wrote {out}");
+r = system ${dsl_cli(p)} --dsl ${out};
+assert(r.code == 0);
+cp = system cp images/histograms-1.png images/histograms.png;
+assert(cp.code == 0);
+println("wrote images/histograms.png (and images/histograms-1.png .. images/histograms-3.png)");

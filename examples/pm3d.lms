@@ -1,18 +1,19 @@
 # pm3d.dem: coloured surfaces (pm3d) with a palette and colorbox.
 out = ARGV.len() > 0 ? ARGV[0] : "build/pm3d.dslb";
-mkdir("build/examples");
+mkdir("images");
+mkdir("build");
 p = _dsl_ cli="lmplot" install="github:lmctl-ai/lmplot@latest";
 plot.script("set xlabel 'x'\nset ylabel 'y'\nset key top\nset border 4095");
 plot.script("set xrange [-15:15]\nset yrange [-15:15]\nset zrange [-0.25:1]");
 plot.script("set samples 25\nset isosamples 20");
 # Image 1: default pm3d on the radial sinc function.
-plot.png("build/examples/pm3d-1.png", 800, 600);
+plot.png("images/pm3d-1.png", 800, 600);
 plot.cmd("set title 'pm3d demo. Radial sinc function. Default options.'");
 plot.cmd("set pm3d; set palette");
 plot.cmd("splot sin(sqrt(x**2+y**2))/sqrt(x**2+y**2)");
 plot.close();
 # Image 2: pm3d on surface and top (map projection), with depth ordering.
-plot.png("build/examples/pm3d-2.png", 800, 600);
+plot.png("images/pm3d-2.png", 800, 600);
 plot.cmd("set title 'set pm3d at bst (depthorder, interp 2,2)'");
 plot.cmd("set ticslevel 0");
 plot.cmd("set cblabel 'colour gradient'");
@@ -26,11 +27,15 @@ plot.cmd("unset key");
 plot.cmd("splot sin(sqrt(x**2+y**2))/sqrt(x**2+y**2)");
 plot.close();
 # Image 3: a gray map seen from above.
-plot.png("build/examples/pm3d-3.png", 800, 600);
+plot.png("images/pm3d-3.png", 800, 600);
 plot.script("reset\nset xrange [-15:15]\nset yrange [-15:15]\nset samples 100; set isosamples 100");
 plot.script("set title 'gray map'\nset view map\nset pm3d\nset palette gray\nunset surface\nunset key");
 plot.cmd("splot sin(sqrt(x**2+y**2))/sqrt(x**2+y**2)");
 plot.close();
 end _dsl_
 savedsl(p, out);
-println(f"wrote {out}");
+r = system ${dsl_cli(p)} --dsl ${out};
+assert(r.code == 0);
+cp = system cp images/pm3d-2.png images/pm3d.png;
+assert(cp.code == 0);
+println("wrote images/pm3d.png (and images/pm3d-1.png .. images/pm3d-3.png)");

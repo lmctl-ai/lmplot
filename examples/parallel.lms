@@ -3,10 +3,19 @@
 # Image 2: PDB atom data with units (UTF-8 angstrom sign) on the axis tics.
 # Image 3: sampled functions, coloured by a palette.
 out = ARGV.len() > 0 ? ARGV[0] : "build/parallel.dslb";
-mkdir("build/examples");
+mkdir("images");
+mkdir("build");
+if (!file_exists("examples/data/silver.dat")) {
+  mkdir("examples/data");
+  write_file("examples/data/silver.dat", http_get("https://raw.githubusercontent.com/lmctl-ai/lmplot/main/examples/data/silver.dat"));
+}
+if (!file_exists("examples/data/GM1_sugar.pdb")) {
+  mkdir("examples/data");
+  write_file("examples/data/GM1_sugar.pdb", http_get("https://raw.githubusercontent.com/lmctl-ai/lmplot/main/examples/data/GM1_sugar.pdb"));
+}
 p = _dsl_ cli="lmplot" install="github:lmctl-ai/lmplot@latest";
 # --- 1: parallel axes with manipulated ranges ---
-plot.png("build/examples/parallel-1.png", 800, 600);
+plot.png("images/parallel-1.png", 800, 600);
 plot.cmd("set title 'Parallel Axis Plot' font ',15'");
 plot.cmd("set border 0");
 plot.cmd("unset key");
@@ -24,7 +33,7 @@ plot.cmd("plot 'examples/data/silver.dat' using 2:(int($0/25)) lc variable, '' u
 plot.close();
 
 # --- 2: molecule coordinates, axis tic labels with unit suffix ---
-plot.png("build/examples/parallel-2.png", 800, 600);
+plot.png("images/parallel-2.png", 800, 600);
 plot.cmd("reset");
 plot.cmd("set encoding utf8");
 plot.cmd("set title 'Parallel Axis Plot' font ',15'");
@@ -40,7 +49,7 @@ plot.cmd("plot 'examples/data/GM1_sugar.pdb' using 6:5 lc var lw 2 title 'X', ''
 plot.close();
 
 # --- 3: generated functions, 'plot sample' over the pseudo-file '+' ---
-plot.png("build/examples/parallel-3.png", 800, 600);
+plot.png("images/parallel-3.png", 800, 600);
 plot.cmd("reset");
 plot.cmd("set style data parallel");
 plot.cmd("set palette defined (0 'dark-blue', 1 'dark-orange')");
@@ -58,4 +67,8 @@ plot.cmd("plot sample [x=1:20] '+' using (abs(sin(7.3*$1*$1))):0 lc palette titl
 plot.close();
 end _dsl_
 savedsl(p, out);
-println(f"wrote {out}");
+r = system ${dsl_cli(p)} --dsl ${out};
+assert(r.code == 0);
+cp = system cp images/parallel-3.png images/parallel.png;
+assert(cp.code == 0);
+println("wrote images/parallel.png (and images/parallel-1.png .. images/parallel-3.png)");

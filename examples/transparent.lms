@@ -2,7 +2,8 @@
 # Image 1: opaque solid filled curves, image 2: the same with 50% transparency,
 # image 3: transparent pattern-filled curves.
 out = ARGV.len() > 0 ? ARGV[0] : "build/transparent.dslb";
-mkdir("build/examples");
+mkdir("images");
+mkdir("build");
 p = _dsl_ cli="lmplot" install="github:lmctl-ai/lmplot@latest";
 plot.cmd("set encoding utf8");
 plot.cmd("set style fill solid 1.0 noborder");
@@ -21,24 +22,28 @@ plot.cmd("set samples 200");
 let gauss = "plot d1(x) fs solid 1.0 lc rgb 'forest-green' title 'μ =  0.5 σ = 0.5', d2(x) lc rgb 'gold' title 'μ =  2.0 σ = 1.0', d3(x) lc rgb 'dark-violet' title 'μ = -1.0 σ = 2.0'";
 
 # --- 1: opaque ---
-plot.png("build/examples/transparent-1.png", 800, 600);
+plot.png("images/transparent-1.png", 800, 600);
 plot.cmd("set title 'Solid filled curves'");
 plot.cmd(gauss);
 plot.close();
 
 # --- 2: translucent, overlaps blend ---
-plot.png("build/examples/transparent-2.png", 800, 600);
+plot.png("images/transparent-2.png", 800, 600);
 plot.cmd("set style fill transparent solid 0.5 noborder");
 plot.cmd("set title 'Transparent filled curves'");
 plot.cmd(gauss);
 plot.close();
 
 # --- 3: transparent patterns (the pattern background is not painted) ---
-plot.png("build/examples/transparent-3.png", 800, 600);
+plot.png("images/transparent-3.png", 800, 600);
 plot.cmd("set style fill transparent pattern 4 bo");
 plot.cmd("set title 'Transparent pattern-filled curves'");
 plot.cmd(gauss);
 plot.close();
 end _dsl_
 savedsl(p, out);
-println(f"wrote {out}");
+r = system ${dsl_cli(p)} --dsl ${out};
+assert(r.code == 0);
+cp = system cp images/transparent-3.png images/transparent.png;
+assert(cp.code == 0);
+println("wrote images/transparent.png (and images/transparent-1.png .. images/transparent-3.png)");

@@ -1,9 +1,10 @@
 # Driven damped harmonic oscillator: steady-state amplitude magnification M(r)
 # and phase lag phi(r) across quality factors Q = 1.5, 3, 6, 12, plus backbone
 # resonance locus and half-power (-3 dB) bandwidth computed in lmscript.
-# Writes build/examples/damped_driven_resonance.png (900x560).
+# Writes images/damped_driven_resonance.png (900x560).
 out = ARGV.len() > 0 ? ARGV[0] : "build/damped_driven_resonance.dslb";
-mkdir("build/examples");
+mkdir("images");
+mkdir("build");
 p = _dsl_ cli="lmplot" install="github:lmctl-ai/lmplot@latest";
 
 fn sqrt_pos(v: float) -> float {
@@ -37,7 +38,7 @@ let q6_bw = 1.0 / 6.0;
 plot.echo("Max magnification (Q=10): " + str(max_mag));
 plot.echo("Q=6 half-power bandwidth: " + str(q6_bw) + " omega_0");
 
-plot.png("build/examples/damped_driven_resonance.png", 900, 560);
+plot.png("images/damped_driven_resonance.png", 900, 560);
 plot.cmd("set encoding utf8");
 plot.cmd("set multiplot");
 plot.cmd("set samples 500");
@@ -88,8 +89,6 @@ plot.cmd("unset multiplot");
 plot.close();
 end _dsl_
 savedsl(p, out);
-if (ARGV.len() == 0) {
-  r = system ${dsl_cli(p)} --dsl ${out};
-  assert(r.code == 0);
-}
-println(f"wrote {out}");
+r = system ${dsl_cli(p)} --dsl ${out};
+assert(r.code == 0);
+println("wrote images/damped_driven_resonance.png");

@@ -1,8 +1,9 @@
 # Ginzburg-Landau double-well free-energy surface F(qx, qy) with symmetry-breaking
 # tilt, saddle-point transition path, and projected contours.
-# Writes build/examples/potential_vortex_surface.png (900x600).
+# Writes images/potential_vortex_surface.png (900x600).
 out = ARGV.len() > 0 ? ARGV[0] : "build/potential_vortex_surface.dslb";
-mkdir("build/examples");
+mkdir("images");
+mkdir("build");
 p = _dsl_ cli="lmplot" install="github:lmctl-ai/lmplot@latest";
 
 # Landau free energy: F(x, y) = 0.25*(x^2 - 1.44)^2 + 0.55*y^2 - 0.12*x + 0.08*x*y^2 + 0.85
@@ -25,7 +26,7 @@ let barrier = f_saddle - f_min;
 plot.echo("global minimum F_min = " + str(f_min) + " k_B T");
 plot.echo("saddle barrier dF    = " + str(barrier) + " k_B T");
 
-plot.png("build/examples/potential_vortex_surface.png", 900, 600);
+plot.png("images/potential_vortex_surface.png", 900, 600);
 plot.cmd("set encoding utf8");
 plot.cmd("set title 'Ginzburg-Landau Free-Energy Landscape F(q_x, q_y) — Bistable Phase-Transition Barrier' font ',12'");
 plot.cmd("set xlabel 'Order Parameter q_x' offset -2,-1.3");
@@ -55,8 +56,6 @@ plot.cmd("splot F(x,y) with pm3d title 'Landau surface F(q_x, q_y)', $PATH using
 plot.close();
 end _dsl_
 savedsl(p, out);
-if (ARGV.len() == 0) {
-  r = system ${dsl_cli(p)} --dsl ${out};
-  assert(r.code == 0);
-}
-println(f"wrote {out}");
+r = system ${dsl_cli(p)} --dsl ${out};
+assert(r.code == 0);
+println("wrote images/potential_vortex_surface.png");

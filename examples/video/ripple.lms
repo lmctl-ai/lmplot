@@ -1,6 +1,7 @@
 # Video: an expanding ripple on a pm3d surface while the camera orbits.
 # `lmscript examples/video/ripple.lms` renders 90 frames and encodes
-# build/video/ripple.mp4 (needs ffmpeg on PATH).
+# images/ripple.mp4 (needs ffmpeg on PATH).
+mkdir("images");
 mkdir("build/video/ripple");
 out = ARGV.len() > 0 ? ARGV[0] : "build/video/ripple.dslb";
 p = _dsl_ cli="lmplot" install="github:lmctl-ai/lmplot@latest";
@@ -30,6 +31,8 @@ end _dsl_
 savedsl(p, out);
 r = system ${dsl_cli(p)} --dsl ${out};
 assert(r.code == 0);
-r = system ffmpeg -y -loglevel error -framerate 30 -i build/video/ripple/frame-%d.png -c:v libx264 -pix_fmt yuv420p build/video/ripple.mp4;
+r = system ffmpeg -y -loglevel error -framerate 30 -i build/video/ripple/frame-%d.png -c:v libx264 -pix_fmt yuv420p images/ripple.mp4;
 assert(r.code == 0);
-println("wrote build/video/ripple.mp4");
+cp = system cp build/video/ripple/frame-45.png images/ripple.png;
+assert(cp.code == 0);
+println("wrote images/ripple.mp4 and images/ripple.png");

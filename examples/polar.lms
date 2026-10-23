@@ -1,21 +1,22 @@
 # polar.dem: functions in polar coordinates.
 out = ARGV.len() > 0 ? ARGV[0] : "build/polar.dslb";
-mkdir("build/examples");
+mkdir("images");
+mkdir("build");
 p = _dsl_ cli="lmplot" install="github:lmctl-ai/lmplot@latest";
 # Image 1: a rose curve and a four-leaf pattern.
-plot.png("build/examples/polar-1.png", 800, 600);
+plot.png("images/polar-1.png", 800, 600);
 plot.script("unset border\nset clip\nset polar\nset xtics axis nomirror\nset ytics axis nomirror");
 plot.script("unset rtics\nset samples 160\nset zeroaxis\nset trange [0:2*pi]\nset key box");
 plot.cmd("plot sin(4*t),cos(4*t)");
 plot.close();
 # Image 2: the "butterfly" curve.
-plot.png("build/examples/polar-2.png", 800, 600);
+plot.png("images/polar-2.png", 800, 600);
 plot.cmd("butterfly(x)=exp(cos(x))-2*cos(4*x)+sin(x/12)**5");
 plot.script("set trange [0:12*pi]\nset samples 800\nset title 'Butterfly'\nunset key");
 plot.cmd("plot butterfly(t)");
 plot.close();
 # Image 3: polar grid with a filled curve above a bounding radius.
-plot.png("build/examples/polar-3.png", 800, 600);
+plot.png("images/polar-3.png", 800, 600);
 plot.script("reset\nset polar\nset grid polar\nunset xtics\nunset ytics\nset border 0");
 plot.script("set style fill solid 0.5\nset rrange [0.1 : 4]\nset size square");
 plot.script("set key title 'bounding radius 2.5'\nset key outside top right samplen 0.7");
@@ -23,4 +24,8 @@ plot.cmd("plot 3.+sin(t)*cos(5*t) with filledcurve above r=2.5 notitle, 3.+sin(t
 plot.close();
 end _dsl_
 savedsl(p, out);
-println(f"wrote {out}");
+r = system ${dsl_cli(p)} --dsl ${out};
+assert(r.code == 0);
+cp = system cp images/polar-2.png images/polar.png;
+assert(cp.code == 0);
+println("wrote images/polar.png (and images/polar-1.png .. images/polar-3.png)");

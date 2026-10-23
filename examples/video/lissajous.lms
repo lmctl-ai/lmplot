@@ -1,5 +1,6 @@
 # Video: a Lissajous curve drawn progressively, with a moving head and the
-# frame data computed in lmscript. Output: build/video/lissajous.mp4 (ffmpeg).
+# frame data computed in lmscript. Output: images/lissajous.mp4 (ffmpeg).
+mkdir("images");
 mkdir("build/video/lissajous");
 out = ARGV.len() > 0 ? ARGV[0] : "build/video/lissajous.dslb";
 p = _dsl_ cli="lmplot" install="github:lmctl-ai/lmplot@latest";
@@ -26,6 +27,8 @@ end _dsl_
 savedsl(p, out);
 r = system ${dsl_cli(p)} --dsl ${out};
 assert(r.code == 0);
-r = system ffmpeg -y -loglevel error -framerate 30 -i build/video/lissajous/frame-%d.png -c:v libx264 -pix_fmt yuv420p build/video/lissajous.mp4;
+r = system ffmpeg -y -loglevel error -framerate 30 -i build/video/lissajous/frame-%d.png -c:v libx264 -pix_fmt yuv420p images/lissajous.mp4;
 assert(r.code == 0);
-println("wrote build/video/lissajous.mp4");
+cp = system cp build/video/lissajous/frame-119.png images/lissajous.png;
+assert(cp.code == 0);
+println("wrote images/lissajous.mp4 and images/lissajous.png");

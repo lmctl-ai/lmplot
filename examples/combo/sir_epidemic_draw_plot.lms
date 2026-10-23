@@ -6,7 +6,9 @@
 #    Runge-Kutta (comparing unmitigated R0=3.2 vs NPI distancing), extracts peak
 #    infectious load via gnuplot stats, and plots the time-course and I-vs-S
 #    herd-immunity phase portrait (build/examples/seir_panels.png, 540x560).
-# 3. Combines the lmdraw schematic and lmplot charts into build/examples/sir_epidemic_draw_plot.png (900x560).
+# 3. Combines the lmdraw schematic and lmplot charts into images/sir_epidemic_draw_plot.png (900x560).
+out = ARGV.len() > 0 ? ARGV[0] : "build/seir_plot.dslb";
+mkdir("images");
 mkdir("build/rendered");
 mkdir("build/examples");
 
@@ -231,10 +233,10 @@ plot.cmd("plot $SEIR using 2:4 with lines lw 2.6 lc rgb '#dc2626' title 'Unmitig
 plot.cmd("unset multiplot");
 plot.close();
 end _dsl_
-savedsl(p, "build/seir_plot.dslb");
-r = system ${dsl_cli(p)} --dsl build/seir_plot.dslb;
+savedsl(p, out);
+r = system ${dsl_cli(p)} --dsl ${out};
 assert(r.code == 0);
 
-r = system ffmpeg -y -loglevel error -i build/rendered/seir_schematic.png -i build/examples/seir_panels.png -filter_complex hstack=inputs=2 build/examples/sir_epidemic_draw_plot.png;
+r = system ffmpeg -y -loglevel error -i build/rendered/seir_schematic.png -i build/examples/seir_panels.png -filter_complex hstack=inputs=2 images/sir_epidemic_draw_plot.png;
 assert(r.code == 0);
-println("wrote build/examples/sir_epidemic_draw_plot.png");
+println("wrote images/sir_epidemic_draw_plot.png");

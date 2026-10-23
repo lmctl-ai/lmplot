@@ -1,20 +1,21 @@
 # Demo param.dem: parametric plots and a parametric pm3d sphere.
 out = ARGV.len() > 0 ? ARGV[0] : "build/param.dslb";
-mkdir("build/examples");
+mkdir("images");
+mkdir("build");
 p = _dsl_ cli="lmplot" install="github:lmctl-ai/lmplot@latest";
 plot.script("set parametric\nset dummy t\nset samples 160\nset key box\nset key below");
 # Image 1: conic sections.
-plot.png("build/examples/param-1.png", 800, 600);
+plot.png("images/param-1.png", 800, 600);
 plot.script("set xrange [-3:3]\nset yrange [-3:3]\nset title 'Parametric Conic Sections'");
 plot.cmd("plot -t,t,cos(t),cos(2*t),2*cos(t),sin(t),-cosh(t),sinh(t)");
 plot.close();
 # Image 2: sin(t)/t and cos(t)/t against each other.
-plot.png("build/examples/param-2.png", 800, 600);
+plot.png("images/param-2.png", 800, 600);
 plot.script("set autoscale x\nset yrange [-1.5:1.5]\nset trange [0.0001:10*pi]\nset title 'sin(t)/t, cos(t)/t'");
 plot.cmd("plot sin(t)/t,cos(t)/t");
 plot.close();
 # Image 3: surface parametrised by u,v, coloured with pm3d.
-plot.png("build/examples/param-3.png", 800, 700);
+plot.png("images/param-3.png", 800, 700);
 plot.cmd("reset");
 plot.cmd("set label 1 \"Decouple range of parametric axes u/v\\nfrom that of display axes x/y/z\" at screen 0.1, 0.9");
 plot.script("unset colorbox\nset palette cubehelix cycle 3\nset view equal xyz\nset view 120, 300\nset xyplane 0\nset pm3d depthorder\nset border 4095\nset tics scale 0\nset format ''\nset angles radians");
@@ -24,4 +25,8 @@ plot.cmd("splot '++' using (xx($1,$2)):(yy($1,$2)):(zz($1,$2)):(color($1,$2)) wi
 plot.close();
 end _dsl_
 savedsl(p, out);
-println(f"wrote {out}");
+r = system ${dsl_cli(p)} --dsl ${out};
+assert(r.code == 0);
+cp = system cp images/param-3.png images/param.png;
+assert(cp.code == 0);
+println("wrote images/param.png (and images/param-1.png .. images/param-3.png)");

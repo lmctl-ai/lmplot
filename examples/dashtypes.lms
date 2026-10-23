@@ -2,7 +2,8 @@
 # Image 1: the ten native dashtypes plus custom string/array patterns.
 # Image 2: the same lines at increasing line widths.
 out = ARGV.len() > 0 ? ARGV[0] : "build/dashtypes.dslb";
-mkdir("build/examples");
+mkdir("images");
+mkdir("build");
 p = _dsl_ cli="lmplot" install="github:lmctl-ai/lmplot@latest";
 # One labelled sample line: arrow number n at height y with dash spec dt
 # (the label is placed to its left, 'noenhanced' keeps '_' literal).
@@ -34,15 +35,19 @@ sample(15, 0.10, "dt (50,6,2,6)", "(50,6,2,6)", 1);
 plot.cmd("set arrow 15 lc 'blue'");
 plot.cmd("set label 15 at screen 0.06, screen 0.10");  # long label: move it left
 
-plot.png("build/examples/dashtypes-1.png", 800, 700);
+plot.png("images/dashtypes-1.png", 800, 700);
 plot.cmd("plot 0 with lines lt nodraw");
 plot.close();
 
 # --- 2: line width interacts with dash scaling ---
-plot.png("build/examples/dashtypes-2.png", 800, 700);
+plot.png("images/dashtypes-2.png", 800, 700);
 plot.cmd("set for [i=1:15] arrow i lw 1+(i-1)%5");
 plot.cmd("plot 0 with lines lt nodraw");
 plot.close();
 end _dsl_
 savedsl(p, out);
-println(f"wrote {out}");
+r = system ${dsl_cli(p)} --dsl ${out};
+assert(r.code == 0);
+cp = system cp images/dashtypes-1.png images/dashtypes.png;
+assert(cp.code == 0);
+println("wrote images/dashtypes.png (and images/dashtypes-1.png .. images/dashtypes-2.png)");

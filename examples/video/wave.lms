@@ -1,6 +1,7 @@
 # Video: a travelling wave packet, rendered as PNG frames and encoded with ffmpeg.
 # `lmscript examples/video/wave.lms` does everything: compile, render 96 frames
-# with lmplot, then run ffmpeg. Needs ffmpeg on PATH. Output: build/video/wave.mp4
+# with lmplot, then run ffmpeg. Needs ffmpeg on PATH. Output: images/wave.mp4
+mkdir("images");
 mkdir("build/video/wave");
 out = ARGV.len() > 0 ? ARGV[0] : "build/video/wave.dslb";
 p = _dsl_ cli="lmplot" install="github:lmctl-ai/lmplot@latest";
@@ -22,6 +23,8 @@ end _dsl_
 savedsl(p, out);
 r = system ${dsl_cli(p)} --dsl ${out};
 assert(r.code == 0);
-r = system ffmpeg -y -loglevel error -framerate 24 -i build/video/wave/frame-%d.png -c:v libx264 -pix_fmt yuv420p build/video/wave.mp4;
+r = system ffmpeg -y -loglevel error -framerate 24 -i build/video/wave/frame-%d.png -c:v libx264 -pix_fmt yuv420p images/wave.mp4;
 assert(r.code == 0);
-println("wrote build/video/wave.mp4");
+cp = system cp build/video/wave/frame-48.png images/wave.png;
+assert(cp.code == 0);
+println("wrote images/wave.mp4 and images/wave.png");

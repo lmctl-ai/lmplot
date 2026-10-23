@@ -3,11 +3,16 @@
 # Image 2: 'pointinterval' with a UTF-8 character as the point symbol.
 # Image 3: arrow styles (heads, filled/empty/nofilled), compared with 'with vectors'.
 out = ARGV.len() > 0 ? ARGV[0] : "build/lines_arrows.dslb";
-mkdir("build/examples");
+mkdir("images");
+mkdir("build");
+if (!file_exists("examples/data/arrowstyle.dat")) {
+  mkdir("examples/data");
+  write_file("examples/data/arrowstyle.dat", http_get("https://raw.githubusercontent.com/lmctl-ai/lmplot/main/examples/data/arrowstyle.dat"));
+}
 p = _dsl_ cli="lmplot" install="github:lmctl-ai/lmplot@latest";
 
 # --- 1: independent colours and dash styles ---
-plot.png("build/examples/lines_arrows-1.png", 800, 600);
+plot.png("images/lines_arrows-1.png", 800, 600);
 plot.cmd("set termoption dash");
 plot.cmd("set xrange [-0.5:3.5]");
 plot.cmd("set yrange [-1:1.4]");
@@ -34,7 +39,7 @@ plot.cmd("plot cos(x) ls 1 title 'ls 1', cos(x-.2) ls 2 title 'ls 2', cos(x-.4) 
 plot.close();
 
 # --- 2: point interval with unicode glyphs as point symbols ---
-plot.png("build/examples/lines_arrows-2.png", 800, 600);
+plot.png("images/lines_arrows-2.png", 800, 600);
 plot.cmd("unset for [i=1:8] label i");
 plot.cmd("set encoding utf8");
 plot.cmd("set title 'The pointinterval property also works with character point symbols'");
@@ -48,7 +53,7 @@ plot.cmd("plot '+' using 1:(cos(x-1.)) with line lt -1 lw 1 title 'lw 1', '+' us
 plot.close();
 
 # --- 3: arrow styles ---
-plot.png("build/examples/lines_arrows-3.png", 800, 600);
+plot.png("images/lines_arrows-3.png", 800, 600);
 plot.cmd("reset");
 plot.cmd("set xrange [-1000:1000]");
 plot.cmd("set yrange [-178:86]");
@@ -70,4 +75,8 @@ plot.cmd("plot 'examples/data/arrowstyle.dat' using 1:2:(0):3 notitle with vecto
 plot.close();
 end _dsl_
 savedsl(p, out);
-println(f"wrote {out}");
+r = system ${dsl_cli(p)} --dsl ${out};
+assert(r.code == 0);
+cp = system cp images/lines_arrows-1.png images/lines_arrows.png;
+assert(cp.code == 0);
+println("wrote images/lines_arrows.png (and images/lines_arrows-1.png .. images/lines_arrows-3.png)");

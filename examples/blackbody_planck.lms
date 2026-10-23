@@ -1,9 +1,10 @@
 # Stellar blackbody radiation: Planck spectral radiance B(lambda, T) across UV,
 # visible (380-750 nm) and near-IR, with Wien's displacement law locus and
 # Stefan-Boltzmann integrated flux computed in lmscript.
-# Writes build/examples/blackbody_planck.png (900x560).
+# Writes images/blackbody_planck.png (900x560).
 out = ARGV.len() > 0 ? ARGV[0] : "build/blackbody_planck.dslb";
-mkdir("build/examples");
+mkdir("images");
+mkdir("build");
 p = _dsl_ cli="lmplot" install="github:lmctl-ai/lmplot@latest";
 
 let b_wien = 2897771.9;
@@ -33,7 +34,7 @@ plot.echo("Wien peak range (nm): " + str(min_peak_nm) + " .. " + str(max_peak_nm
 plot.echo("Solar peak wavelength: " + str(sun_lam) + " nm");
 plot.echo("Solar bolometric flux: " + str(sun_flux) + " MW/m^2");
 
-plot.png("build/examples/blackbody_planck.png", 900, 560);
+plot.png("images/blackbody_planck.png", 900, 560);
 plot.cmd("set encoding utf8");
 plot.cmd("set title 'Planck Blackbody Spectral Radiance — Wien Displacement Locus Across Stellar Temperatures' font ',12'");
 plot.cmd("set xlabel 'Wavelength λ (nm)'");
@@ -62,8 +63,6 @@ plot.cmd("plot planck(x, 6500) with filledcurves y1=0 lc rgb '#2563eb' notitle, 
 plot.close();
 end _dsl_
 savedsl(p, out);
-if (ARGV.len() == 0) {
-  r = system ${dsl_cli(p)} --dsl ${out};
-  assert(r.code == 0);
-}
-println(f"wrote {out}");
+r = system ${dsl_cli(p)} --dsl ${out};
+assert(r.code == 0);
+println("wrote images/blackbody_planck.png");

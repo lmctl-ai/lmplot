@@ -1,9 +1,10 @@
 # Urban Heat Island (UHI) thermal anomaly field across a 24x24 km metropolitan
 # basin (downtown core, industrial corridor, river cooling channel, and park),
 # paired with West-East and South-North cross-section transects.
-# Writes build/examples/urban_heat_island.png (900x560).
+# Writes images/urban_heat_island.png (900x560).
 out = ARGV.len() > 0 ? ARGV[0] : "build/urban_heat_island.dslb";
-mkdir("build/examples");
+mkdir("images");
+mkdir("build");
 p = _dsl_ cli="lmplot" install="github:lmctl-ai/lmplot@latest";
 
 fn exp_neg(u: float) -> float {
@@ -58,7 +59,7 @@ plot.echo("Peak downtown anomaly: +" + str(dt_max) + " C");
 plot.echo("Park/river minimum:    " + str(dt_min) + " C");
 plot.echo("Basin mean anomaly:    +" + str(dt_mean) + " C");
 
-plot.png("build/examples/urban_heat_island.png", 900, 560);
+plot.png("images/urban_heat_island.png", 900, 560);
 plot.cmd("set encoding utf8");
 plot.cmd("set multiplot");
 
@@ -109,8 +110,6 @@ plot.cmd("unset multiplot");
 plot.close();
 end _dsl_
 savedsl(p, out);
-if (ARGV.len() == 0) {
-  r = system ${dsl_cli(p)} --dsl ${out};
-  assert(r.code == 0);
-}
-println(f"wrote {out}");
+r = system ${dsl_cli(p)} --dsl ${out};
+assert(r.code == 0);
+println("wrote images/urban_heat_island.png");

@@ -1,9 +1,10 @@
 # Exoplanet radial-velocity detection: synthetic Doppler measurements of a star
 # orbited by a warm Jupiter (K = 42.5 m/s, P = 18.4 d), analysed with gnuplot
 # `stats`, orbital mass derived in lmscript, and plotted with O-C residuals.
-# Writes build/examples/kepler_rv_fit.png (900x560).
+# Writes images/kepler_rv_fit.png (900x560).
 out = ARGV.len() > 0 ? ARGV[0] : "build/kepler_rv_fit.dslb";
-mkdir("build/examples");
+mkdir("images");
+mkdir("build");
 p = _dsl_ cli="lmplot" install="github:lmctl-ai/lmplot@latest";
 
 fn sin_approx(x: float) -> float {
@@ -71,7 +72,7 @@ plot.echo("Mp sin(i)      " + str(mp_sini) + " M_Jup");
 let summary = plot.str("sprintf('P = 18.40 d | K = %.1f m/s | e = 0.14\nM·sin(i) = %.2f M_Jup  (Δv = %.0f m/s)\nO-C RMS = %.2f m/s  (χ²/ν = %.2f)', " + str(k_true) + ", " + str(mp_sini) + ", " + str(vmax - vmin) + ", " + str(rms_res) + ", " + str(chi2_red) + ")");
 
 # 3. Render 2-panel phase-folded radial-velocity figure + O-C residuals.
-plot.png("build/examples/kepler_rv_fit.png", 900, 560);
+plot.png("images/kepler_rv_fit.png", 900, 560);
 plot.cmd("set encoding utf8");
 plot.cmd("set multiplot");
 
@@ -108,8 +109,6 @@ plot.cmd("unset multiplot");
 plot.close();
 end _dsl_
 savedsl(p, out);
-if (ARGV.len() == 0) {
-  r = system ${dsl_cli(p)} --dsl ${out};
-  assert(r.code == 0);
-}
-println(f"wrote {out}");
+r = system ${dsl_cli(p)} --dsl ${out};
+assert(r.code == 0);
+println("wrote images/kepler_rv_fit.png");

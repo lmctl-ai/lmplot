@@ -6,7 +6,9 @@ HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$HERE"
 
 BUILD_DIR="${BUILD_DIR:-build}"
-mkdir -p "$BUILD_DIR/examples" docs/images
+rm -rf images
+mkdir -p "$BUILD_DIR/examples" "$BUILD_DIR/video" docs/images images
+trap 'rm -rf "$HERE/images"' EXIT
 
 # Put the local build and any cached sibling tools on PATH first.
 export PATH="$(cd "$BUILD_DIR" 2>/dev/null && pwd || echo "$HERE/$BUILD_DIR"):$PATH"
@@ -24,12 +26,12 @@ if [ ! -x "$HOST" ]; then
   cmake --build "$BUILD_DIR" >/dev/null
 fi
 
-# 1. Compile and run all standalone lmplot examples in examples/*.lms
+# 1. Compile and self-execute all standalone lmplot examples in examples/*.lms
 for src in examples/*.lms; do
   name="$(basename "$src" .lms)"
   "$LMSCRIPT" "$src" "$BUILD_DIR/$name.dslb" >/dev/null
-  "$HOST" --dsl "$BUILD_DIR/$name.dslb" >/dev/null
 done
+mv images/*.png "$BUILD_DIR/examples/"
 
 # Refresh examples/renders/ and copy classic gallery previews to docs/images/
 scripts/update-renders.sh >/dev/null
@@ -54,6 +56,7 @@ done
 # 2. Multi-host combo examples (lmcad + lmplot, lmdraw + lmplot)
 if command -v lmcad >/dev/null 2>&1; then
   "$LMSCRIPT" examples/combo/nozzle_cad_plot.lms >/dev/null
+  mv images/nozzle_cad_plot.png "$BUILD_DIR/examples/nozzle_cad_plot.png"
   cp "$BUILD_DIR/examples/nozzle_cad_plot.png" docs/images/nozzle_cad_plot.png
 else
   echo "note: skipping nozzle_cad_plot.lms regeneration (lmcad not on PATH)"
@@ -61,6 +64,7 @@ fi
 
 if command -v lmdraw >/dev/null 2>&1 && command -v ffmpeg >/dev/null 2>&1; then
   "$LMSCRIPT" examples/combo/sir_epidemic_draw_plot.lms >/dev/null
+  mv images/sir_epidemic_draw_plot.png "$BUILD_DIR/examples/sir_epidemic_draw_plot.png"
   cp "$BUILD_DIR/examples/sir_epidemic_draw_plot.png" docs/images/sir_epidemic_draw_plot.png
 else
   echo "note: skipping sir_epidemic_draw_plot.lms regeneration (lmdraw or ffmpeg not on PATH)"
@@ -69,9 +73,13 @@ fi
 # 3. Video / animation examples via ffmpeg
 if command -v ffmpeg >/dev/null 2>&1; then
   "$LMSCRIPT" examples/video/quantum_packet.lms >/dev/null
+  mv images/quantum_packet.gif "$BUILD_DIR/video/quantum_packet.gif"
+  mv images/quantum_packet.mp4 "$BUILD_DIR/video/quantum_packet.mp4"
+  mv images/quantum_packet.png "$BUILD_DIR/video/quantum_packet.png"
   cp "$BUILD_DIR/video/quantum_packet.gif" docs/images/quantum_packet.gif
 else
   echo "note: skipping quantum_packet.gif regeneration (ffmpeg not on PATH)"
 fi
 
+rm -rf images
 echo "docs/images/ updated ($(ls -1 docs/images | wc -l | tr -d ' ') files)"

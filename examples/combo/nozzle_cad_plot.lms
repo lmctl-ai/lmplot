@@ -5,7 +5,9 @@
 # 2. lmplot solves the quasi-1D isentropic area-Mach relation A/A*(x) along the
 #    nozzle axis (subsonic inlet -> sonic throat M=1 -> M=3.10 supersonic exit)
 #    and combines the 3D CAD cutaway render with the Mach/pressure/temperature
-#    profiles in a single 900x560 engineering figure.
+#    profiles in a single 900x560 engineering figure (images/nozzle_cad_plot.png).
+out = ARGV.len() > 0 ? ARGV[0] : "build/nozzle_flow.dslb";
+mkdir("images");
 mkdir("build/examples");
 
 cad = _dsl_ cli="lmcad" install="github:lmctl-ai/lmcad@latest";
@@ -127,7 +129,7 @@ let max_mach = plot.num("STATS_max_y");
 plot.echo("Expansion ratio Ae/A* = " + str(max_ar));
 plot.echo("Exit Mach number Me   = " + str(max_mach));
 
-plot.png("build/examples/nozzle_cad_plot.png", 900, 560);
+plot.png("images/nozzle_cad_plot.png", 900, 560);
 plot.cmd("set encoding utf8");
 plot.cmd("set multiplot");
 
@@ -176,7 +178,7 @@ plot.cmd("plot $NOZZLE using 1:($2/11.0) axes x1y1 with filledcurves y1=0 lc rgb
 plot.cmd("unset multiplot");
 plot.close();
 end _dsl_
-savedsl(p, "build/nozzle_flow.dslb");
-r = system ${dsl_cli(p)} --dsl build/nozzle_flow.dslb;
+savedsl(p, out);
+r = system ${dsl_cli(p)} --dsl ${out};
 assert(r.code == 0);
-println("wrote build/examples/nozzle_cad_plot.png");
+println("wrote images/nozzle_cad_plot.png");

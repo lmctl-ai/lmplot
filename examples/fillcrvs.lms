@@ -1,22 +1,23 @@
 # Demo fillcrvs.dem: "plot with filledcurves" in several variants.
 out = ARGV.len() > 0 ? ARGV[0] : "build/fillcrvs.dslb";
-mkdir("build/examples");
+mkdir("images");
+mkdir("build");
 p = _dsl_ cli="lmplot" install="github:lmctl-ai/lmplot@latest";
 # Image 1: the many filledcurve closing modes (x2, default, y1=, xy=, x1, y2).
-plot.png("build/examples/fillcrvs-1.png", 800, 600);
+plot.png("images/fillcrvs-1.png", 800, 600);
 plot.cmd("set key outside");
 plot.cmd("set title 'plot with filledcurve [options]'");
 plot.script("plot [-10:10] [-5:3] 1.5+sin(x)/x with filledcurve x2, sin(x)/x with filledcurve, 1+sin(x)/x with lines, -1+sin(x)/x with filledcurve y1=-2, -2.5+sin(x)/x with filledcurve xy=-5,-4., -4.3+sin(x)/x with filledcurve x1, (x>3.5 ? x/3-3 : 1/0) with filledcurve y2");
 plot.close();
 # Image 2: intersection of two parabolas, grid drawn in front of the fills.
-plot.png("build/examples/fillcrvs-2.png", 800, 600);
+plot.png("images/fillcrvs-2.png", 800, 600);
 plot.cmd("set key on");
 plot.cmd("set grid front");
 plot.cmd("set title 'Intersection of two parabolas'");
 plot.cmd("plot x*x with filledcurves, 50-x*x with filledcurves, x*x with line lt 1");
 plot.close();
 # Image 3: parametric smiley built from filled curves, arrows and labels.
-plot.png("build/examples/fillcrvs-3.png", 700, 700);
+plot.png("images/fillcrvs-3.png", 700, 700);
 plot.cmd("reset");
 plot.cmd("set title \"Let's smile with parametric filled curves\"");
 plot.script("set size square\nset key off\nunset border\nunset xtics\nunset ytics\nset grid");
@@ -28,4 +29,8 @@ plot.script("plot [t=-pi:pi] sin(t),cos(t) with filledcurve xy=0,0 lt 15, sin(t)
 plot.close();
 end _dsl_
 savedsl(p, out);
-println(f"wrote {out}");
+r = system ${dsl_cli(p)} --dsl ${out};
+assert(r.code == 0);
+cp = system cp images/fillcrvs-1.png images/fillcrvs.png;
+assert(cp.code == 0);
+println("wrote images/fillcrvs.png (and images/fillcrvs-1.png .. images/fillcrvs-3.png)");

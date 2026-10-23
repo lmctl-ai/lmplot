@@ -1,19 +1,32 @@
 # Demo steps.dem: steps, fsteps and histeps, and histograms via smooth frequency.
 out = ARGV.len() > 0 ? ARGV[0] : "build/steps.dslb";
-mkdir("build/examples");
+mkdir("images");
+mkdir("build");
+if (!file_exists("examples/data/steps.dat")) {
+  mkdir("examples/data");
+  write_file("examples/data/steps.dat", http_get("https://raw.githubusercontent.com/lmctl-ai/lmplot/main/examples/data/steps.dat"));
+}
+if (!file_exists("examples/data/hemisphr.dat")) {
+  mkdir("examples/data");
+  write_file("examples/data/hemisphr.dat", http_get("https://raw.githubusercontent.com/lmctl-ai/lmplot/main/examples/data/hemisphr.dat"));
+}
 p = _dsl_ cli="lmplot" install="github:lmctl-ai/lmplot@latest";
 # Image 1: the three step styles over the raw points.
-plot.png("build/examples/steps-1.png", 800, 600);
+plot.png("images/steps-1.png", 800, 600);
 plot.cmd("set title 'Compare steps, fsteps and histeps'");
 plot.cmd("set key left");
 plot.cmd("plot [0:12][0:13] 'examples/data/steps.dat' notitle with points ps 2 pt 6, 'examples/data/steps.dat' title 'steps' with steps, 'examples/data/steps.dat' title 'fsteps' with fsteps, 'examples/data/steps.dat' title 'histeps' with histeps");
 plot.close();
 # Image 2: histogram built from unsorted data, drawn as filled steps.
-plot.png("build/examples/steps-2.png", 800, 600);
+plot.png("images/steps-2.png", 800, 600);
 plot.cmd("set title \"Histogram built from unsorted data by 'smooth frequency'\"");
 plot.script("set ylabel 'counts per bin'\nset xlabel 'bins'\nset key right\nset style fill solid 1.0");
 plot.cmd("plot 'examples/data/hemisphr.dat' u (floor($1*20)):(1) smooth freq with fillsteps title 'with fillsteps'");
 plot.close();
 end _dsl_
 savedsl(p, out);
-println(f"wrote {out}");
+r = system ${dsl_cli(p)} --dsl ${out};
+assert(r.code == 0);
+cp = system cp images/steps-1.png images/steps.png;
+assert(cp.code == 0);
+println("wrote images/steps.png (and images/steps-1.png .. images/steps-2.png)");

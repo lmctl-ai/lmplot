@@ -2,11 +2,16 @@
 # Image 1: 'with labels boxed' (two textbox styles) over line plots.
 # Image 2: 'with labels rotate variable tc variable' with a datablock built in the DSL.
 out = ARGV.len() > 0 ? ARGV[0] : "build/rotate_labels.dslb";
-mkdir("build/examples");
+mkdir("images");
+mkdir("build");
+if (!file_exists("examples/data/table.dat")) {
+  mkdir("examples/data");
+  write_file("examples/data/table.dat", http_get("https://raw.githubusercontent.com/lmctl-ai/lmplot/main/examples/data/table.dat"));
+}
 p = _dsl_ cli="lmplot" install="github:lmctl-ai/lmplot@latest";
 
 # --- 1: textboxes (two side by side panels via multiplot) ---
-plot.png("build/examples/rotate_labels-1.png", 1000, 500);
+plot.png("images/rotate_labels-1.png", 1000, 500);
 plot.cmd("set grid");
 plot.cmd("unset xtics");
 plot.cmd("set xrange [ -0.50 : 12.00 ]");
@@ -49,7 +54,7 @@ for (i in range(1, 13)) {
   rows = rows + str(i) + " " + name(i) + " " + str(-30 * i) + "\n";
 }
 plot.data("Data", rows);
-plot.png("build/examples/rotate_labels-2.png", 800, 600);
+plot.png("images/rotate_labels-2.png", 800, 600);
 plot.cmd("reset");
 plot.cmd("set angle degrees");
 plot.cmd("unset key");
@@ -63,4 +68,8 @@ plot.cmd("plot $Data using 1:1:2:3:0 with labels rotate variable tc variable fon
 plot.close();
 end _dsl_
 savedsl(p, out);
-println(f"wrote {out}");
+r = system ${dsl_cli(p)} --dsl ${out};
+assert(r.code == 0);
+cp = system cp images/rotate_labels-2.png images/rotate_labels.png;
+assert(cp.code == 0);
+println("wrote images/rotate_labels.png (and images/rotate_labels-1.png .. images/rotate_labels-2.png)");

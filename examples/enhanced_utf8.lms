@@ -3,11 +3,12 @@
 #          alignment of labels, bold/italic markup.
 # Image 2: Greek letters via the {/Symbol ...} font switch and via UTF-8, in titles, labels and tics.
 out = ARGV.len() > 0 ? ARGV[0] : "build/enhanced_utf8.dslb";
-mkdir("build/examples");
+mkdir("images");
+mkdir("build");
 p = _dsl_ cli="lmplot" install="github:lmctl-ai/lmplot@latest";
 
 # --- 1: the enhanced text test page ---
-plot.png("build/examples/enhanced_utf8-1.png", 900, 650);
+plot.png("images/enhanced_utf8-1.png", 900, 650);
 plot.cmd("set termoption enhanced");
 plot.cmd("set encoding utf8");
 plot.cmd("set title 'Demo of enhanced text mode using a single UTF-8 encoded font\nThere is another demo that shows how to use a separate Symbol font'");
@@ -33,7 +34,7 @@ plot.cmd("plot sin(x)**2 lt 2 lw 2 title 'sin^2(x)'");
 plot.close();
 
 # --- 2: Greek via font switch and via unicode in axis labels, key and tic labels ---
-plot.png("build/examples/enhanced_utf8-2.png", 1000, 600);
+plot.png("images/enhanced_utf8-2.png", 1000, 600);
 plot.cmd("reset");
 plot.cmd("set termoption enhanced");
 plot.cmd("set encoding utf8");
@@ -48,4 +49,8 @@ plot.cmd("plot sin(x) title 'sin(φ)', cos(x) title 'cos(φ)', exp(-x**2) title 
 plot.close();
 end _dsl_
 savedsl(p, out);
-println(f"wrote {out}");
+r = system ${dsl_cli(p)} --dsl ${out};
+assert(r.code == 0);
+cp = system cp images/enhanced_utf8-1.png images/enhanced_utf8.png;
+assert(cp.code == 0);
+println("wrote images/enhanced_utf8.png (and images/enhanced_utf8-1.png .. images/enhanced_utf8-2.png)");

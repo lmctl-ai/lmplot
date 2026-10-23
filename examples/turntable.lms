@@ -2,9 +2,10 @@
 # A plain .gp script would need a do-for with `set output sprintf(...)`; here the
 # loop, the file names and the view angle are ordinary typed lmscript code, and
 # each frame is one plot.png / plot.close pair.
-# Writes build/examples/turntable-0.png ... turntable-7.png.
+# Writes images/turntable-0.png ... turntable-7.png.
 out = ARGV.len() > 0 ? ARGV[0] : "build/turntable.dslb";
-mkdir("build/examples");
+mkdir("images");
+mkdir("build");
 p = _dsl_ cli="lmplot" install="github:lmctl-ai/lmplot@latest";
 
 # scene set up once: identical axes, ranges and colours in every frame
@@ -26,7 +27,7 @@ plot.cmd("set zlabel 'z'");
 let frames = 8;
 for (k in range(0, frames)) {
   let angle = 360 * k / frames;          # azimuth in degrees: 0, 45, ..., 315
-  let file = "build/examples/turntable-" + str(k) + ".png";
+  let file = "images/turntable-" + str(k) + ".png";
   plot.png(file, 480, 480);
   plot.cmd("set view 60, " + str(angle));
   plot.cmd("set title 'sin(r)/r surface, view 60, " + str(angle) + "'");
@@ -36,4 +37,8 @@ for (k in range(0, frames)) {
 }
 end _dsl_
 savedsl(p, out);
-println(f"wrote {out}");
+r = system ${dsl_cli(p)} --dsl ${out};
+assert(r.code == 0);
+cp = system cp images/turntable-3.png images/turntable.png;
+assert(cp.code == 0);
+println("wrote images/turntable.png (and images/turntable-0.png .. images/turntable-7.png)");

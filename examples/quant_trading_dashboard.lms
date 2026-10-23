@@ -1,9 +1,10 @@
 # Quantitative trading regime dashboard: 60 trading days of synthetic OHLC price
 # action with 10-day SMA, +-2 sigma Bollinger Bands, volume histogram, and
 # underwater peak-to-trough drawdown curve analysed via gnuplot stats.
-# Writes build/examples/quant_trading_dashboard.png (900x600).
+# Writes images/quant_trading_dashboard.png (900x600).
 out = ARGV.len() > 0 ? ARGV[0] : "build/quant_trading_dashboard.dslb";
-mkdir("build/examples");
+mkdir("images");
+mkdir("build");
 p = _dsl_ cli="lmplot" install="github:lmctl-ai/lmplot@latest";
 
 fn sqrt_pos(v: float) -> float {
@@ -112,7 +113,7 @@ plot.echo("Price range:   $" + str(p_min) + " .. $" + str(p_max));
 plot.echo("Total return:  +" + str(total_ret) + "%");
 plot.echo("Max drawdown:  " + str(max_dd) + "%");
 
-plot.png("build/examples/quant_trading_dashboard.png", 900, 600);
+plot.png("images/quant_trading_dashboard.png", 900, 600);
 plot.cmd("set encoding utf8");
 plot.cmd("set multiplot");
 plot.cmd("set boxwidth 0.62");
@@ -160,8 +161,6 @@ plot.cmd("unset multiplot");
 plot.close();
 end _dsl_
 savedsl(p, out);
-if (ARGV.len() == 0) {
-  r = system ${dsl_cli(p)} --dsl ${out};
-  assert(r.code == 0);
-}
-println(f"wrote {out}");
+r = system ${dsl_cli(p)} --dsl ${out};
+assert(r.code == 0);
+println("wrote images/quant_trading_dashboard.png");
