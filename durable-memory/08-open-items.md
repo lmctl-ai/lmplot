@@ -33,3 +33,14 @@
   (patch 0006) are candidates to report to gnuplot.
 - Rebasing: bump `gnuplot.lock`, run `scripts/sync-gnuplot.sh`; patches 0001
   and 0006 may become unnecessary.
+
+## From the 2026-10-23 review (fixed items are in git log; these remain)
+
+- No `--dry-run` (PROCEDURE rule 4): gnuplot writes through `set output`, `save`, `print` to
+  files and `system`, so a faithful dry run needs terminal/output interception.
+- Determinism is checked on one machine (byte-identical reruns); there are no golden image hashes
+  across platforms (the rasterizer uses libm sin/cos/sqrt), and `examples/expected.txt` does not
+  exist, so the PNG dimension check in `test.sh` is skipped.
+- `Plot.num` returns NaN as NaN (gnuplot's "no value"), so scripts must test for it.
+- Temporary scripts for `Plot.script`/`Plot.data` are created exclusively (O_EXCL) on POSIX only;
+  Windows uses the per-user temp directory with plain `fopen`.
