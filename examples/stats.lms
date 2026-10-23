@@ -5,7 +5,7 @@
 # Writes build/examples/stats.png.
 out = ARGV.len() > 0 ? ARGV[0] : "build/stats.dslb";
 mkdir("build/examples");
-p = _dsl_ schema="../schema/lmplot.dsl.json";
+p = _dsl_ cli="lmplot" install="github:lmctl-ai/lmplot@latest";
 
 # 1. Noisy line y = 2.5 + 0.8 x, from a deterministic LCG (no rand(), so reruns are byte-identical).
 let seed = 12345;

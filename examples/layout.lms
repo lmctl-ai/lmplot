@@ -3,7 +3,7 @@
 # Image 3: stacked plots sharing one x axis (zero top/bottom margins).
 out = ARGV.len() > 0 ? ARGV[0] : "build/layout.dslb";
 mkdir("build/examples");
-p = _dsl_ schema="../schema/lmplot.dsl.json";
+p = _dsl_ cli="lmplot" install="github:lmctl-ai/lmplot@latest";
 # The histogram/line data files live in examples/data (paths relative to repo root).
 let hist = "plot 'examples/data/immigration.dat' using 2 with histograms, '' using 7 with histograms, '' using 8 with histograms, '' using 11 with histograms";
 

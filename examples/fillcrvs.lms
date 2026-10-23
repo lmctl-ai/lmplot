@@ -1,7 +1,7 @@
 # Demo fillcrvs.dem: "plot with filledcurves" in several variants.
 out = ARGV.len() > 0 ? ARGV[0] : "build/fillcrvs.dslb";
 mkdir("build/examples");
-p = _dsl_ schema="../schema/lmplot.dsl.json";
+p = _dsl_ cli="lmplot" install="github:lmctl-ai/lmplot@latest";
 # Image 1: the many filledcurve closing modes (x2, default, y1=, xy=, x1, y2).
 plot.png("build/examples/fillcrvs-1.png", 800, 600);
 plot.cmd("set key outside");

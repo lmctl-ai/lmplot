@@ -1,7 +1,7 @@
 # Demo errorbars.dem: x/y error bars on the battery.dat measurements vs. a theory curve.
 out = ARGV.len() > 0 ? ARGV[0] : "build/errorbars.dslb";
 mkdir("build/examples");
-p = _dsl_ schema="../schema/lmplot.dsl.json";
+p = _dsl_ cli="lmplot" install="github:lmctl-ai/lmplot@latest";
 plot.script("set xlabel 'Resistance [Ohm]'\nset ylabel 'Power [W]'\nn(x)=1.53**2*x/(5.67+x)**2");
 # Image 1: both x and y errors.
 plot.png("build/examples/errorbars-1.png", 800, 600);

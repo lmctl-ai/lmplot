@@ -3,7 +3,7 @@
 # image 3: two data arrays on one set of axes with a spider grid (newspiderplot).
 out = ARGV.len() > 0 ? ARGV[0] : "build/spiderplot.dslb";
 mkdir("build/examples");
-p = _dsl_ schema="../schema/lmplot.dsl.json";
+p = _dsl_ cli="lmplot" install="github:lmctl-ai/lmplot@latest";
 # One data row with a header line: the column heads become the axis names.
 plot.data("DATA", "A\tB\tC\tD\tE\tF\n15\t75\t20\t43\t90\t50\n");
 plot.cmd("set spiderplot");

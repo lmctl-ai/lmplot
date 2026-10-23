@@ -1,7 +1,7 @@
 # Demo boxplot.dem: box plots of silver.dat and of energy usage grouped by factor.
 out = ARGV.len() > 0 ? ARGV[0] : "build/boxplot.dslb";
 mkdir("build/examples");
-p = _dsl_ schema="../schema/lmplot.dsl.json";
+p = _dsl_ cli="lmplot" install="github:lmctl-ai/lmplot@latest";
 # Image 1: two boxplots with custom x tics.
 plot.png("build/examples/boxplot-1.png", 800, 600);
 plot.script("set style fill solid 0.5 border -1\nset style boxplot outliers pointtype 7\nset style data boxplot\nset boxwidth 0.5\nset pointsize 0.5\nunset key\nset border 2");

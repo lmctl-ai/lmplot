@@ -1,7 +1,7 @@
 # vector.dem: dipole equipotentials (contours saved to a table) plus field vectors.
 out = ARGV.len() > 0 ? ARGV[0] : "build/vector.dslb";
 mkdir("build/examples");
-p = _dsl_ schema="../schema/lmplot.dsl.json";
+p = _dsl_ cli="lmplot" install="github:lmctl-ai/lmplot@latest";
 plot.script("r(x,y)=sqrt(x*x+y*y)\nx0=1.\nq1=1\nq2=-1\ncoef=.7");
 plot.script("v1(x,y)=q1/(r((x-x0),y))\nv2(x,y)=q2/(r((x+x0),y))\nvtot(x,y)=v1(x,y)+v2(x,y)");
 plot.script("e1x(x,y)=q1*(x-x0)/r(x-x0,y)**3\ne1y(x,y)=q1*y/r(x-x0,y)**3");

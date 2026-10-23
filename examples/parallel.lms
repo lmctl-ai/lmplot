@@ -4,7 +4,7 @@
 # Image 3: sampled functions, coloured by a palette.
 out = ARGV.len() > 0 ? ARGV[0] : "build/parallel.dslb";
 mkdir("build/examples");
-p = _dsl_ schema="../schema/lmplot.dsl.json";
+p = _dsl_ cli="lmplot" install="github:lmctl-ai/lmplot@latest";
 # --- 1: parallel axes with manipulated ranges ---
 plot.png("build/examples/parallel-1.png", 800, 600);
 plot.cmd("set title 'Parallel Axis Plot' font ',15'");

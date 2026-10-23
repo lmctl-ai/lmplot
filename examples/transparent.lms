@@ -3,7 +3,7 @@
 # image 3: transparent pattern-filled curves.
 out = ARGV.len() > 0 ? ARGV[0] : "build/transparent.dslb";
 mkdir("build/examples");
-p = _dsl_ schema="../schema/lmplot.dsl.json";
+p = _dsl_ cli="lmplot" install="github:lmctl-ai/lmplot@latest";
 plot.cmd("set encoding utf8");
 plot.cmd("set style fill solid 1.0 noborder");
 plot.cmd("set style function filledcurves y1=0");

@@ -8,7 +8,9 @@ file compiles to bytecode and writes PNG images into `build/examples/`:
 lmscript examples/pm3d.lms build/pm3d.dslb && build/lmplot --dsl build/pm3d.dslb
 ```
 
-Run from the repository root (data files are loaded by repo-relative paths).
+`lmscript` uses `lmplot` from `PATH` when present, otherwise it downloads the
+release binary into its tool cache; no schema file is needed. Run from the
+repository root (data files are loaded by repo-relative paths).
 `./test.sh` compiles and runs all of them, validates the PNGs and checks that
 a second run produces identical bytes. The checked-in previews in `renders/`
 come from `scripts/update-renders.sh`.
@@ -52,7 +54,7 @@ from the gnuplot demo directory (gnuplot license, see `../THIRD_PARTY_NOTICES`).
 ```
 out = ARGV.len() > 0 ? ARGV[0] : "build/mine.dslb";   # compile-time argv: output path
 mkdir("build/examples");                              # ordinary lmscript, outside the block
-p = _dsl_ schema="../schema/lmplot.dsl.json";         # schema path is relative to this file
+p = _dsl_ cli="lmplot" install="github:lmctl-ai/lmplot@latest";  # host binary supplies the schema
 plot.png("build/examples/mine.png", 800, 600);        # inside the block: the Plot API
 plot.cmd("plot sin(x)");
 plot.close();

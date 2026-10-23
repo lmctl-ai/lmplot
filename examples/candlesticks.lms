@@ -1,7 +1,7 @@
 # Demo candlesticks.dem: candlestick and box-and-whisker plots.
 out = ARGV.len() > 0 ? ARGV[0] : "build/candlesticks.dslb";
 mkdir("build/examples");
-p = _dsl_ schema="../schema/lmplot.dsl.json";
+p = _dsl_ cli="lmplot" install="github:lmctl-ai/lmplot@latest";
 plot.script("set xrange [0:11]\nset yrange [0:10]\nset boxwidth 0.2");
 # Image 1: open/close states, hollow when open < close.
 plot.png("build/examples/candlesticks-1.png", 800, 600);

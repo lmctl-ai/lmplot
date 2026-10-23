@@ -43,21 +43,25 @@ lmplot gnuplot my_script.gp
 ```
 
 **From lmscript.** A program is a `_dsl_` block compiled by `lmscript`
-(`npm i -g @lmctl-ai/lmctl`) against the embedded schema, then run by the host:
+(`npm i -g @lmctl-ai/lmctl`). The block names the host, not a schema file:
+`lmscript` finds `lmplot` on `PATH`, or downloads the release binary for your
+platform on first use (`install=`), and compiles against the schema built into
+it:
 
 ```
 # sine.lms
-p = _dsl_ schema="schema/lmplot.dsl.json";
+p = _dsl_ cli="lmplot" install="github:lmctl-ai/lmplot@latest";
 plot.png("sine.png", 800, 500);
 plot.cmd("set title 'sin(x) and a fit'");
 plot.cmd("plot sin(x) lw 2, x - x**3/6 dt 2");
 plot.close();
 end _dsl_
 savedsl(p, "sine.dslb");
+system ${dsl_cli(p)} --dsl sine.dslb;   # run it with exactly the binary it was compiled against
 ```
 
 ```sh
-lmscript sine.lms && lmplot --dsl sine.dslb
+lmscript sine.lms     # downloads lmplot on first use if it is not on PATH
 ```
 
 The script keeps loops, numbers and string building; gnuplot keeps drawing.

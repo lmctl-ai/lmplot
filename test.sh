@@ -23,6 +23,8 @@ png_size(){
   echo "$(( (b[0]<<24)+(b[1]<<16)+(b[2]<<8)+b[3] ))x$(( (b[4]<<24)+(b[5]<<16)+(b[6]<<8)+b[7] ))"
 }
 
+# lmscript resolves `cli="lmplot"` on PATH first, so the examples bind to the binary under test.
+export PATH="$(cd "$BUILD_DIR" 2>/dev/null && pwd || echo "$HERE/$BUILD_DIR"):$PATH"
 LMSCRIPT="$(scripts/select-compiler.sh)"
 scripts/sync-sdk.sh --verify >/dev/null || fail "SDK header pin mismatch"
 ok "SDK header matches sdk.lock"
@@ -124,7 +126,7 @@ ok "all $(wc -l <"$WORK/after.txt" | tr -d ' ') example images are byte-identica
 
 # DSL error paths.
 cat >"$WORK/bad.lms" <<LMS
-p = _dsl_ schema="$ROOT/schema/lmplot.dsl.json";
+p = _dsl_ cli="lmplot";
 plot.cmd("this is not a gnuplot command");
 plot.echo("unreachable");
 end _dsl_
@@ -138,7 +140,7 @@ echo "$out" | grep -q 'unreachable' && fail "statements after the failing comman
 ok "a failing gnuplot command stops the program (exit 3, JSON error)"
 
 cat >"$WORK/values.lms" <<LMS
-p = _dsl_ schema="$ROOT/schema/lmplot.dsl.json";
+p = _dsl_ cli="lmplot";
 plot.data("d", "1 2\n2 4\n3 6\n4 8");
 plot.cmd("set terminal unknown");
 plot.cmd("stats \$d u 1:2 nooutput");

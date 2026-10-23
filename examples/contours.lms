@@ -1,7 +1,7 @@
 # contours.dem: contour lines on the base grid and on the surface.
 out = ARGV.len() > 0 ? ARGV[0] : "build/contours.dslb";
 mkdir("build/examples");
-p = _dsl_ schema="../schema/lmplot.dsl.json";
+p = _dsl_ cli="lmplot" install="github:lmctl-ai/lmplot@latest";
 plot.script("set samples 20\nset isosamples 21\nset xlabel 'X axis'\nset ylabel 'Y axis'");
 plot.script("set zlabel 'Z ' offset 1, 0\nset view 60, 30, 0.85, 1.1");
 plot.script("set key at screen 1.0, 0.9\nset style textbox opaque noborder margins 0.5, 0.5");

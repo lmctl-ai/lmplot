@@ -3,7 +3,7 @@
 # Image 2: the same lines at increasing line widths.
 out = ARGV.len() > 0 ? ARGV[0] : "build/dashtypes.dslb";
 mkdir("build/examples");
-p = _dsl_ schema="../schema/lmplot.dsl.json";
+p = _dsl_ cli="lmplot" install="github:lmctl-ai/lmplot@latest";
 # One labelled sample line: arrow number n at height y with dash spec dt
 # (the label is placed to its left, 'noenhanced' keeps '_' literal).
 fn sample(n: int, y: float, name: string, dt: string, lt: int) -> void {

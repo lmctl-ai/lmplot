@@ -1,7 +1,7 @@
 # Demo fillbetween.dem: fill the area between two curves (data from silver.dat).
 out = ARGV.len() > 0 ? ARGV[0] : "build/fillbetween.dslb";
 mkdir("build/examples");
-p = _dsl_ schema="../schema/lmplot.dsl.json";
+p = _dsl_ cli="lmplot" install="github:lmctl-ai/lmplot@latest";
 # Image 1: plain filledcurves between columns 2 and 3, outlined with lines.
 plot.png("build/examples/fillbetween-1.png", 800, 600);
 plot.script("set style data lines\nset xrange [10:*]\nset yrange [0:175]");

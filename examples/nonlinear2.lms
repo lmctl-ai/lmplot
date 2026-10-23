@@ -4,7 +4,7 @@
 # Image 1: logscale.  Image 2: nonlinear axes (identical output expected).
 out = ARGV.len() > 0 ? ARGV[0] : "build/nonlinear2.dslb";
 mkdir("build/examples");
-p = _dsl_ schema="../schema/lmplot.dsl.json";
+p = _dsl_ cli="lmplot" install="github:lmctl-ai/lmplot@latest";
 
 # common setup: complex transfer function A(jw), a second y axis for the phase
 plot.cmd("set dummy jw, y");

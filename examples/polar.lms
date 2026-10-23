@@ -1,7 +1,7 @@
 # polar.dem: functions in polar coordinates.
 out = ARGV.len() > 0 ? ARGV[0] : "build/polar.dslb";
 mkdir("build/examples");
-p = _dsl_ schema="../schema/lmplot.dsl.json";
+p = _dsl_ cli="lmplot" install="github:lmctl-ai/lmplot@latest";
 # Image 1: a rose curve and a four-leaf pattern.
 plot.png("build/examples/polar-1.png", 800, 600);
 plot.script("unset border\nset clip\nset polar\nset xtics axis nomirror\nset ytics axis nomirror");

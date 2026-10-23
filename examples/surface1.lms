@@ -1,7 +1,7 @@
 # surface1.dem: 3D surfaces from a matrix (hidden3d) and from functions, with labels and arrows.
 out = ARGV.len() > 0 ? ARGV[0] : "build/surface1.dslb";
 mkdir("build/examples");
-p = _dsl_ schema="../schema/lmplot.dsl.json";
+p = _dsl_ cli="lmplot" install="github:lmctl-ai/lmplot@latest";
 # Image 1: a 5x5 matrix of Z values drawn as a hidden-line wireframe.
 plot.png("build/examples/surface1-1.png", 800, 600);
 plot.cmd("set title '3D surface from a grid (matrix) of Z values'");

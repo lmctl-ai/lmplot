@@ -4,7 +4,7 @@
 # Image 2: Greek letters via the {/Symbol ...} font switch and via UTF-8, in titles, labels and tics.
 out = ARGV.len() > 0 ? ARGV[0] : "build/enhanced_utf8.dslb";
 mkdir("build/examples");
-p = _dsl_ schema="../schema/lmplot.dsl.json";
+p = _dsl_ cli="lmplot" install="github:lmctl-ai/lmplot@latest";
 
 # --- 1: the enhanced text test page ---
 plot.png("build/examples/enhanced_utf8-1.png", 900, 650);

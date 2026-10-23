@@ -1,7 +1,7 @@
 # Demo histograms.dem: clustered, stacked and multi-group histograms (immigration.dat).
 out = ARGV.len() > 0 ? ARGV[0] : "build/histograms.dslb";
 mkdir("build/examples");
-p = _dsl_ schema="../schema/lmplot.dsl.json";
+p = _dsl_ cli="lmplot" install="github:lmctl-ai/lmplot@latest";
 plot.cmd("set datafile missing '-'");
 plot.cmd("set key noenhanced");  # keep underscores in names like United_Kingdom literal
 plot.script("set style data histogram\nset style fill solid border -1\nset boxwidth 0.9");

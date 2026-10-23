@@ -45,3 +45,15 @@ generate-plot-read-back loops without a second description of gnuplot.
 Deliberate omissions for v0: no per-call error recovery (`try`), no reading of
 whole datablocks back into the script, no image post-processing, no `replot`
 helper (just `plot.cmd("replot")`).
+
+## How programs bind to the schema
+
+Programs use `_dsl_ cli="lmplot" install="github:lmctl-ai/lmplot@latest";`, not a
+schema file: `lmscript` runs `lmplot --dsl-schema --json` (searching `PATH`
+first, then its tool cache, filled on first use from the release asset
+`lmplot-<os>-<arch>[.exe]` with its SHA-256 checked), so the bytecode is bound
+to the binary that runs it and a downloaded release is all a user needs.
+`dsl_cli(p)` gives the argv prefix for running it. `test.sh` puts the build
+directory first on `PATH` so examples bind to the binary under test.
+`schema/lmplot.dsl.json` remains the source the binary embeds (and
+`select-compiler.sh` still probes with `schema=`).

@@ -1,7 +1,7 @@
 # image.dem: plotting a binary RGB image, and rotated/translated copies.
 out = ARGV.len() > 0 ? ARGV[0] : "build/image.dslb";
 mkdir("build/examples");
-p = _dsl_ schema="../schema/lmplot.dsl.json";
+p = _dsl_ cli="lmplot" install="github:lmctl-ai/lmplot@latest";
 # Data: examples/data/blutux.rgb, 128x128 RGB bytes (path relative to the repo root).
 # Image 1: the penguin with a label.
 plot.png("build/examples/image-1.png", 800, 600);

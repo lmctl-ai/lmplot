@@ -1,7 +1,7 @@
 # Demo param.dem: parametric plots and a parametric pm3d sphere.
 out = ARGV.len() > 0 ? ARGV[0] : "build/param.dslb";
 mkdir("build/examples");
-p = _dsl_ schema="../schema/lmplot.dsl.json";
+p = _dsl_ cli="lmplot" install="github:lmctl-ai/lmplot@latest";
 plot.script("set parametric\nset dummy t\nset samples 160\nset key box\nset key below");
 # Image 1: conic sections.
 plot.png("build/examples/param-1.png", 800, 600);

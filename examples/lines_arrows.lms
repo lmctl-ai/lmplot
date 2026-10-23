@@ -4,7 +4,7 @@
 # Image 3: arrow styles (heads, filled/empty/nofilled), compared with 'with vectors'.
 out = ARGV.len() > 0 ? ARGV[0] : "build/lines_arrows.dslb";
 mkdir("build/examples");
-p = _dsl_ schema="../schema/lmplot.dsl.json";
+p = _dsl_ cli="lmplot" install="github:lmctl-ai/lmplot@latest";
 
 # --- 1: independent colours and dash styles ---
 plot.png("build/examples/lines_arrows-1.png", 800, 600);

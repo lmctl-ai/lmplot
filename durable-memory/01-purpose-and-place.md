@@ -12,7 +12,7 @@ works, including PNG output with TrueType text.
 Two ways to drive it:
 
 - `lmplot --dsl program.dslb` runs lmscript `_dsl_` bytecode against the
-  embedded schema (`schema/lmplot.dsl.json`, type `Plot`, context `plot`).
+  embedded schema (`schema/lmplot.dsl.json`, embedded in the binary and read by `lmscript` through `cli="lmplot"`; type `Plot`, context `plot`).
   The script keeps control flow, loops, string building and numbers;
   gnuplot keeps drawing. `plot.cmd("...")` runs gnuplot commands,
   `plot.num("STATS_slope")` reads values back.

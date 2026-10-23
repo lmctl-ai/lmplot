@@ -5,7 +5,7 @@
 # Writes build/examples/turntable-0.png ... turntable-7.png.
 out = ARGV.len() > 0 ? ARGV[0] : "build/turntable.dslb";
 mkdir("build/examples");
-p = _dsl_ schema="../schema/lmplot.dsl.json";
+p = _dsl_ cli="lmplot" install="github:lmctl-ai/lmplot@latest";
 
 # scene set up once: identical axes, ranges and colours in every frame
 plot.cmd("set samples 40, 40");

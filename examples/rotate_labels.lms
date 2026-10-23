@@ -3,7 +3,7 @@
 # Image 2: 'with labels rotate variable tc variable' with a datablock built in the DSL.
 out = ARGV.len() > 0 ? ARGV[0] : "build/rotate_labels.dslb";
 mkdir("build/examples");
-p = _dsl_ schema="../schema/lmplot.dsl.json";
+p = _dsl_ cli="lmplot" install="github:lmctl-ai/lmplot@latest";
 
 # --- 1: textboxes (two side by side panels via multiplot) ---
 plot.png("build/examples/rotate_labels-1.png", 1000, 500);
