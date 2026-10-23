@@ -1,6 +1,8 @@
 // lmplot: gnuplot embedded in a single static executable, scriptable from
 // lmscript `_dsl_` bytecode. See durable-memory/ for the design.
 #include "dslvm.hpp"
+#include "gp_memory.h"
+#include "memory_budget.hpp"
 #include "notices_embedded.hpp"
 #include "schema_embedded.hpp"
 
@@ -54,11 +56,18 @@ struct Host {
     if (lmplot_gp_init() != 0) throw dslvm::Error("gnuplot initialization failed");
     ready = true;
   }
+  // gnuplot's allocations cannot throw: a refused gp_alloc ends the command with "out of memory",
+  // bare mallocs over the budget and png-terminal failures are only noted (gp_memory.h). Either
+  // way the budget message is the error.
+  static void check_budget() {
+    if (const char *failure = lmplot_mem_failure()) throw dslvm::Error(failure);
+  }
   void run(const std::string &cmd) {
     init();
     std::fflush(stdout);
     int rc = lmplot_gp_do(cmd.c_str());
     std::fflush(stdout);
+    check_budget();
     if (rc != 0) {
       std::string msg = lmplot_gp_errmsg();
       throw dslvm::Error("gnuplot: " + (msg.empty() ? std::string("command failed: ") + cmd : msg));
@@ -70,7 +79,11 @@ struct Host {
     init();
     char *s = nullptr;
     int kind = lmplot_gp_eval(expr.c_str(), &num, &s);
-    if (kind == 2) { str = s; std::free(s); }
+    if (kind == 2) {
+      try { str = s; } catch (...) { lmplot_mem_free(s); throw; }
+      lmplot_mem_free(s);
+    }
+    check_budget();
     if (kind == 3) throw dslvm::Error(who + ": value is complex (non-zero imaginary part): " + expr);
     if (kind == 4) throw dslvm::Error(who + ": value is not a number or string (array, datablock?): " + expr);
     if (kind == 0) {
@@ -197,9 +210,11 @@ void register_host(dslvm::Registry &r, Host &h) {
     char *str = nullptr;
     h.run("lmplot_terms__ = GPVAL_TERMINALS");
     int kind = lmplot_gp_eval("lmplot_terms__", &num, &str);
+    Host::check_budget();
     if (kind != 2) throw dslvm::Error("GPVAL_TERMINALS unavailable");
-    std::string s = str;
-    std::free(str);
+    std::string s;
+    try { s = str; } catch (...) { lmplot_mem_free(str); throw; }
+    lmplot_mem_free(str);
     return Value::string(s);
   });
   checked(r, "echo", {"string"}, "void", [](void *, Args &a) { std::fflush(stdout); std::cout << a[0].s << std::endl; return Value::none(); });
@@ -208,7 +223,9 @@ void register_host(dslvm::Registry &r, Host &h) {
 
 const char *usage =
     "usage: lmplot --version | --notices | --dsl-schema [--json] | --dsl-signatures | --dsl FILE [FILE ...]\n"
-    "       lmplot gnuplot [GNUPLOT-OPTIONS] [FILE ...]   (the embedded gnuplot command line)\n";
+    "       lmplot gnuplot [GNUPLOT-OPTIONS] [FILE ...]   (the embedded gnuplot command line)\n"
+    "environment: LMPLOT_MAX_MEMORY_MB  total memory budget in MiB (default 4096, gnuplot included); a\n"
+    "             program that needs more stops with a run error (exit 3) instead of allocating\n";
 
 }  // namespace
 
@@ -225,6 +242,7 @@ int main(int argc, char **argv) {
 #else
       setenv("GNUTERM", "dumb", 0);
 #endif
+    if (!membudget::configure("lmplot", "LMPLOT_MAX_MEMORY_MB")) { std::cerr << usage; return 2; }
     std::vector<char *> args;
     args.push_back(argv[0]);
     for (int i = 2; i < argc; i++) args.push_back(argv[i]);
@@ -269,6 +287,7 @@ int main(int argc, char **argv) {
       return 2;
     }
   }
+  if (!membudget::configure("lmplot", "LMPLOT_MAX_MEMORY_MB")) { std::cerr << usage; return 2; }
   const std::string schema(reinterpret_cast<const char *>(lmplot::embedded_schema), lmplot::embedded_schema_size);
   dslvm::Context context;
   context.set("plot", &host);
@@ -280,6 +299,8 @@ int main(int argc, char **argv) {
       programs.push_back(dslvm::Program::load(dslvm::read_file(argv[i]), schema, reg));
     } catch (const dslvm::Error &error) {
       return dslvm::report_error("load", error);
+    } catch (const std::exception &error) {
+      return dslvm::report_error("load", dslvm::Error(error.what()));
     }
   }
   int status = 0;
@@ -288,6 +309,9 @@ int main(int argc, char **argv) {
       program.run(context, reg);
     } catch (const dslvm::Error &error) {
       status = dslvm::report_error("run", error);
+      break;
+    } catch (const std::exception &error) {  // the memory budget in the VM
+      status = dslvm::report_error("run", dslvm::Error(error.what()));
       break;
     }
     dslvm::report_ok();

@@ -80,10 +80,15 @@ set(GP_SRC alloc amos_airy axis boundary breaders color command complexfun conto
   util3d version voxelgrid vplot watch xdg bitmap)
 list(TRANSFORM GP_SRC PREPEND "${GP}/src/")
 list(TRANSFORM GP_SRC APPEND ".c")
-add_library(gnuplot_core STATIC ${GP_SRC} cpp/raster/lmraster.cpp "${GEN}/fontdata.c")
+add_library(gnuplot_core STATIC ${GP_SRC} cpp/raster/lmraster.cpp cpp/gp_memory.cpp "${GEN}/fontdata.c")
 set_source_files_properties(cpp/raster/lmraster.cpp PROPERTIES COMPILE_OPTIONS "-w;-O2")
 target_include_directories(gnuplot_core PRIVATE cpp/gpconfig cpp/raster vendor "${GP}/src" "${GP}/term" "${GEN}" cpp)
 target_compile_definitions(gnuplot_core PRIVATE HAVE_CONFIG_H LMPLOT_EMBED LMPLOT_VERSION="${PROJECT_VERSION}")
+# Memory budget: gnuplot's malloc/free go through counting wrappers (cpp/gp_memory.h, force-included
+# into the C sources); only gp_alloc/gp_realloc in alloc.c may be refused (NULL -> "out of memory").
+target_compile_options(gnuplot_core PRIVATE "$<$<COMPILE_LANGUAGE:C>:-include>"
+  "$<$<COMPILE_LANGUAGE:C>:${CMAKE_CURRENT_SOURCE_DIR}/cpp/gp_memory.h>")
+set_source_files_properties("${GP}/src/alloc.c" PROPERTIES COMPILE_DEFINITIONS LMPLOT_MEM_CHECKED)
 # plot.c's main() becomes the full gnuplot command line, reachable as `lmplot gnuplot ...`.
 set_source_files_properties("${GP}/src/plot.c" PROPERTIES COMPILE_DEFINITIONS "main=gnuplot_cli_main")
 if(NOT MSVC)
@@ -93,7 +98,7 @@ if(NOT WIN32)
   target_link_libraries(gnuplot_core PUBLIC m)
 endif()
 
-add_executable(lmplot cpp/main.cpp)
+add_executable(lmplot cpp/main.cpp cpp/memory_budget.cpp)
 target_compile_definitions(lmplot PRIVATE LMPLOT_VERSION="${PROJECT_VERSION}")
 target_include_directories(lmplot PRIVATE cpp "${GEN}")
 target_link_libraries(lmplot PRIVATE gnuplot_core)

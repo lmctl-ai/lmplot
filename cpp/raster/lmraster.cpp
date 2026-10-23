@@ -6,6 +6,7 @@
 #include "stb_truetype.h"
 
 #include "deflate.hpp"
+#include "gp_memory.h"
 #include "lmraster.h"
 
 #include <algorithm>
@@ -396,17 +397,33 @@ void flatten_glyph(Shape &s, const std::vector<stbtt_vertex> &v, double scale, d
 
 // ---------------------------------------------------------------- C API
 
+// The C API is called from gnuplot's C code, which an exception must not unwind (the memory
+// budget's Exceeded is a std::bad_alloc). Each allocating entry point catches it, notes the
+// failure for the host (gp_memory.h) and returns as if nothing was drawn.
+#define LMR_TRY try {
+#define LMR_CATCH(ret)                                    \
+  }                                                       \
+  catch (const std::exception &e) {                       \
+    lmplot_mem_note_failure(e.what());                    \
+    return ret;                                           \
+  }                                                       \
+  catch (...) {                                           \
+    lmplot_mem_note_failure("png terminal: internal error"); \
+    return ret;                                           \
+  }
+
 extern "C" {
 
-lmr *lmr_create(int w, int h, unsigned bg) {
+lmr *lmr_create(int w, int h, unsigned bg) { LMR_TRY
   if (w < 1 || h < 1 || (long long)w * h > 100000000LL) return nullptr;
-  lmr *r = new lmr;
+  std::unique_ptr<lmr> r(new lmr);  // freed if the pixel buffer does not fit the budget
   r->w = w; r->h = h;
   r->px.resize((size_t)w * h * 4);
   for (size_t i = 0; i < (size_t)w * h; i++) {
     r->px[i * 4] = (bg >> 16) & 255; r->px[i * 4 + 1] = (bg >> 8) & 255; r->px[i * 4 + 2] = bg & 255; r->px[i * 4 + 3] = (bg >> 24) & 255;
   }
-  return r;
+  return r.release();
+  LMR_CATCH(nullptr)
 }
 void lmr_destroy(lmr *r) { delete r; }
 int lmr_width(const lmr *r) { return r->w; }
@@ -421,23 +438,25 @@ void lmr_set_pixel(lmr *r, int x, int y, unsigned argb) {
   blend(&r->px[((size_t)y * r->w + x) * 4], argb, 1.f);
 }
 
-void lmr_fill_polygon(lmr *r, const double *xy, int n, unsigned argb) {
+void lmr_fill_polygon(lmr *r, const double *xy, int n, unsigned argb) { LMR_TRY
   Shape s;
   std::vector<Pt> p(n);
   for (int i = 0; i < n; i++) p[i] = {xy[2 * i], xy[2 * i + 1]};
   s.polygon(p);
   fill_shape(r, s, argb);
+  LMR_CATCH()
 }
 
-void lmr_fill_polygon_crisp(lmr *r, const double *xy, int n, unsigned argb) {
+void lmr_fill_polygon_crisp(lmr *r, const double *xy, int n, unsigned argb) { LMR_TRY
   Shape s;
   std::vector<Pt> p(n);
   for (int i = 0; i < n; i++) p[i] = {xy[2 * i], xy[2 * i + 1]};
   s.polygon(p);
   fill_shape(r, s, argb, false, true);
+  LMR_CATCH()
 }
 
-void lmr_fill_polygon_pattern(lmr *r, const double *xy, int n, unsigned argb, unsigned bg, int pattern) {
+void lmr_fill_polygon_pattern(lmr *r, const double *xy, int n, unsigned argb, unsigned bg, int pattern) { LMR_TRY
   Shape s;
   std::vector<Pt> p(n);
   for (int i = 0; i < n; i++) p[i] = {xy[2 * i], xy[2 * i + 1]};
@@ -483,16 +502,18 @@ void lmr_fill_polygon_pattern(lmr *r, const double *xy, int n, unsigned argb, un
       poly.a[(size_t)j * poly.w + i] *= cov;
     }
   composite(r, poly, argb);
+  LMR_CATCH()
 }
 
 void lmr_stroke(lmr *r, const double *xy, int n, double width, unsigned argb, int cap, int join, const double *dash,
-                int ndash) {
+                int ndash) { LMR_TRY
   if (n < 1 || width <= 0) return;
   std::vector<Pt> p(n);
   for (int i = 0; i < n; i++) p[i] = {xy[2 * i], xy[2 * i + 1]};
   Shape s;
   for (const auto &run : dash_polyline(p, dash, ndash)) stroke_run(s, run, width, cap, join);
   fill_shape(r, s, argb);
+  LMR_CATCH()
 }
 
 void lmr_draw_image(lmr *r, const unsigned *argb, int w, int h, double x0, double y0, double x1, double y1, double x2,
@@ -521,7 +542,7 @@ void lmr_font_metrics(lmr_font font, double px, double *ascent, double *descent)
   *descent = f ? f->descent * px : px * 0.24;
 }
 
-double lmr_text_width(lmr_font font, double px, const char *utf8) {
+double lmr_text_width(lmr_font font, double px, const char *utf8) { LMR_TRY
   FontData *f = font_for(font.family == LMR_FAMILY_SYMBOL ? LMR_FAMILY_SANS : font.family, font.bold);
   if (!f) return 0;
   double w = 0;
@@ -531,9 +552,10 @@ double lmr_text_width(lmr_font font, double px, const char *utf8) {
     w += adv * f->upem_scale * px;
   }
   return w;
+  LMR_CATCH(0)
 }
 
-void lmr_text_draw(lmr *r, lmr_font font, double px, const char *utf8, double x, double y, double angle, unsigned argb) {
+void lmr_text_draw(lmr *r, lmr_font font, double px, const char *utf8, double x, double y, double angle, unsigned argb) { LMR_TRY
   FontData *f = font_for(font.family == LMR_FAMILY_SYMBOL ? LMR_FAMILY_SANS : font.family, font.bold);
   if (!f || px <= 0) return;
   double cs = std::cos(angle), sn = std::sin(angle), scale = f->upem_scale * px, pen = 0;
@@ -550,6 +572,7 @@ void lmr_text_draw(lmr *r, lmr_font font, double px, const char *utf8, double x,
   // light stem darkening: unhinted outlines read thin at small sizes
   for (float &a : m.a) a = std::min(1.f, a * 1.12f);
   composite(r, m, argb);
+  LMR_CATCH()
 }
 
 int lmr_content_bbox(const lmr *r, unsigned bg, int *bx0, int *by0, int *bx1, int *by1) {
@@ -590,7 +613,7 @@ static void chunk(std::vector<unsigned char> &out, const char *type, const std::
   put32(out, crc32_(out.data() + begin, out.size() - begin));
 }
 
-int lmr_write_png(const lmr *r, FILE *fp) {
+int lmr_write_png(const lmr *r, FILE *fp) { LMR_TRY
   bool opaque = true;
   for (size_t i = 3; i < r->px.size(); i += 4) if (r->px[i] != 255) { opaque = false; break; }
   int bpp = opaque ? 3 : 4;
@@ -631,6 +654,7 @@ int lmr_write_png(const lmr *r, FILE *fp) {
   chunk(out, "IDAT", lmraster::deflate_zlib(raw));
   chunk(out, "IEND", {});
   return fwrite(out.data(), 1, out.size(), fp) == out.size() ? 0 : 1;
+  LMR_CATCH(1)
 }
 
 }  // extern "C"

@@ -147,6 +147,13 @@ links and image magic bytes, 36 standalone examples, byte-identical reruns,
 video and multi-host combo pipelines, error paths), and leaves the images in
 `build/examples/`.
 
+## Resource limits
+
+A program may use at most 4096 MiB in total (gnuplot's datablocks, arrays and plot data, the png
+canvas, everything the host keeps); beyond that it stops with a run error (exit 3) naming the limit,
+instead of exhausting the machine. Set `LMPLOT_MAX_MEMORY_MB` to change it, e.g.
+`LMPLOT_MAX_MEMORY_MB=16384 lmscript big.lms`; it also applies to `lmplot gnuplot`.
+
 ## License
 
 lmplot's own code is [MIT](LICENSE). It embeds gnuplot, which is distributed

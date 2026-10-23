@@ -271,6 +271,41 @@ if [ "$UNAME_S" = Linux ] && [ -w /dev/full ]; then
 fi
 ok "Plot.num rejects complex/array values, datablocks keep EOD lines, write errors stop the program"
 
+# Memory budget: a runaway loop stops with a run error (exit 3, message on stderr and in the JSON
+# line) instead of exhausting the machine. Each iteration makes a gnuplot array of 1e6 values
+# (~23 MiB through gp_alloc, refused by the counting malloc shim). A small budget everywhere, a png
+# canvas over the budget (C++ raster called from C), and on Linux the default 4096 MiB under a
+# 6 GiB address-space limit (ulimit only here, never in the host).
+cat >"$WORK/runaway.lms" <<LMS
+p = _dsl_ cli="lmplot";
+let i = 0;
+while (i < 1000000) {
+  plot.cmd("array A" + str(i) + "[1000000]");
+  i = i + 1;
+}
+end _dsl_
+savedsl(p, "$WORK/runaway.dslb");
+LMS
+"$LMSCRIPT" "$WORK/runaway.lms" >/dev/null || fail "runaway.lms compile"
+set +e; out="$(LMPLOT_MAX_MEMORY_MB=64 "$HOST" --dsl "$WORK/runaway.dslb" 2>"$WORK/runaway.err")"; code=$?; set -e
+[ "$code" = 3 ] || fail "runaway loop under LMPLOT_MAX_MEMORY_MB=64: exit $code, expected 3 ($out)"
+echo "$out" | grep -q "memory budget exceeded" || fail "runaway loop: JSON lacks the budget message: $out"
+grep -q "LMPLOT_MAX_MEMORY_MB" "$WORK/runaway.err" || fail "runaway loop: no budget message on stderr"
+printf 'p = _dsl_ cli="lmplot";\nplot.png("%s", 10000, 5000);\nplot.cmd("plot x");\nend _dsl_\nsavedsl(p, "%s");\n' \
+  "$WORK/big.png" "$WORK/bigcanvas.dslb" >"$WORK/bigcanvas.lms"
+"$LMSCRIPT" "$WORK/bigcanvas.lms" >/dev/null || fail "bigcanvas.lms compile"
+set +e; out="$(LMPLOT_MAX_MEMORY_MB=64 "$HOST" --dsl "$WORK/bigcanvas.dslb" 2>/dev/null)"; code=$?; set -e
+[ "$code" = 3 ] && echo "$out" | grep -q "memory budget exceeded" || fail "10000x5000 png canvas under LMPLOT_MAX_MEMORY_MB=64: exit $code ($out)"
+set +e; LMPLOT_MAX_MEMORY_MB=-5 "$HOST" --dsl "$WORK/runaway.dslb" >/dev/null 2>"$WORK/badenv.err"; code=$?; set -e
+[ "$code" = 2 ] && grep -q "positive whole number" "$WORK/badenv.err" || fail "bad LMPLOT_MAX_MEMORY_MB: exit $code"
+if [ "$UNAME_S" = Linux ]; then
+  set +e; out="$(ulimit -v 6291456; "$HOST" --dsl "$WORK/runaway.dslb" 2>/dev/null)"; code=$?; set -e
+  [ "$code" = 3 ] && echo "$out" | grep -q "limit 4096 MiB" || fail "runaway loop with the default budget under ulimit -v 6 GiB: exit $code ($out)"
+  ok "memory budget: runaway loop stops at 64 MiB and at the default 4096 MiB (under ulimit -v 6 GiB), png canvas too"
+else
+  ok "memory budget: runaway loop and png canvas stop at LMPLOT_MAX_MEMORY_MB=64 (default-budget run is Linux-only)"
+fi
+
 set +e; "$HOST" --dsl "$WORK/does-not-exist.dslb" >/dev/null 2>&1; code=$?; set -e
 [ "$code" = 3 ] || fail "missing bytecode exit code $code, expected 3"
 set +e; "$HOST" >/dev/null 2>&1; code=$?; set -e
