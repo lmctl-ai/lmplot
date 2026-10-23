@@ -41,3 +41,14 @@ root (programs are run from there).
   geometry as gnuplot's svg output; not a bug.
 - `parallel-1` axes 2 and 4 are drawn over the data extent, not the full
   `paxis` range; that is gnuplot's own paxis drawing, unchanged by the terminal.
+
+## Video examples (`examples/video/`)
+
+`wave.lms`, `ripple.lms`, `lissajous.lms`: a `_dsl_` loop writes
+`build/video/<name>/frame-<k>.png`, then plain lmscript runs
+`system ${dsl_cli(p)} --dsl out.dslb;` and `system ffmpeg ... -i frame-%d.png
+-c:v libx264 -pix_fmt yuv420p build/video/<name>.mp4;`. Gotchas: `system`
+spawns without a shell (a quoted command line is taken as a program name) and
+ignores failures, so check the frame count; yuv420p needs even frame sizes;
+gnuplot has no color named `firebrick`/`navy`-style names beyond its list
+(use `#rrggbb`). `test.sh` runs them only when ffmpeg is installed.

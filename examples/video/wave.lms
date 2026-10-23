@@ -1,0 +1,25 @@
+# Video: a travelling wave packet, rendered as PNG frames and encoded with ffmpeg.
+# `lmscript examples/video/wave.lms` does everything: compile, render 96 frames
+# with lmplot, then run ffmpeg. Needs ffmpeg on PATH. Output: build/video/wave.mp4
+mkdir("build/video/wave");
+out = ARGV.len() > 0 ? ARGV[0] : "build/video/wave.dslb";
+p = _dsl_ cli="lmplot" install="github:lmctl-ai/lmplot@latest";
+plot.cmd("set xrange [-10:10]");
+plot.cmd("set yrange [-1.2:1.2]");
+plot.cmd("set grid");
+plot.cmd("set xlabel 'x'");
+plot.cmd("set ylabel 'amplitude'");
+plot.cmd("unset key");
+let frames = 96;
+for (k in range(0, frames)) {
+  let t = 12.0 * float(k) / float(frames);      # the packet moves 12 units in total
+  plot.png("build/video/wave/frame-" + str(k) + ".png", 800, 450);
+  plot.cmd("set title 'wave packet, t = " + str(t) + "'");
+  plot.cmd("plot exp(-(x-(" + str(t) + ")+6)**2/4) * cos(4*(x-(" + str(t) + "))) lw 2 lc rgb '#1f77b4', exp(-(x-(" + str(t) + ")+6)**2/4) lw 1 dt 2 lc rgb 'gray50', -exp(-(x-(" + str(t) + ")+6)**2/4) lw 1 dt 2 lc rgb 'gray50'");
+  plot.close();
+}
+end _dsl_
+savedsl(p, out);
+system ${dsl_cli(p)} --dsl ${out};
+system ffmpeg -y -loglevel error -framerate 24 -i build/video/wave/frame-%d.png -c:v libx264 -pix_fmt yuv420p build/video/wave.mp4;
+println("wrote build/video/wave.mp4");

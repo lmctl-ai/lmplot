@@ -68,7 +68,8 @@ The script keeps loops, numbers and string building; gnuplot keeps drawing.
 Values come back with `plot.num("STATS_slope")`, so a program can generate
 data, run `stats` or `fit`, compute from the results and plot again (see
 [stats.lms](examples/stats.lms)), or render a series of frames in a loop (see
-[turntable.lms](examples/turntable.lms)).
+[turntable.lms](examples/turntable.lms)) and turn them into video with ffmpeg
+(see [examples/video](examples/video/): `lmscript examples/video/wave.lms`).
 
 | `plot.` | |
 | --- | --- |

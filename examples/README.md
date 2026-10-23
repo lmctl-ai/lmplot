@@ -46,6 +46,26 @@ come from `scripts/update-renders.sh`.
 | `stats.lms` | (lmplot) | generate data in lmscript, `stats`, compute, label and plot |
 | `turntable.lms` | (lmplot) | a loop rendering a rotating surface as 8 frames |
 
+## Video
+
+Because a program can write any number of images, a movie is a loop plus
+ffmpeg. The programs in `video/` render PNG frames from a `_dsl_` loop, then
+(in plain lmscript after the block) run lmplot on the bytecode and `ffmpeg` on
+the frames, so one command does it all (needs `ffmpeg` on `PATH`):
+
+```sh
+lmscript examples/video/wave.lms        # -> build/video/wave.mp4
+```
+
+| Program | Shows |
+| --- | --- |
+| `video/wave.lms` | a wave packet travelling along a string, 96 frames, 800x450 |
+| `video/ripple.lms` | an expanding pm3d ripple with an orbiting camera, 90 frames |
+| `video/lissajous.lms` | a Lissajous curve drawn progressively with a moving head, 120 frames |
+
+`system` runs a program without a shell: write the ffmpeg command as plain
+words, and the frame names as `frame-%d.png` (no zero padding needed).
+
 `data/` holds the small demo data files the programs read, copied unchanged
 from the gnuplot demo directory (gnuplot license, see `../THIRD_PARTY_NOTICES`).
 

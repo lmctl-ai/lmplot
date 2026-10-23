@@ -1,0 +1,33 @@
+# Video: an expanding ripple on a pm3d surface while the camera orbits.
+# `lmscript examples/video/ripple.lms` renders 90 frames and encodes
+# build/video/ripple.mp4 (needs ffmpeg on PATH).
+mkdir("build/video/ripple");
+out = ARGV.len() > 0 ? ARGV[0] : "build/video/ripple.dslb";
+p = _dsl_ cli="lmplot" install="github:lmctl-ai/lmplot@latest";
+plot.cmd("set samples 60, 60");
+plot.cmd("set isosamples 60, 60");
+plot.cmd("set xrange [-10:10]");
+plot.cmd("set yrange [-10:10]");
+plot.cmd("set zrange [-1:1]");
+plot.cmd("set cbrange [-1:1]");
+plot.cmd("set ticslevel 0");
+plot.cmd("set pm3d");
+plot.cmd("set palette defined (0 '#000080', 0.5 'white', 1 '#b22222')");
+plot.cmd("unset key");
+plot.cmd("unset colorbox");
+plot.cmd("set border 4095");
+let frames = 90;
+for (k in range(0, frames)) {
+  let phase = 6.283185 * float(k) / 30.0;       # three wave periods over the clip
+  let azimuth = 30.0 + 120.0 * float(k) / float(frames);
+  plot.png("build/video/ripple/frame-" + str(k) + ".png", 640, 480);
+  plot.cmd("set view 55, " + str(azimuth));
+  plot.cmd("set title 'ripple, frame " + str(k) + "'");
+  plot.cmd("splot cos(sqrt(x**2+y**2) - " + str(phase) + ") * exp(-sqrt(x**2+y**2)/8) with pm3d");
+  plot.close();
+}
+end _dsl_
+savedsl(p, out);
+system ${dsl_cli(p)} --dsl ${out};
+system ffmpeg -y -loglevel error -framerate 30 -i build/video/ripple/frame-%d.png -c:v libx264 -pix_fmt yuv420p build/video/ripple.mp4;
+println("wrote build/video/ripple.mp4");

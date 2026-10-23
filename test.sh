@@ -124,6 +124,19 @@ for f in build/examples/*.png; do echo "$(sha "$f") $f"; done >"$WORK/after.txt"
 cmp -s "$WORK/before.txt" "$WORK/after.txt" || { diff "$WORK/before.txt" "$WORK/after.txt" >&2 || true; fail "images differ on rerun"; }
 ok "all $(wc -l <"$WORK/after.txt" | tr -d ' ') example images are byte-identical on rerun"
 
+# Video examples: frames via lmplot, encoding via ffmpeg (skipped when ffmpeg is absent).
+if command -v ffmpeg >/dev/null 2>&1; then
+  for src in examples/video/*.lms; do
+    name="$(basename "$src" .lms)"
+    rm -f "build/video/$name.mp4"
+    "$LMSCRIPT" "$src" >"$WORK/v-$name.log" 2>&1 || { cat "$WORK/v-$name.log" >&2; fail "video $name"; }
+    [ -s "build/video/$name.mp4" ] || fail "video $name wrote no mp4"
+  done
+  ok "video examples render frames and encode mp4 with ffmpeg"
+else
+  ok "video examples skipped (no ffmpeg)"
+fi
+
 # DSL error paths.
 cat >"$WORK/bad.lms" <<LMS
 p = _dsl_ cli="lmplot";

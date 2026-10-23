@@ -1,0 +1,29 @@
+# Video: a Lissajous curve drawn progressively, with a moving head and the
+# frame data computed in lmscript. Output: build/video/lissajous.mp4 (ffmpeg).
+mkdir("build/video/lissajous");
+out = ARGV.len() > 0 ? ARGV[0] : "build/video/lissajous.dslb";
+p = _dsl_ cli="lmplot" install="github:lmctl-ai/lmplot@latest";
+plot.cmd("set parametric");
+plot.cmd("set size square");
+plot.cmd("set xrange [-1.2:1.2]");
+plot.cmd("set yrange [-1.2:1.2]");
+plot.cmd("set trange [0:6.283185]");
+plot.cmd("set samples 400");
+plot.cmd("set grid");
+plot.cmd("unset key");
+plot.cmd("unset border");
+plot.cmd("unset tics");
+let frames = 120;
+for (k in range(1, frames + 1)) {
+  let tend = 6.283185 * float(k) / float(frames);
+  plot.png("build/video/lissajous/frame-" + str(k - 1) + ".png", 640, 640);
+  plot.cmd("set title 'x = sin(3t), y = sin(2t + pi/4)'");
+  # the drawn part of the curve, then the head as a point
+  plot.cmd("plot [0:" + str(tend) + "] sin(3*t), sin(2*t+pi/4) w l lw 3 lc rgb '#d62728', '+' u (sin(3*" + str(tend) + ")):(sin(2*" + str(tend) + "+pi/4)) w p pt 7 ps 2 lc rgb '#1f77b4'");
+  plot.close();
+}
+end _dsl_
+savedsl(p, out);
+system ${dsl_cli(p)} --dsl ${out};
+system ffmpeg -y -loglevel error -framerate 30 -i build/video/lissajous/frame-%d.png -c:v libx264 -pix_fmt yuv420p build/video/lissajous.mp4;
+println("wrote build/video/lissajous.mp4");
