@@ -49,7 +49,8 @@ root (programs are run from there).
 `system ${dsl_cli(p)} --dsl out.dslb;` and `system ffmpeg ... -i frame-%d.png
 -c:v libx264 -pix_fmt yuv420p build/video/<name>.mp4;`. Gotchas: `system`
 spawns without a shell (a quoted command line is taken as a program name) and
-a standalone `system ...;` discards its result by design (documented: the
+a standalone `system ...;` discards its result by design (lmscript now at
+least prints the child's stderr and a status line when it fails) (documented: the
 value is `{stdout, stderr, code, ...}`), so write `r = system ...;
 assert(r.code == 0);`; yuv420p needs even frame sizes;
 gnuplot has no color named `firebrick`/`navy`-style names beyond its list
