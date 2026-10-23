@@ -38,6 +38,7 @@
 # include <sys/stat.h>
 # include <sys/timeb.h>
 # include <sys/time.h>
+# define LMPLOT_WINDOWS 1  /* _WIN32 is hidden from gnuplot below; lmplot_embed.inc still needs to know */
 # undef _WIN32
 # undef WIN32
 # undef __WIN32__
