@@ -1,0 +1,61 @@
+diff --git a/src/util.c b/src/util.c
+index a0fa3e8..a7d7779 100644
+--- a/src/util.c
++++ b/src/util.c
+@@ -1209,24 +1209,31 @@ int_warn(int t_num, const char str[], va_dcl)
+ #endif
+ 
+     if (!suppress_warnings) {
++	char warn_message[140] = "warning: ";
+ 
+ 	/* reprint line if screen has been written to */
+ 	print_line_with_error(t_num);
+ 
+-	fputs("warning: ", stderr);
+ #ifdef VA_START
+ 	VA_START(args, str);
+ # if defined(HAVE_VFPRINTF) || _LIBC
+-	vfprintf(stderr, str, args);
++	vsnprintf(warn_message + 9, sizeof(warn_message) - 9, str, args);
++	fprintf(stderr, "%.130s\n", warn_message);
+ # else
++	fputs("warning: ", stderr);
+ 	_doprnt(str, args, stderr);
++	putc('\n', stderr);
+ # endif
+ 	va_end(args);
+ #else  /* VA_START */
++	fputs("warning: ", stderr);
+ 	fprintf(stderr, str, a1, a2, a3, a4, a5, a6, a7, a8);
+-#endif /* VA_START */
+ 	putc('\n', stderr);
++	snprintf(warn_message + 9, sizeof(warn_message) - 9, str, a1, a2, a3, a4, a5, a6, a7, a8);
++#endif /* VA_START */
+ 
++	fill_gpval_string("GPVAL_ERRMSG", warn_message);
++	common_error_exit();
+     }
+ 
+ #if defined(_WIN32) || defined(__KLIBC__)
+diff --git a/term/svg.trm b/term/svg.trm
+index 7816d51..eb202f2 100644
+--- a/term/svg.trm
++++ b/term/svg.trm
+@@ -524,6 +524,7 @@ SVG_MoveForced(unsigned int x, unsigned int y)
+ TERM_PUBLIC void
+ SVG_options ()
+ {
++    TBOOLEAN set_font = FALSE;
+     /* Annoying hack to handle the case of 'set termoption' after */
+     /* we have already initialized the terminal settings.         */
+     if (!almost_equals(c_token-1, "termopt$ion"))
+@@ -621,6 +622,9 @@ SVG_options ()
+ 
+ 	if (almost_equals(c_token, "fn$ame") || almost_equals(c_token, "font"))  {
+ 	    char *s, *comma;
++	    if (set_font)
++		int_error(c_token, "duplicate font option");
++	    set_font = TRUE;
+ 	    c_token++;
+ 
+ 	    if (!(s = try_to_get_string()))

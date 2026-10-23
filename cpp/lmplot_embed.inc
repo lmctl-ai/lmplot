@@ -52,6 +52,7 @@ int lmplot_gp_do(const char *cmd)
     clause_reset_after_error();
     lf_reset_after_error();
     inside_plot_command = FALSE;
+    lmplot_abort_output();
     return -1;
 }
 

@@ -1,9 +1,9 @@
 diff --git a/term/lmpng.trm b/term/lmpng.trm
 new file mode 100644
-index 0000000..f2718e4
+index 0000000..e1de6e5
 --- /dev/null
 +++ b/term/lmpng.trm
-@@ -0,0 +1,1114 @@
+@@ -0,0 +1,1136 @@
 +/* Hello, Emacs, this is -*-C-*- */
 +
 +/* lmplot: native PNG terminal.
@@ -227,8 +227,13 @@ index 0000000..f2718e4
 +    copy = gp_strdup(font);
 +    comma = strchr(copy, ',');
 +    if (comma) {
-+        double sz;
-+        if (sscanf(comma + 1, "%lf", &sz) == 1 && sz > 0) *size_out = sz;
++        char *endp;
++        double sz = strtod(comma + 1, &endp);
++        if (comma[1] == '\0' || endp == comma + 1 || *endp != '\0' || !(sz > 0)) {
++            free(copy);
++            int_error(NO_CARET, "invalid font size");
++        }
++        *size_out = sz;
 +        *comma = '\0';
 +    }
 +    if (*copy == '\0' && keep_name) { free(copy); return; }
@@ -245,6 +250,7 @@ index 0000000..f2718e4
 +        f->family = LMR_FAMILY_SERIF;
 +    else
 +        f->family = LMR_FAMILY_SANS;
++    free(copy);
 +    free(*name_out);
 +    /* keep the user's spelling (minus size) for the options string */
 +    copy = gp_strdup(font);
@@ -279,6 +285,7 @@ index 0000000..f2718e4
 +LMPNG_options(void)
 +{
 +    int fresh = (LMPNG_initialized != term->name);
++    int font_set = 0;
 +    if (fresh) {
 +        LMPNG_initialized = term->name;
 +        LM.opt_width = LMPNG_XMAX;
@@ -321,11 +328,13 @@ index 0000000..f2718e4
 +            break;
 +        case LMPNG_FONT: {
 +            char *s;
++            if (font_set)
++                int_error(c_token, "duplicate font option");
 +            c_token++;
-+            if (END_OF_COMMAND) break;
-+            if (isstringvalue(c_token) && (s = try_to_get_string())) {
++            if (!END_OF_COMMAND && isstringvalue(c_token) && (s = try_to_get_string())) {
 +                LMPNG_parse_font(s, &LM.default_fontname, &LM.default_fontsize, &LM.default_font, 1);
 +                free(s);
++                font_set = 1;
 +            } else {
 +                int_error(c_token, "expecting font name and size in quotes");
 +            }
@@ -363,11 +372,11 @@ index 0000000..f2718e4
 +        case LMPNG_COLOR: LM.monochrome = 0; c_token++; break;
 +        case LMPNG_MONOCHROME: LM.monochrome = 1; c_token++; break;
 +        case LMPNG_IGNORED: c_token++; break;
-+        case LMPNG_TINY: LM.default_fontsize = 7; c_token++; break;
-+        case LMPNG_SMALL: LM.default_fontsize = 9; c_token++; break;
-+        case LMPNG_MEDIUM: LM.default_fontsize = 12; c_token++; break;
-+        case LMPNG_LARGE: LM.default_fontsize = 14; c_token++; break;
-+        case LMPNG_GIANT: LM.default_fontsize = 18; c_token++; break;
++        case LMPNG_TINY:   if (font_set) int_error(c_token, "duplicate font option"); LM.default_fontsize = 7;  font_set = 1; c_token++; break;
++        case LMPNG_SMALL:  if (font_set) int_error(c_token, "duplicate font option"); LM.default_fontsize = 9;  font_set = 1; c_token++; break;
++        case LMPNG_MEDIUM: if (font_set) int_error(c_token, "duplicate font option"); LM.default_fontsize = 12; font_set = 1; c_token++; break;
++        case LMPNG_LARGE:  if (font_set) int_error(c_token, "duplicate font option"); LM.default_fontsize = 14; font_set = 1; c_token++; break;
++        case LMPNG_GIANT:  if (font_set) int_error(c_token, "duplicate font option"); LM.default_fontsize = 18; font_set = 1; c_token++; break;
 +        case LMPNG_POINTSCALE:
 +            c_token++;
 +            if (!END_OF_COMMAND) (void)real_expression();
@@ -375,7 +384,10 @@ index 0000000..f2718e4
 +        default: {
 +            double sz;
 +            if (sscanf(gp_input_line + token[c_token].start_index, "%lf", &sz) == 1 && sz > 0 && sz < 999) {
++                if (font_set)
++                    int_error(c_token, "duplicate font option");
 +                LM.default_fontsize = sz;
++                font_set = 1;
 +                c_token++;
 +                break;
 +            }
@@ -456,23 +468,30 @@ index 0000000..f2718e4
 +LMPNG_text(void)
 +{
 +    lmr *out;
++    int x0, y0, x1, y1, has_content, write_err;
++    unsigned bg;
 +    LMPNG_flush_path();
 +    if (!LM.img) return;
++    bg = LM.transparent ? 0x00ffffffu : (0xff000000u | LM.bg);
++    has_content = lmr_content_bbox(LM.img, bg, &x0, &y0, &x1, &y1);
++    if (!has_content) {
++        lmr_destroy(LM.img);
++        LM.img = NULL;
++        int_error(NO_CARET, "png: canvas is blank (nothing was drawn)");
++    }
 +    out = LM.img;
 +    if (LM.crop) {
-+        int x0, y0, x1, y1;
-+        unsigned bg = LM.transparent ? 0x00ffffffu : (0xff000000u | LM.bg);
-+        if (lmr_content_bbox(LM.img, bg, &x0, &y0, &x1, &y1)) {
-+            lmr *c = lmr_crop(LM.img, x0, y0, x1, y1);
-+            if (c) out = c;
-+        }
++        lmr *c = lmr_crop(LM.img, x0, y0, x1, y1);
++        if (c) out = c;
 +    }
-+    if (lmr_write_png(out, gpoutfile) != 0)
-+        int_warn(NO_CARET, "png: error writing output");
-+    fflush(gpoutfile);
++    write_err = (lmr_write_png(out, gpoutfile) != 0);
++    if (fflush(gpoutfile) != 0 || ferror(gpoutfile))
++        write_err = 1;
 +    if (out != LM.img) lmr_destroy(out);
 +    lmr_destroy(LM.img);
 +    LM.img = NULL;
++    if (write_err)
++        int_warn(NO_CARET, "png: error writing the output file");
 +}
 +
 +/* ------------------------------------------------------------ lines */
@@ -834,8 +853,11 @@ index 0000000..f2718e4
 +        double size = LM.fontsize;
 +        if (*font == ',') {
 +            /* size only */
-+            double sz;
-+            if (sscanf(font + 1, "%lf", &sz) == 1 && sz > 0) size = sz;
++            char *endp;
++            double sz = strtod(font + 1, &endp);
++            if (font[1] == '\0' || endp == font + 1 || *endp != '\0' || !(sz > 0))
++                int_error(NO_CARET, "invalid font size");
++            size = sz;
 +        } else {
 +            LMPNG_parse_font(font, &name, &size, &f, 0);
 +            LM.font = f;

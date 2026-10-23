@@ -20,5 +20,6 @@ emit 0005-lmpng-terminal term/lmpng.trm
 emit 0006-no-pager-when-scripted src/help.c
 emit 0007-dry-run src/command.c src/fit.c src/plot.h src/set.c src/term.c
 emit 0008-image-reader src/breaders.c
+emit 0009-strict-warnings-and-fonts src/util.c term/svg.trm
 git -C "$DIR" reset -q
 ls -la "$HERE"/patches

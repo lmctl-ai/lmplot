@@ -38,10 +38,10 @@ index 3e90768..0974f2a 100644
  	free(logfile);
      }
 diff --git a/src/plot.h b/src/plot.h
-index d22e392..0990bed 100644
+index d22e392..2d9a226 100644
 --- a/src/plot.h
 +++ b/src/plot.h
-@@ -81,6 +81,13 @@ int ExecuteMacro(char *, int);
+@@ -81,6 +81,15 @@ int ExecuteMacro(char *, int);
  
  void restrict_popen(void);
  
@@ -51,15 +51,86 @@ index d22e392..0990bed 100644
 +#include <stdio.h>
 +extern int lmplot_dry_run;
 +FILE *lmplot_dry_fopen(const char *name, const char *mode);
++void lmplot_abort_output(void);
++int lmplot_finish_output(void);
 +
  #ifdef GNUPLOT_HISTORY
  void cancel_history(void);
  #else
 diff --git a/src/set.c b/src/set.c
-index b680c78..ce104f6 100644
+index b680c78..6df582a 100644
 --- a/src/set.c
 +++ b/src/set.c
-@@ -4849,7 +4849,7 @@ set_table()
+@@ -1363,6 +1363,7 @@ set_cntrparam()
+ static void
+ set_cntrlabel()
+ {
++    TBOOLEAN set_font = FALSE;
+     c_token++;
+     if (END_OF_COMMAND) {
+ 	strcpy(contour_params.format, "%8.3g");
+@@ -1378,11 +1379,16 @@ set_cntrlabel()
+ 	    free(new);
+ 	} else if (equals(c_token, "font")) {
+ 	    char *newfont;
++	    if (set_font)
++		int_error(c_token, "duplicate font option");
+ 	    c_token++;
+ 	    newfont = try_to_get_string();
+ 	    if (newfont) {
+ 		free(clabel_font);
+ 		clabel_font = newfont;
++		set_font = TRUE;
++	    } else {
++		int_error(c_token, "expected font");
+ 	    }
+ 	} else if (almost_equals(c_token, "one$color")) {
+ 	    c_token++;
+@@ -2376,7 +2382,7 @@ set_key_position_from_stack_direction(legend_key *key)
+ static void
+ set_key()
+ {
+-    TBOOLEAN vpos_set = FALSE, hpos_set = FALSE, reg_set = FALSE, sdir_set = FALSE;
++    TBOOLEAN vpos_set = FALSE, hpos_set = FALSE, reg_set = FALSE, sdir_set = FALSE, font_set = FALSE;
+     char *vpos_warn = "Multiple vertical position settings";
+     char *hpos_warn = "Multiple horizontal position settings";
+     char *reg_warn = "Multiple location region settings";
+@@ -2601,6 +2607,8 @@ set_key()
+ 	    key->title.text = NULL;
+ 	    break;
+ 	case S_KEY_FONT:
++	    if (font_set)
++		int_error(c_token, "duplicate font option");
+ 	    c_token++;
+ 	    /* Make sure they've specified a font */
+ 	    if (!isstringvalue(c_token))
+@@ -2610,6 +2618,7 @@ set_key()
+ 		if (tmp) {
+ 		    free(key->font);
+ 		    key->font = tmp;
++		    font_set = TRUE;
+ 		}
+ 		c_token--;
+ 	    }
+@@ -2719,6 +2728,9 @@ set_key()
+ /* process 'set label' command */
+ /* set label {tag} {"label_text"{,<value>{,...}}} {<label options>} */
+ /* EAM Mar 2003 - option parsing broken out into separate routine */
++static TBOOLEAN keep_label_font = FALSE;
++static TBOOLEAN label_font_seen = FALSE;
++
+ static void
+ set_label()
+ {
+@@ -2782,6 +2794,7 @@ set_label()
+     }
+ 
+     /* Now parse the label format and style options */
++    keep_label_font = TRUE;
+     parse_label_options(this_label, 0);
+ }
+ 
+@@ -4849,7 +4862,7 @@ set_table()
  	    c_token++;
  	    append = TRUE;
  	}
@@ -68,11 +139,193 @@ index b680c78..ce104f6 100644
  	   os_error(filename_token, "cannot open table output file");
  	free(tablefile);
      }
+@@ -5155,7 +5168,7 @@ set_timefmt()
+ static void
+ set_timestamp()
+ {
+-    TBOOLEAN got_format = FALSE;
++    TBOOLEAN got_format = FALSE, set_font = FALSE;
+     char *new;
+ 
+     c_token++;
+@@ -5189,10 +5202,15 @@ set_timestamp()
+ 	}
+ 
+ 	if (equals(c_token,"font")) {
++	    if (set_font)
++		int_error(c_token, "duplicate font option");
+ 	    c_token++;
+ 	    new = try_to_get_string();
++	    if (!new)
++		int_error(c_token, "expected font");
+ 	    free(timelabel.font);
+ 	    timelabel.font = new;
++	    set_font = TRUE;
+ 	    continue;
+ 	}
+ 
+@@ -5514,6 +5532,7 @@ set_tic_prop(struct axis *this_axis)
+     if (almost_equals(c_token, cmdptr) || all_axes || axis >= PARALLEL_AXES) {
+ 	TBOOLEAN axisset = FALSE;
+ 	TBOOLEAN mirror_opt = FALSE; /* set to true if (no)mirror option specified) */
++	TBOOLEAN font_set = FALSE;
+ 	this_axis->ticdef.def.mix = FALSE;
+ 	++c_token;
+ 	do {
+@@ -5602,12 +5621,15 @@ set_tic_prop(struct axis *this_axis)
+ 		++c_token;
+ 	    } else if (almost_equals(c_token, "f$ont")) {
+ 		char *newfont;
++		if (font_set)
++		    int_error(c_token, "duplicate font option");
+ 		++c_token;
+ 		newfont = try_to_get_string();
+ 		/* Make sure they've specified a font */
+ 		if (newfont) {
+ 		    free(this_axis->ticdef.font);
+ 		    this_axis->ticdef.font = newfont;
++		    font_set = TRUE;
+ 		} else {
+ 		    int_error(c_token,"expected font");
+ 		}
+@@ -5809,6 +5831,7 @@ set_xyzlabel(text_label *label)
+ 	}
+     }
+ 
++    keep_label_font = TRUE;
+     parse_label_options(label, 0);
+ 
+ }
+@@ -6181,6 +6204,10 @@ parse_label_options( struct text_label *this_label, int ndim)
+     loc_lp.flags = LP_NOT_INITIALIZED;
+     if (this_label->tag == LABEL_TAG_ROTATE_IN_3D || this_label->tag == LABEL_TAG_VARIABLE_ROTATE)
+ 	axis_label = TRUE;
++    if ((keep_label_font && label_font_seen) || (ndim == 2 && this_label->font != NULL))
++	set_font = TRUE;
++    keep_label_font = FALSE;
++    label_font_seen = FALSE;
+ 
+    /* Now parse the label format and style options */
+     while (!END_OF_COMMAND) {
+@@ -6247,10 +6274,13 @@ parse_label_options( struct text_label *this_label, int ndim)
+ 	}
+ 
+ 	/* get font (added by DJL) */
+-	if (! set_font && equals(c_token, "font")) {
++	if (equals(c_token, "font")) {
++	    if (set_font)
++		int_error(c_token, "duplicate font option");
+ 	    c_token++;
+ 	    if ((font = try_to_get_string())) {
+ 		set_font = TRUE;
++		label_font_seen = TRUE;
+ 		continue;
+ 	    } else
+ 		int_error(c_token, "'fontname,fontsize' expected");
 diff --git a/src/term.c b/src/term.c
-index 230e1b5..594178e 100644
+index 230e1b5..15823f0 100644
 --- a/src/term.c
 +++ b/src/term.c
-@@ -408,9 +408,9 @@ term_set_output(char *dest)
+@@ -303,6 +303,9 @@ static size_units parse_term_size(float *xsize, float *ysize, size_units def_uni
+ static TBOOLEAN output_pipe_open = FALSE;
+ #endif /* PIPES */
+ 
++static int lmplot_plots_in_output = 0;
++static TBOOLEAN lmplot_reopening_output = FALSE;
++
+ static void
+ term_close_output()
+ {
+@@ -336,6 +339,63 @@ term_close_output()
+     gppsfile = NULL;
+ }
+ 
++void
++lmplot_abort_output(void)
++{
++    char *bad = NULL;
++    term_graphics = FALSE;
++    if (multiplot)
++	multiplot_end();
++    if (term && term_initialised) {
++	(*term->reset) ();
++	term_initialised = FALSE;
++	gppsfile = NULL;
++    }
++    if (outstr && !lmplot_dry_run
++#if defined(PIPES)
++	&& !output_pipe_open
++#endif
++	&& strncmp(outstr, "/dev/", 5) != 0) {
++	bad = gp_strdup(outstr);
++    }
++    term_close_output();
++    lmplot_plots_in_output = 0;
++    if (bad) {
++	remove(bad);
++	free(bad);
++    }
++}
++
++int
++lmplot_finish_output(void)
++{
++    if (multiplot) {
++	lmplot_abort_output();
++	return 1;
++    }
++    if (outstr) {
++	int write_err = 0;
++	if (lmplot_plots_in_output == 0) {
++	    lmplot_abort_output();
++	    return 2;
++	}
++	if (gpoutfile && gpoutfile != stdout && gpoutfile != stderr) {
++	    if (fflush(gpoutfile) != 0 || ferror(gpoutfile))
++		write_err = 1;
++	}
++	if (term && term_initialised) {
++	    (*term->reset) ();
++	    term_initialised = FALSE;
++	    gppsfile = NULL;
++	}
++	term_close_output();
++	lmplot_plots_in_output = 0;
++	if (write_err)
++	    return 3;
++    }
++    return 0;
++}
++
+ /* assigns dest to outstr, so it must be allocated or NULL
+  * and it must not be outstr itself !
+  */
+@@ -348,8 +408,14 @@ term_set_output(char *dest)
+     assert(dest == NULL || dest != outstr);
+ 
+     if (multiplot) {
+-	fputs("In multiplot mode you can't change the output\n", stderr);
+-	return;
++	free(dest);
++	lmplot_abort_output();
++	int_error(NO_CARET, "In multiplot mode you can't change the output");
++    }
++    if (outstr && !lmplot_reopening_output && lmplot_plots_in_output == 0) {
++	free(dest);
++	lmplot_abort_output();
++	int_error(NO_CARET, "output file closed with no plots drawn");
+     }
+     if (term && term_initialised) {
+ 	(*term->reset) ();
+@@ -359,6 +425,7 @@ term_set_output(char *dest)
+     }
+     if (dest == NULL) {         /* stdout */
+ 	term_close_output();
++	lmplot_plots_in_output = 0;
+     } else {
+ 
+ #if defined(PIPES)
+@@ -408,9 +475,9 @@ term_set_output(char *dest)
  	    }
  #endif
  	    if (term && (term->flags & TERM_BINARY))
@@ -84,3 +337,41 @@ index 230e1b5..594178e 100644
  
  	    if (f == (FILE *) NULL)
  		os_error(c_token, "cannot open file; output not changed");
+@@ -423,6 +490,7 @@ term_set_output(char *dest)
+ 	gpoutfile = f;
+ 	outstr = dest;
+ 	opened_binary = (term && (term->flags & TERM_BINARY));
++	lmplot_plots_in_output = 0;
+     }
+ }
+ 
+@@ -459,7 +527,9 @@ term_initialise()
+ 	    FPRINTF((stderr, "term_initialise: reopening \"%s\" as %s\n",
+ 		     outstr, term->flags & TERM_BINARY ? "binary" : "text"));
+ 	    strcpy(temp, outstr);
++	    lmplot_reopening_output = TRUE;
+ 	    term_set_output(temp);      /* will free outstr */
++	    lmplot_reopening_output = FALSE;
+ 	    if (temp != outstr) {
+ 		if (temp)
+ 		    free(temp);
+@@ -561,6 +631,7 @@ term_end_plot()
+ 	FPRINTF((stderr, "- calling term->text()\n"));
+ 	(*term->text) ();
+ 	term_graphics = FALSE;
++	lmplot_plots_in_output++;
+     } else {
+ 	multiplot_next();
+     }
+@@ -719,6 +790,11 @@ term_end_multiplot()
+     if (!multiplot)
+ 	return;
+ 
++    if (multiplot_count == 0) {
++	lmplot_abort_output();
++	int_error(NO_CARET, "multiplot ended with no plots drawn");
++    }
++
+     if (term_suspended) {
+ 	if (term->resume)
+ 	    (*term->resume) ();

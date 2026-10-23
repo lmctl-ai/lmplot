@@ -1,8 +1,44 @@
 diff --git a/src/plot.c b/src/plot.c
-index 99dc898..9be8639 100644
+index 99dc898..5e6fea0 100644
 --- a/src/plot.c
 +++ b/src/plot.c
-@@ -1053,6 +1053,8 @@ restrict_popen()
+@@ -579,9 +579,12 @@ main(int argc_orig, char **argv)
+ 	    goto RECOVER_FROM_ERROR_IN_DASH;
+ 	reading_from_dash = FALSE;
+ 
+-	if (!interactive && !noinputfiles) {
+-	    term_reset();
+-	    gp_exit(EXIT_FAILURE);	/* exit on non-interactive error */
++	if (!interactive) {
++	    lmplot_abort_output();
++	    if (!noinputfiles) {
++		term_reset();
++		gp_exit(EXIT_FAILURE);	/* exit on non-interactive error */
++	    }
+ 	}
+     }
+ 
+@@ -699,6 +702,19 @@ RECOVER_FROM_ERROR_IN_DASH:
+ 
+     /* HBB 20040223: Not all compilers like exit() to end main() */
+     /* exit(exit_status); */
++    if (!interactive) {
++	int fin = lmplot_finish_output();
++	if (fin == 1) {
++	    fputs("gnuplot: multiplot not closed (missing unset multiplot)\n", stderr);
++	    exit_status = EXIT_FAILURE;
++	} else if (fin == 2) {
++	    fputs("gnuplot: output file closed with no plots drawn\n", stderr);
++	    exit_status = EXIT_FAILURE;
++	} else if (fin == 3) {
++	    fputs("gnuplot: error writing the output file\n", stderr);
++	    exit_status = EXIT_FAILURE;
++	}
++    }
+ #if ! defined(_WIN32)
+     /* Windows does the cleanup later */
+     gp_exit_cleanup();
+@@ -1053,6 +1069,8 @@ restrict_popen()
  {
      if (!successful_initialization)
  	int_error(NO_CARET,"Pipes and shell commands not permitted during initialization");
@@ -11,7 +47,7 @@ index 99dc898..9be8639 100644
  }
  
  
-@@ -1074,3 +1076,7 @@ RelativePathToGnuplot(const char * path)
+@@ -1074,3 +1092,7 @@ RelativePathToGnuplot(const char * path)
      return rel_path;
  }
  #endif

@@ -271,9 +271,10 @@ echo "$out" | grep -q "real=3" || fail "complex with zero imaginary part: $out"
 expect_run_error() { # name, snippet, expected message fragment
   printf 'p = _dsl_ cli="lmplot";\n%s\nend _dsl_\nsavedsl(p, "%s");\n' "$2" "$WORK/$1.dslb" >"$WORK/$1.lms"
   "$LMSCRIPT" "$WORK/$1.lms" >/dev/null || fail "$1 compile"
-  set +e; out="$("$HOST" --dsl "$WORK/$1.dslb" 2>/dev/null)"; code=$?; set -e
+  set +e; out="$("$HOST" --dsl "$WORK/$1.dslb" 2>"$WORK/$1.rerr")"; code=$?; set -e
   [ "$code" = 3 ] || fail "$1: exit code $code, expected 3 ($out)"
   echo "$out" | grep -q "$3" || fail "$1: message lacks '$3': $out"
+  grep -q "$3" "$WORK/$1.rerr" || fail "$1: stderr lacks '$3': $(cat "$WORK/$1.rerr")"
 }
 expect_run_error complex 'let x = plot.num("sqrt(-1)");' "complex"
 expect_run_error array 'plot.cmd("array A[2] = [1, 2]"); let x = plot.num("A");' "not a number"
@@ -284,6 +285,29 @@ if [ "$UNAME_S" = Linux ] && [ -w /dev/full ]; then
   expect_run_error writefail 'plot.png("/dev/full", 200, 100); plot.cmd("plot x");' "error writing the output"
 fi
 ok "Plot.num rejects complex/array values, assert_close checks known answers, datablocks keep EOD lines, write errors stop the program"
+
+# Duplicated font options, gnuplot warnings, and empty/incomplete output files fail with exit 3 + stderr and leave no PNG behind.
+expect_run_error dupfont_term "plot.cmd(\"set terminal png size 400,300 font 'Sans,12' font ',10'\");" "duplicate font option"
+expect_run_error dupfont_termsize "plot.cmd(\"set terminal png size 400,300 font 'Sans,12' 10\");" "duplicate font option"
+expect_run_error dupfont_svg "plot.cmd(\"set terminal svg size 400,300 font 'Sans,12' font ',10'\");" "duplicate font option"
+expect_run_error dupfont_title "plot.png(\"$WORK/dupfont.png\", 600, 400); plot.cmd(\"set multiplot layout 2,2 title 'Main' font ',13'\"); plot.cmd(\"set title 'Sub 1' font ',11' font ',11'\");" "duplicate font option"
+[ ! -e "$WORK/dupfont.png" ] || fail "failed multiplot left behind $WORK/dupfont.png"
+expect_run_error dupfont_title_split "plot.cmd(\"set title font ',11' 'Sub 1' font ',12'\");" "duplicate font option"
+expect_run_error dupfont_label_split "plot.cmd(\"set label 1 font ',11' 'Note' font ',12'\");" "duplicate font option"
+expect_run_error dupfont_key "plot.cmd(\"set key font ',11' font ',9'\");" "duplicate font option"
+expect_run_error dupfont_tics "plot.cmd(\"set xtics font ',11' font ',9'\");" "duplicate font option"
+expect_run_error warn_keypos "plot.cmd(\"set key top bottom\");" "warning:"
+expect_run_error warn_missing "plot.png(\"$WORK/warn.png\", 400, 300); plot.cmd(\"plot '$WORK/no_such_file.dat' u 1:2 w l, sin(x)\");" "warning:"
+[ ! -e "$WORK/warn.png" ] || fail "warning during plot left behind $WORK/warn.png"
+expect_run_error empty_close "plot.png(\"$WORK/empty1.png\", 400, 300); plot.close();" "output file closed with no plots drawn"
+[ ! -e "$WORK/empty1.png" ] || fail "empty plot.close() left behind $WORK/empty1.png"
+expect_run_error empty_eof "plot.png(\"$WORK/empty2.png\", 400, 300);" "output file closed with no plots drawn"
+[ ! -e "$WORK/empty2.png" ] || fail "empty output at EOF left behind $WORK/empty2.png"
+expect_run_error empty_mp "plot.png(\"$WORK/empty_mp.png\", 400, 300); plot.cmd(\"set multiplot layout 2,2 title 'Only Title'\"); plot.cmd(\"unset multiplot\");" "multiplot ended with no plots drawn"
+[ ! -e "$WORK/empty_mp.png" ] || fail "empty multiplot left behind $WORK/empty_mp.png"
+expect_run_error unclosed_mp "plot.png(\"$WORK/unclosed_mp.png\", 400, 300); plot.cmd(\"set multiplot layout 2,2 title 'Unclosed'\"); plot.cmd(\"plot sin(x)\");" "multiplot not closed"
+[ ! -e "$WORK/unclosed_mp.png" ] || fail "unclosed multiplot left behind $WORK/unclosed_mp.png"
+ok "duplicate font options, gnuplot warnings, and empty/unclosed outputs fail with stderr + exit 3 and leave no truncated PNG"
 
 # Memory budget: a runaway loop stops with a run error (exit 3, message on stderr and in the JSON
 # line) instead of exhausting the machine. Each iteration makes a gnuplot array of 1e6 values

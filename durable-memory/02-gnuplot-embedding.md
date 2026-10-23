@@ -62,8 +62,9 @@ the available set follows from the macros above plus patch `0002`.
 | `0004-version-id.patch` | `version.c`: patchlevel `0 (lmplot X.Y.Z)`. |
 | `0005-lmpng-terminal.patch` | adds `term/lmpng.trm`, the `png`/`pngcairo` terminal driver (see `04-png-terminal.md`). |
 | `0006-no-pager-when-scripted.patch` | `help.c`: the built-in pager (`set terminal`, `help`) reads stdin for "Press return for more"; skip it unless `interactive`, so a script never blocks. |
-| `0007-dry-run.patch` | `--dry-run`: every file gnuplot opens for writing (`set output`, `set print`, `save`, `set table`, the fit log) goes through `lmplot_dry_fopen()` (in `lmplot_embed.inc`), which, when `lmplot_dry_run` is set, prints `[dry-run] would write F` on stderr and opens the null device instead. Reads are untouched. |
+| `0007-dry-run.patch` | `--dry-run` and output lifecycle: every file gnuplot opens for writing (`set output`, `set print`, `save`, `set table`, the fit log) goes through `lmplot_dry_fopen()` (in `lmplot_embed.inc`), which, when `lmplot_dry_run` is set, prints `[dry-run] would write F` on stderr and opens the null device instead. Also rejects duplicate `font` options in `set` commands and aborts/unlinks output files when a run fails, ends in `multiplot`, or closes an output with zero plots drawn. |
 | `0008-image-reader.patch` | `breaders.c`: without libgd, the `png`/`gif`/`jpeg` binary filetypes and `set pixmap` include `cpp/lmplot_image.inc`, which decodes with `vendor/stb_image.h` (v2.30, MIT; PNG, JPEG, GIF first frame, BMP, TGA, PNM) into RGBA and serves pixels through the same `df_libgd_get_pixel` interface. This is how examples composite renders from `lmdraw`/`lmcad`/`lmblender` into one figure without `ffmpeg`. |
+| `0009-strict-warnings-and-fonts.patch` | `util.c` and `term/svg.trm`: promotes gnuplot warnings (`int_warn`) to errors with `GPVAL_ERRMSG` populated so scripted runs never silently ignore warnings, and rejects duplicate `font` options in the SVG terminal. |
 
 Workflow: `scripts/sync-gnuplot.sh` (checkout + apply), edit files under
 `third_party/gnuplot`, then `scripts/save-patches.sh` regenerates the patch

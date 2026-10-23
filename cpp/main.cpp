@@ -31,6 +31,8 @@ int lmplot_gp_do(const char *cmd);
 int lmplot_gp_eval(const char *expr, double *num, char **str);
 const char *lmplot_gp_errmsg(void);
 int lmplot_gp_output_ok(void);
+void lmplot_abort_output(void);
+int lmplot_finish_output(void);
 void lmplot_gp_shutdown(void);
 extern int lmplot_dry_run;
 int gnuplot_cli_main(int argc, char **argv);
@@ -318,24 +320,36 @@ int main(int argc, char **argv) {
   // Load and verify every file first so a corrupt later file cannot leave
   // earlier output half-written.
   std::vector<dslvm::Program> programs;
+  auto fail_with = [](const char *phase, const dslvm::Error &error) {
+    std::cerr << "lmplot: " << error.what() << "\n";
+    return dslvm::report_error(phase, error);
+  };
   for (int i = first; i < argc; i++) {
     try {
       programs.push_back(dslvm::Program::load(dslvm::read_file(argv[i]), schema, reg));
     } catch (const dslvm::Error &error) {
-      return dslvm::report_error("load", error);
+      return fail_with("load", error);
     } catch (const std::exception &error) {
-      return dslvm::report_error("load", dslvm::Error(error.what()));
+      return fail_with("load", dslvm::Error(error.what()));
     }
   }
   int status = 0;
-  for (const auto &program : programs) {
+  for (size_t i = 0; i < programs.size(); i++) {
     try {
-      program.run(context, reg);
+      programs[i].run(context, reg);
+      if (i + 1 == programs.size() && host.ready) {
+        int fin = lmplot_finish_output();
+        if (fin == 1) throw dslvm::Error("gnuplot: multiplot not closed (missing unset multiplot)");
+        if (fin == 2) throw dslvm::Error("gnuplot: output file closed with no plots drawn");
+        if (fin == 3) throw dslvm::Error("gnuplot: error writing the output file (disk full or I/O error)");
+      }
     } catch (const dslvm::Error &error) {
-      status = dslvm::report_error("run", error);
+      if (host.ready) lmplot_abort_output();
+      status = fail_with("run", error);
       break;
     } catch (const std::exception &error) {  // the memory budget in the VM
-      status = dslvm::report_error("run", dslvm::Error(error.what()));
+      if (host.ready) lmplot_abort_output();
+      status = fail_with("run", dslvm::Error(error.what()));
       break;
     }
     dslvm::report_ok();
