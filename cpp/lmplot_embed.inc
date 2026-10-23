@@ -63,26 +63,59 @@ void lmplot_gp_shutdown(void)
     }
 }
 
-/* Evaluate `expr` and fetch the result. kind: 0 error, 1 number, 2 string.
- * The string is malloc'ed (free it); numbers come back in *num. */
+/* Evaluate `expr` and fetch the result. kind: 0 error, 1 number, 2 string,
+ * 3 complex with a non-zero imaginary part, 4 another type (array, datablock,
+ * function block, voxel grid). The string is malloc'ed (free it); numbers
+ * come back in *num. Types are handled here rather than with real(), whose
+ * int_error on non-scalars would longjmp to a command_line_env whose frame
+ * (lmplot_gp_do) has already returned. */
 int lmplot_gp_eval(const char *expr, double *num, char **str)
 {
     struct udvt_entry *u;
     size_t n = strlen(expr) + 32;
     char *cmd = (char *) malloc(n);
     int kind = 0;
+    if (!cmd)
+	return 0;
     snprintf(cmd, n, "lmplot_result__ = (%s)", expr);
     if (lmplot_gp_do(cmd) == 0 && (u = get_udv_by_name("lmplot_result__")) != NULL) {
-	if (u->udv_value.type == STRING && u->udv_value.v.string_val) {
-	    *str = strdup(u->udv_value.v.string_val);
-	    kind = 2;
-	} else if (u->udv_value.type != NOTDEFINED) {
-	    *num = real(&u->udv_value);
+	switch (u->udv_value.type) {
+	case STRING:
+	    if (u->udv_value.v.string_val) {
+		*str = strdup(u->udv_value.v.string_val);
+		kind = *str ? 2 : 0;
+	    }
+	    break;
+	case INTGR:
+	    *num = (double) u->udv_value.v.int_val;
 	    kind = 1;
+	    break;
+	case CMPLX:
+	    if (u->udv_value.v.cmplx_val.imag != 0.0) {
+		kind = 3;
+	    } else {
+		*num = u->udv_value.v.cmplx_val.real;
+		kind = 1;
+	    }
+	    break;
+	case NOTDEFINED:
+	    break;
+	default:
+	    kind = 4;
+	    break;
 	}
     }
     free(cmd);
     return kind;
+}
+
+/* After a command: flush the output file and report write errors (disk full,
+ * /dev/full, closed pipe), which gnuplot's terminals mostly ignore. 1 = ok. */
+int lmplot_gp_output_ok(void)
+{
+    if (gpoutfile && gpoutfile != stdout && gpoutfile != stderr)
+	return fflush(gpoutfile) == 0 && !ferror(gpoutfile);
+    return 1;
 }
 
 /* Text of the last gnuplot error (GPVAL_ERRMSG), or "". */

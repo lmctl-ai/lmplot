@@ -168,6 +168,37 @@ echo "$out" | grep -q "slope=2" || fail "stats slope: $out"
 echo "$out" | grep -q "4 points" || fail "stats records: $out"
 ok "Plot.num / Plot.str / Plot.data return gnuplot values"
 
+# Values and writes that used to pass silently: complex or array results of Plot.num, a datablock
+# line starting with EOD (ended the block and ran the rest as commands), output write errors.
+cat >"$WORK/edge.lms" <<LMS
+p = _dsl_ cli="lmplot";
+plot.data("e", "1 2\nEOD\nEODX 5\n3 4");
+plot.cmd("set terminal unknown");
+plot.cmd("stats \$e u 1 nooutput");
+plot.echo("lines=" + str(plot.num("|\$e|")) + " records=" + str(plot.num("STATS_records")));
+plot.echo("real=" + str(plot.num("{3,0}")));
+end _dsl_
+savedsl(p, "$WORK/edge.dslb");
+LMS
+"$LMSCRIPT" "$WORK/edge.lms" >/dev/null || fail "edge.lms compile"
+out="$("$HOST" --dsl "$WORK/edge.dslb" 2>&1)" || fail "edge.lms run: $out"
+echo "$out" | grep -q "lines=4 records=2" || fail "datablock with EOD lines: $out"
+echo "$out" | grep -q "real=3" || fail "complex with zero imaginary part: $out"
+expect_run_error() { # name, snippet, expected message fragment
+  printf 'p = _dsl_ cli="lmplot";\n%s\nend _dsl_\nsavedsl(p, "%s");\n' "$2" "$WORK/$1.dslb" >"$WORK/$1.lms"
+  "$LMSCRIPT" "$WORK/$1.lms" >/dev/null || fail "$1 compile"
+  set +e; out="$("$HOST" --dsl "$WORK/$1.dslb" 2>/dev/null)"; code=$?; set -e
+  [ "$code" = 3 ] || fail "$1: exit code $code, expected 3 ($out)"
+  echo "$out" | grep -q "$3" || fail "$1: message lacks '$3': $out"
+}
+expect_run_error complex 'let x = plot.num("sqrt(-1)");' "complex"
+expect_run_error array 'plot.cmd("array A[2] = [1, 2]"); let x = plot.num("A");' "not a number"
+expect_run_error dataname 'plot.data("1x", "1 2");' "Plot.data: name"
+if [ "$UNAME_S" = Linux ] && [ -w /dev/full ]; then
+  expect_run_error writefail 'plot.png("/dev/full", 200, 100); plot.cmd("plot x");' "error writing the output"
+fi
+ok "Plot.num rejects complex/array values, datablocks keep EOD lines, write errors stop the program"
+
 set +e; "$HOST" --dsl "$WORK/does-not-exist.dslb" >/dev/null 2>&1; code=$?; set -e
 [ "$code" = 3 ] || fail "missing bytecode exit code $code, expected 3"
 set +e; "$HOST" >/dev/null 2>&1; code=$?; set -e

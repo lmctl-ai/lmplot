@@ -4,6 +4,7 @@
 #include "notices_embedded.hpp"
 #include "schema_embedded.hpp"
 
+#include <cctype>
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
@@ -17,6 +18,7 @@
 #include <io.h>
 #include <process.h>
 #else
+#include <fcntl.h>
 #include <unistd.h>
 #endif
 
@@ -25,6 +27,7 @@ int lmplot_gp_init(void);
 int lmplot_gp_do(const char *cmd);
 int lmplot_gp_eval(const char *expr, double *num, char **str);
 const char *lmplot_gp_errmsg(void);
+int lmplot_gp_output_ok(void);
 void lmplot_gp_shutdown(void);
 int gnuplot_cli_main(int argc, char **argv);
 }
@@ -60,6 +63,21 @@ struct Host {
       std::string msg = lmplot_gp_errmsg();
       throw dslvm::Error("gnuplot: " + (msg.empty() ? std::string("command failed: ") + cmd : msg));
     }
+    if (!lmplot_gp_output_ok()) throw dslvm::Error("gnuplot: error writing the output file (disk full or I/O error)");
+  }
+  // Plot.num / Plot.str: evaluate, map the non-scalar kinds to errors.
+  int eval(const std::string &who, const std::string &expr, double &num, std::string &str) {
+    init();
+    char *s = nullptr;
+    int kind = lmplot_gp_eval(expr.c_str(), &num, &s);
+    if (kind == 2) { str = s; std::free(s); }
+    if (kind == 3) throw dslvm::Error(who + ": value is complex (non-zero imaginary part): " + expr);
+    if (kind == 4) throw dslvm::Error(who + ": value is not a number or string (array, datablock?): " + expr);
+    if (kind == 0) {
+      std::string msg = lmplot_gp_errmsg();
+      throw dslvm::Error("gnuplot: " + (msg.empty() ? "expression has no value: " + expr : msg));
+    }
+    return kind;
   }
   // Multi-line text goes through a temp file and `load` so datablocks and
   // bracketed clauses work exactly as in a .gp file.
@@ -74,9 +92,18 @@ struct Host {
 #endif
                                         ) + "-" + std::to_string(seq++) + ".gp");
     {
-      std::ofstream f(tmp, std::ios::binary);
+      // Exclusive creation: never write through a file or symlink someone else placed in a shared
+      // temp directory under the (predictable) name.
+#ifdef _WIN32
+      std::FILE *f = std::fopen(tmp.string().c_str(), "wb");
+#else
+      int fd = ::open(tmp.c_str(), O_WRONLY | O_CREAT | O_EXCL, 0600);
+      std::FILE *f = fd < 0 ? nullptr : fdopen(fd, "wb");
+#endif
       if (!f) throw dslvm::Error("cannot create temporary script " + tmp.string());
-      f << text << "\n";
+      bool ok = std::fwrite(text.data(), 1, text.size(), f) == text.size() && std::fputc('\n', f) != EOF;
+      ok = std::fclose(f) == 0 && ok;
+      if (!ok) { std::error_code ec; fs::remove(tmp, ec); throw dslvm::Error("cannot write temporary script " + tmp.string()); }
     }
     struct Cleanup {
       fs::path p;
@@ -121,9 +148,24 @@ void register_host(dslvm::Registry &r, Host &h) {
   checked(r, "data", {"string", "string"}, "void", [&h](void *, Args &a) {
     const std::string &name = a[0].s;
     if (name.empty() || name[0] == '$') throw dslvm::Error("Plot.data: name is given without the leading $");
+    for (size_t i = 0; i < name.size(); i++) {
+      unsigned char c = (unsigned char)name[i];
+      if (!(std::isalpha(c) || (i > 0 && (c == '_' || std::isdigit(c)))))
+        throw dslvm::Error("Plot.data: name must start with a letter and contain only letters, digits and _: " + name);
+    }
     std::string body = a[1].s;
     if (!body.empty() && body.back() == '\n') body.pop_back();
-    h.run_script("$" + name + " << EOD\n" + body + "\nEOD");
+    // gnuplot ends a datablock at the first line that *starts with* the terminator, and runs the
+    // rest as commands; pick a terminator that no body line starts with.
+    std::string end = "EOD";
+    for (int k = 1;; k++) {
+      bool clash = body.compare(0, end.size(), end) == 0;
+      for (size_t nl = body.find('\n'); !clash && nl != std::string::npos; nl = body.find('\n', nl + 1))
+        clash = body.compare(nl + 1, end.size(), end) == 0;
+      if (!clash) break;
+      end = "EOD" + std::to_string(k);
+    }
+    h.run_script("$" + name + " << " + end + "\n" + body + "\n" + end);
     return Value::none();
   });
   checked(r, "png", {"string", "int", "int"}, "void", [&h](void *, Args &a) {
@@ -136,21 +178,15 @@ void register_host(dslvm::Registry &r, Host &h) {
   });
   checked(r, "close", {}, "void", [&h](void *, Args &) { h.run("set output"); return Value::none(); });
   checked(r, "num", {"string"}, "float", [&h](void *, Args &a) {
-    h.init();
     double num = 0;
-    char *str = nullptr;
-    int kind = lmplot_gp_eval(a[0].s.c_str(), &num, &str);
-    if (kind == 2) { std::free(str); throw dslvm::Error("Plot.num: expression is a string: " + a[0].s); }
-    if (kind != 1) throw dslvm::Error(std::string("gnuplot: ") + lmplot_gp_errmsg());
+    std::string str;
+    if (h.eval("Plot.num", a[0].s, num, str) == 2) throw dslvm::Error("Plot.num: expression is a string: " + a[0].s);
     return Value::real(num);
   });
   checked(r, "str", {"string"}, "string", [&h](void *, Args &a) {
-    h.init();
     double num = 0;
-    char *str = nullptr;
-    int kind = lmplot_gp_eval(a[0].s.c_str(), &num, &str);
-    if (kind == 2) { std::string s = str; std::free(str); return Value::string(s); }
-    if (kind != 1) throw dslvm::Error(std::string("gnuplot: ") + lmplot_gp_errmsg());
+    std::string str;
+    if (h.eval("Plot.str", a[0].s, num, str) == 2) return Value::string(str);
     char buf[64];
     std::snprintf(buf, sizeof buf, "%.15g", num);
     return Value::string(buf);

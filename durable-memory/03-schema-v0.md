@@ -34,6 +34,14 @@ Rules and gotchas:
   between calls and between bytecode files of one invocation.
 - `plot.num("STATS_slope")` after `stats` etc. is the way to get results back
   into the script; `plot.str` for strings (`sprintf`, `GPVAL_*`, `strftime`).
+  A complex result with a non-zero imaginary part (`sqrt(-1)` is `{0,1}` in
+  gnuplot) or an array/datablock value is an error, not its real part; NaN
+  is returned as NaN (gnuplot uses it for "no value", e.g. empty `stats`).
+- `data(name, text)` picks a terminator that no line of `text` starts with
+  (gnuplot ends a datablock at the first line *starting with* the marker), so
+  data lines beginning with `EOD` stay data. The name must start with a letter.
+- After every command the host flushes the output file and stops the program
+  on a write error (disk full, `/dev/full`); the terminals only warn.
 - Output paths are relative to the current directory; the host does not
   sandbox them (gnuplot has `system` and `set output "|cmd"` as well).
 
