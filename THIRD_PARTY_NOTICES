@@ -1,0 +1,159 @@
+Third-party notices for lmplot
+==============================
+
+lmplot's own code (cpp/, schema/, scripts/, examples/, tests; including the
+vendored `cpp/dslvm.hpp` runtime from the cpp-dsl-sdk project and the deflate
+encoder from lmcad) is Copyright (c) 2026 Lattice Systems LLC, MIT license (see
+LICENSE). This file covers third-party components shipped in or linked into the
+distributed binaries. `lmplot --notices` prints it.
+
+gnuplot
+-------
+Statically linked into every lmplot binary (about 60 source files of gnuplot
+6.1.0-dev, https://github.com/gnuplot/gnuplot, pinned in gnuplot.lock). The
+gnuplot license permits distributing binaries built from modified sources
+provided the modifications are distributed as patches, the version is marked,
+and the contact information is retained. lmplot does all three:
+
+  - Modifications: the files in `patches/` are the complete and only changes
+    to the pinned gnuplot source; they ship with every release next to the
+    binaries and live at https://github.com/lmctl-ai/lmplot/tree/main/patches.
+    In addition lmplot adds its own native PNG terminal (cpp/term/lmpng.trm) and
+    an embedding hook (cpp/lmplot_embed.inc) that are not gnuplot code.
+  - Version identification: this build identifies itself as "lmplot" (see
+    `lmplot --version`; `show version` reports the lmplot patch level).
+  - Contact: for problems with this modified version write to
+    https://github.com/lmctl-ai/lmplot/issues (Lattice Systems LLC). Contact
+    information for the base software is retained below and in the gnuplot
+    sources.
+
+The gnuplot license text, from the Copyright file of the pinned source:
+
+/*[
+ * Copyright 1986 - 1993, 1998, 2004   Thomas Williams, Colin Kelley
+ *
+ * Permission to use, copy, and distribute this software and its
+ * documentation for any purpose with or without fee is hereby granted,
+ * provided that the above copyright notice appear in all copies and
+ * that both that copyright notice and this permission notice appear
+ * in supporting documentation.
+ *
+ * Permission to modify the software is granted, but not the right to
+ * distribute the complete modified source code.  Modifications are to
+ * be distributed as patches to the released version.  Permission to
+ * distribute binaries produced by compiling modified sources is granted,
+ * provided you
+ *   1. distribute the corresponding source modifications from the
+ *    released version in the form of a patch file along with the binaries,
+ *   2. add special version identification to distinguish your version
+ *    in addition to the base release version number,
+ *   3. provide your name and address as the primary contact for the
+ *    support of your modified version, and
+ *   4. retain our contact information in regard to use of the base
+ *    software.
+ * Permission to distribute the released version of the source code along
+ * with corresponding source modifications in the form of a patch file is
+ * granted with same provisions 2 through 4 for binary distributions.
+ *
+ * This software is provided "as is" without express or implied warranty
+ * to the extent permitted by applicable law.
+]*/
+
+stb_truetype
+------------
+cpp/raster/lmraster.cpp includes vendor/stb_truetype.h (Sean Barrett, stb
+commit a7d4c2175630e1ea5b6f8dd00ab96fed0b97b96d), available under the MIT license
+or the public domain; lmplot uses it under the MIT license:
+
+Copyright (c) 2017 Sean Barrett
+
+Permission is hereby granted, free of charge, to any person obtaining a copy of
+this software and associated documentation files (the "Software"), to deal in
+the Software without restriction, including without limitation the rights to
+use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies
+of the Software, and to permit persons to whom the Software is furnished to do
+so, subject to the following conditions:
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+DejaVu fonts
+------------
+The png terminal embeds DejaVu Sans, DejaVu Sans Bold, DejaVu Serif and DejaVu
+Sans Mono, unmodified (vendor/fonts/). Copyright (c) 2003 by Bitstream, Inc.
+All Rights Reserved. Bitstream Vera is a trademark of Bitstream, Inc. DejaVu
+changes are in the public domain. License:
+
+Copyright (c) 2003 by Bitstream, Inc. All Rights Reserved. 
+Bitstream Vera is a trademark of Bitstream, Inc.
+DejaVu changes are in public domain.
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of the fonts accompanying this license ("Fonts") and associated
+documentation files (the "Font Software"), to reproduce and distribute the
+Font Software, including without limitation the rights to use, copy, merge,
+publish, distribute, and/or sell copies of the Font Software, and to permit
+persons to whom the Font Software is furnished to do so, subject to the
+following conditions:
+
+The above copyright and trademark notices and this permission notice shall
+be included in all copies of one or more of the Font Software typefaces.
+
+The Font Software may be modified, altered, or added to, and in particular
+the designs of glyphs or characters in the Fonts may be modified and
+additional glyphs or characters may be added to the Fonts, only if the fonts
+are renamed to names not containing either the words "Bitstream" or the word
+"Vera".
+
+This License becomes null and void to the extent applicable to Fonts or Font
+Software that has been modified and is distributed under the "Bitstream
+Vera" names.
+
+The Font Software may be sold as part of a larger software package but no
+copy of one or more of the Font Software typefaces may be sold by itself.
+
+THE FONT SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
+OR IMPLIED, INCLUDING BUT NOT LIMITED TO ANY WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT OF COPYRIGHT, PATENT,
+TRADEMARK, OR OTHER RIGHT. IN NO EVENT SHALL BITSTREAM OR THE GNOME
+FOUNDATION BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, INCLUDING
+ANY GENERAL, SPECIAL, INDIRECT, INCIDENTAL, OR CONSEQUENTIAL DAMAGES,
+WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF
+THE USE OR INABILITY TO USE THE FONT SOFTWARE OR FROM OTHER DEALINGS IN THE
+FONT SOFTWARE.
+
+Except as contained in this notice, the names of Gnome, the Gnome
+Foundation, and Bitstream Inc., shall not be used in advertising or
+otherwise to promote the sale, use or other dealings in this Font Software
+without prior written authorization from the Gnome Foundation or Bitstream
+Inc., respectively. For further information, contact: fonts at gnome dot
+org.
+
+GCC runtime libraries (Linux builds: libstdc++, libgcc)
+-------------------------------------------------------
+The fully static Linux binaries contain code from libstdc++ and libgcc. These
+are licensed under the GNU General Public License v3.0 or later with the GCC
+Runtime Library Exception 3.1, which permits distributing binaries that
+statically incorporate the runtime without GPL obligations for the rest of the
+program. License texts: https://www.gnu.org/licenses/gpl-3.0.html and
+https://www.gnu.org/licenses/gcc-exception-3.1.html
+
+glibc (Linux builds)
+--------------------
+The fully static Linux binaries statically link glibc, which is licensed under
+the GNU Lesser General Public License v2.1 or later. Static linking is
+permitted by the LGPL; the glibc source is available from
+https://www.gnu.org/software/libc/ and the object files needed to relink are
+available on request from the contact above. Licenses:
+https://www.gnu.org/licenses/lgpl-2.1.html
+
+MinGW-w64 runtime (Windows builds)
+----------------------------------
+Windows binaries statically link the MinGW-w64 C runtime and libstdc++/libgcc
+(see the GCC runtime exception above). MinGW-w64 headers and runtime are
+public-domain / ZPL / BSD-licensed; see https://www.mingw-w64.org/.

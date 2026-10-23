@@ -1,0 +1,12 @@
+diff --git a/src/plot.c b/src/plot.c
+index 99dc898..cab5043 100644
+--- a/src/plot.c
++++ b/src/plot.c
+@@ -1074,3 +1074,7 @@ RelativePathToGnuplot(const char * path)
+     return rel_path;
+ }
+ #endif
++
++#ifdef LMPLOT_EMBED
++#include "lmplot_embed.inc"
++#endif

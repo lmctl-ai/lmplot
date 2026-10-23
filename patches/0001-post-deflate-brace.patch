@@ -1,0 +1,13 @@
+diff --git a/term/post.trm b/term/post.trm
+index e7186be..40cfb55 100644
+--- a/term/post.trm
++++ b/term/post.trm
+@@ -4025,6 +4025,8 @@ PS_image (unsigned int M, unsigned int N, coordval *image, gpiPoint *corner, t_i
+ 					    bits_per_component, max_colors, cscale,
+ 					    &num_encoded_bytes);
+     } else {
++#else
++    {
+ #endif
+ 	encoded_image = PS_encode_image(M, N, image, color_mode,
+ 					bits_per_component, max_colors, cscale,

@@ -1,0 +1,14 @@
+# Simple functions: gnuplot's "simple.dem" first plots, driven from lmscript.
+out = ARGV.len() > 0 ? ARGV[0] : "build/simple.dslb";
+mkdir("build/examples");
+p = _dsl_ schema="../schema/lmplot.dsl.json";
+plot.png("build/examples/simple.png", 800, 600);
+plot.cmd("set title 'Simple Plots' font ',16'");
+plot.cmd("set key left box");
+plot.cmd("set samples 50");
+plot.cmd("set style data points");
+plot.cmd("plot [-10:10] sin(x), atan(x), cos(atan(x))");
+plot.close();
+end _dsl_
+savedsl(p, out);
+println(f"wrote {out}");

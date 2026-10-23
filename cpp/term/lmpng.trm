@@ -1,0 +1,1071 @@
+/* Hello, Emacs, this is -*-C-*- */
+
+/* lmplot: native PNG terminal.
+ *
+ * A dependency-free replacement for gnuplot's gd/cairo PNG terminals. Drawing
+ * goes through lmraster (anti-aliased scanline rasterizer, embedded DejaVu
+ * TrueType fonts), so `set terminal png` and `set terminal pngcairo` work in a
+ * fully static executable. Not part of upstream gnuplot; the pinned gnuplot
+ * source includes this file through patches/0004-lmpng-terminal.patch.
+ *
+ * Copyright (c) 2026 Lattice Systems LLC. MIT license (see LICENSE).
+ */
+
+#include "driver.h"
+
+#ifdef TERM_REGISTER
+register_term(lmpng)
+#endif
+
+#ifdef TERM_PROTO
+TERM_PUBLIC void LMPNG_options(void);
+TERM_PUBLIC void LMPNG_init(void);
+TERM_PUBLIC void LMPNG_reset(void);
+TERM_PUBLIC void LMPNG_text(void);
+TERM_PUBLIC void LMPNG_graphics(void);
+TERM_PUBLIC void LMPNG_move(unsigned int x, unsigned int y);
+TERM_PUBLIC void LMPNG_vector(unsigned int x, unsigned int y);
+TERM_PUBLIC void LMPNG_linetype(int lt);
+TERM_PUBLIC void LMPNG_dashtype(int type, t_dashtype *custom);
+TERM_PUBLIC void LMPNG_linewidth(double lw);
+TERM_PUBLIC int  LMPNG_text_angle(float ang);
+TERM_PUBLIC int  LMPNG_justify_text(enum JUSTIFY mode);
+TERM_PUBLIC void LMPNG_point(unsigned int x, unsigned int y, int number);
+TERM_PUBLIC int  LMPNG_set_font(const char *font);
+TERM_PUBLIC void LMPNG_fillbox(int style, unsigned int x, unsigned int y, unsigned int w, unsigned int h);
+TERM_PUBLIC int  LMPNG_make_palette(t_sm_palette *palette);
+TERM_PUBLIC void LMPNG_set_color(t_colorspec *colorspec);
+TERM_PUBLIC void LMPNG_filled_polygon(int points, gpiPoint *corners);
+TERM_PUBLIC void LMPNG_image(unsigned int m, unsigned int n, coordval *image, gpiPoint *corner, t_imagecolor color_mode);
+TERM_PUBLIC void LMPNG_put_text(unsigned int x, unsigned int y, const char *str);
+TERM_PUBLIC void LMPNG_put_text_plain(unsigned int x, unsigned int y, const char *str);
+TERM_PUBLIC void LMPNG_enhanced_open(char *fontname, double fontsize, double base, TBOOLEAN widthflag, TBOOLEAN showflag, int overprint);
+TERM_PUBLIC void LMPNG_enhanced_flush(void);
+TERM_PUBLIC void LMPNG_boxed_text(unsigned int x, unsigned int y, int option);
+
+#define LMPNG_XMAX 640
+#define LMPNG_YMAX 480
+#define LMPNG_PX_PER_PT (96.0 / 72.0)
+#endif /* TERM_PROTO */
+
+#ifndef TERM_PROTO_ONLY
+#ifdef TERM_BODY
+
+#include "lmraster.h"
+#include <math.h>
+
+#define LMPNG_MAXPATH 100000
+
+static struct {
+    lmr *img;
+    int width, height;            /* canvas size in pixels */
+    int opt_width, opt_height;
+    unsigned bg;                  /* 0xRRGGBB */
+    int bg_set, transparent, crop;
+    unsigned rgb;                 /* current color 0xRRGGBB */
+    double opacity;               /* 1 = opaque */
+    int lt;                       /* current linetype index */
+    double lw;                    /* current linewidth (gnuplot units) */
+    double lw_factor, dash_factor;
+    int cap_round;                /* 0 butt, 1 rounded, 2 square */
+    double dash[8];
+    int ndash;
+    int axis_dash;
+    double *path;                 /* pending polyline, device coords */
+    int npath, cappath;
+    unsigned lastx, lasty;
+    int have_last;
+    /* text */
+    lmr_font font, default_font;
+    char *fontname, *default_fontname;
+    double fontsize, default_fontsize, fontscale;
+    float angle;
+    enum JUSTIFY just;
+    int enhanced;
+    int monochrome;
+    /* enhanced text machinery */
+    int enh_open, enh_show, enh_overprint, enh_widthflag, enh_sizeonly;
+    char *enh_font;
+    double enh_size, enh_base;
+    double pen_x, pen_y, save_x, save_y;
+    double box[4];                /* text bounding box (device), x0,y0,x1,y1 */
+    double box_xmargin, box_ymargin;
+    int box_valid;
+} LM;
+
+enum LMPNG_id {
+    LMPNG_SIZE, LMPNG_FONT, LMPNG_FONTSCALE, LMPNG_ENHANCED, LMPNG_NOENHANCED, LMPNG_TRANSPARENT, LMPNG_NOTRANSPARENT,
+    LMPNG_CROP, LMPNG_NOCROP, LMPNG_BACKGROUND, LMPNG_LINEWIDTH, LMPNG_DASHLENGTH, LMPNG_BUTT, LMPNG_ROUNDED, LMPNG_SQUARE,
+    LMPNG_COLOR, LMPNG_MONOCHROME, LMPNG_IGNORED, LMPNG_TINY, LMPNG_SMALL, LMPNG_MEDIUM, LMPNG_LARGE, LMPNG_GIANT,
+    LMPNG_POINTSCALE, LMPNG_OTHER
+};
+
+static struct gen_table LMPNG_opts[] = {
+    { "si$ze", LMPNG_SIZE },
+    { "fo$nt", LMPNG_FONT },
+    { "fontscale", LMPNG_FONTSCALE },
+    { "enh$anced", LMPNG_ENHANCED },
+    { "noenh$anced", LMPNG_NOENHANCED },
+    { "trans$parent", LMPNG_TRANSPARENT },
+    { "notran$sparent", LMPNG_NOTRANSPARENT },
+    { "crop", LMPNG_CROP },
+    { "nocrop", LMPNG_NOCROP },
+    { "backg$round", LMPNG_BACKGROUND },
+    { "linew$idth", LMPNG_LINEWIDTH },
+    { "lw", LMPNG_LINEWIDTH },
+    { "dashl$ength", LMPNG_DASHLENGTH },
+    { "dl", LMPNG_DASHLENGTH },
+    { "butt", LMPNG_BUTT },
+    { "round$ed", LMPNG_ROUNDED },
+    { "square", LMPNG_SQUARE },
+    { "col$or", LMPNG_COLOR },
+    { "colour", LMPNG_COLOR },
+    { "mono$chrome", LMPNG_MONOCHROME },
+    { "true$color", LMPNG_IGNORED },
+    { "notrue$color", LMPNG_IGNORED },
+    { "inter$lace", LMPNG_IGNORED },
+    { "nointer$lace", LMPNG_IGNORED },
+    { "ti$ny", LMPNG_TINY },
+    { "s$mall", LMPNG_SMALL },
+    { "m$edium", LMPNG_MEDIUM },
+    { "l$arge", LMPNG_LARGE },
+    { "g$iant", LMPNG_GIANT },
+    { "pointscale", LMPNG_POINTSCALE },
+    { "ps", LMPNG_POINTSCALE },
+    { NULL, LMPNG_OTHER }
+};
+
+static const char *LMPNG_initialized = NULL;
+
+/* ------------------------------------------------------------ helpers */
+
+/* Terminal coordinates (y up, 0..xmax/ymax inclusive) to device pixel centers. */
+#define LMX(x) ((double)(x) + 0.5)
+#define LMY(y) ((double)(LM.height - 1 - (int)(y)) + 0.5)
+
+static unsigned
+LMPNG_argb(void)
+{
+    unsigned a = (unsigned)(LM.opacity * 255.0 + 0.5);
+    if (a > 255) a = 255;
+    return (a << 24) | (LM.rgb & 0xffffff);
+}
+
+static void
+LMPNG_flush_path(void)
+{
+    if (LM.npath >= 1 && LM.img && LM.lt != LT_NODRAW) {
+        double w = LM.lw * LM.lw_factor;
+        double dash[8];
+        int nd = 0, i;
+        if (w < 0.01) w = 0.01;
+        if (LM.axis_dash) {
+            dash[0] = 2; dash[1] = 4; nd = 2;
+        } else if (LM.ndash) {
+            for (i = 0; i < LM.ndash; i++) dash[i] = LM.dash[i];
+            nd = LM.ndash;
+        }
+        lmr_stroke(LM.img, LM.path, LM.npath, w, LMPNG_argb(), LM.cappath,
+                   LM.cappath == LMR_CAP_ROUND ? LMR_JOIN_ROUND : LMR_JOIN_MITER, dash, nd);
+    }
+    LM.npath = 0;
+}
+
+static void
+LMPNG_path_add(double x, double y)
+{
+    if (!LM.path)
+        LM.path = (double *)gp_alloc(sizeof(double) * 2 * LMPNG_MAXPATH, "lmpng path");
+    if (LM.npath >= LMPNG_MAXPATH) {
+        double lx = LM.path[2 * LM.npath - 2], ly = LM.path[2 * LM.npath - 1];
+        LMPNG_flush_path();
+        LM.path[0] = lx; LM.path[1] = ly; LM.npath = 1;
+    }
+    LM.path[2 * LM.npath] = x;
+    LM.path[2 * LM.npath + 1] = y;
+    LM.npath++;
+}
+
+/* gnuplot's classic pen table (index = linetype + 3 in svg.trm). */
+static unsigned
+LMPNG_pen_rgb(int lt)
+{
+    static const unsigned pens[16] = {
+        0xffffff, 0x000000, 0x808080, 0xff0000, 0x00ff00, 0x0000ff, 0x00ffff, 0x157545,
+        0x000094, 0xff9900, 0x0099a1, 0xd6d645, 0xa391ff, 0xffcc00, 0xd60078, 0xabd600
+    };
+    int idx;
+    if (LM.monochrome && lt >= 0) return 0x000000;
+    if (lt == LT_BACKGROUND) return LM.bg;
+    if (lt >= 13) lt %= 13;
+    idx = lt + 3;
+    if (idx < 0) idx = 0;
+    if (idx > 15) idx = 15;
+    return pens[idx];
+}
+
+static void
+LMPNG_parse_font(const char *font, char **name_out, double *size_out, lmr_font *f, int keep_name)
+{
+    char *copy, *comma, *p;
+    int bold = 0, italic = 0;
+    if (!font) return;
+    copy = gp_strdup(font);
+    comma = strchr(copy, ',');
+    if (comma) {
+        double sz;
+        if (sscanf(comma + 1, "%lf", &sz) == 1 && sz > 0) *size_out = sz;
+        *comma = '\0';
+    }
+    if (*copy == '\0' && keep_name) { free(copy); return; }
+    for (p = copy; *p; p++) *p = (char)tolower((unsigned char)*p);
+    if (strstr(copy, "bold")) bold = 1;
+    if (strstr(copy, "italic") || strstr(copy, "oblique")) italic = 1;
+    f->bold = bold;
+    f->italic = italic;
+    if (strstr(copy, "symbol")) f->family = LMR_FAMILY_SYMBOL;
+    else if (strstr(copy, "mono") || strstr(copy, "courier") || strstr(copy, "consol") || strstr(copy, "fixed"))
+        f->family = LMR_FAMILY_MONO;
+    else if ((strstr(copy, "serif") && !strstr(copy, "sans")) || strstr(copy, "times") || strstr(copy, "georgia")
+             || strstr(copy, "palatino") || strstr(copy, "bookman") || strstr(copy, "garamond") || strstr(copy, "century"))
+        f->family = LMR_FAMILY_SERIF;
+    else
+        f->family = LMR_FAMILY_SANS;
+    free(*name_out);
+    /* keep the user's spelling (minus size) for the options string */
+    copy = gp_strdup(font);
+    comma = strchr(copy, ',');
+    if (comma) *comma = '\0';
+    *name_out = copy;
+}
+
+static void
+LMPNG_apply_font_metrics(void)
+{
+    double px = LM.default_fontsize * LM.fontscale * LMPNG_PX_PER_PT;
+    term->h_char = (unsigned int)(px * 0.6 + 0.5);
+    term->v_char = (unsigned int)(px * 1.25 + 0.5);
+    if (term->h_char < 1) term->h_char = 1;
+    if (term->v_char < 1) term->v_char = 1;
+}
+
+static void
+LMPNG_apply_size(void)
+{
+    term->xmax = LM.opt_width - 1;
+    term->ymax = LM.opt_height - 1;
+    term->v_tic = (LM.opt_width < LM.opt_height ? LM.opt_width : LM.opt_height) / 100;
+    if (term->v_tic < 1) term->v_tic = 1;
+    term->h_tic = term->v_tic;
+}
+
+/* ------------------------------------------------------------ options */
+
+TERM_PUBLIC void
+LMPNG_options(void)
+{
+    int fresh = (LMPNG_initialized != term->name);
+    if (fresh) {
+        LMPNG_initialized = term->name;
+        LM.opt_width = LMPNG_XMAX;
+        LM.opt_height = LMPNG_YMAX;
+        LM.bg_set = 0;
+        LM.bg = 0xffffff;
+        LM.transparent = 0;
+        LM.crop = 0;
+        LM.lw_factor = 1.0;
+        LM.dash_factor = 1.0;
+        LM.cap_round = 0;
+        LM.monochrome = 0;
+        LM.fontscale = 1.0;
+        free(LM.default_fontname);
+        LM.default_fontname = gp_strdup("Sans");
+        LM.default_fontsize = 12.0;
+        LM.default_font.family = LMR_FAMILY_SANS;
+        LM.default_font.bold = LM.default_font.italic = 0;
+    }
+    term->flags &= ~TERM_MONOCHROME;
+    term->flags |= TERM_ENHANCED_TEXT;
+    LM.enhanced = 1;
+    term->put_text = LMPNG_put_text;
+
+    while (!END_OF_COMMAND) {
+        switch (lookup_table(&LMPNG_opts[0], c_token)) {
+        case LMPNG_SIZE:
+            c_token++;
+            if (END_OF_COMMAND) {
+                LM.opt_width = LMPNG_XMAX; LM.opt_height = LMPNG_YMAX;
+            } else {
+                double w = real_expression(), h = LM.opt_height;
+                if (equals(c_token, ",")) { c_token++; h = real_expression(); }
+                if (w >= 1 && h >= 1 && w < 30000 && h < 30000 && w * h <= 100000000.0) {
+                    LM.opt_width = (int)w; LM.opt_height = (int)h;
+                } else {
+                    int_error(c_token, "size out of range");
+                }
+            }
+            break;
+        case LMPNG_FONT: {
+            char *s;
+            c_token++;
+            if (END_OF_COMMAND) break;
+            if (isstringvalue(c_token) && (s = try_to_get_string())) {
+                LMPNG_parse_font(s, &LM.default_fontname, &LM.default_fontsize, &LM.default_font, 1);
+                free(s);
+            } else {
+                int_error(c_token, "expecting font name and size in quotes");
+            }
+            break;
+        }
+        case LMPNG_FONTSCALE:
+            c_token++;
+            LM.fontscale = END_OF_COMMAND ? 1.0 : real_expression();
+            if (LM.fontscale <= 0) LM.fontscale = 1.0;
+            break;
+        case LMPNG_ENHANCED: LM.enhanced = 1; c_token++; break;
+        case LMPNG_NOENHANCED: LM.enhanced = 0; c_token++; break;
+        case LMPNG_TRANSPARENT: LM.transparent = 1; c_token++; break;
+        case LMPNG_NOTRANSPARENT: LM.transparent = 0; c_token++; break;
+        case LMPNG_CROP: LM.crop = 1; c_token++; break;
+        case LMPNG_NOCROP: LM.crop = 0; c_token++; break;
+        case LMPNG_BACKGROUND:
+            c_token++;
+            LM.bg = (unsigned)parse_color_name() & 0xffffff;
+            LM.bg_set = 1;
+            break;
+        case LMPNG_LINEWIDTH:
+            c_token++;
+            LM.lw_factor = real_expression();
+            if (LM.lw_factor <= 0) LM.lw_factor = 1.0;
+            break;
+        case LMPNG_DASHLENGTH:
+            c_token++;
+            LM.dash_factor = real_expression();
+            if (LM.dash_factor <= 0.2) LM.dash_factor = 1.0;
+            break;
+        case LMPNG_BUTT: LM.cap_round = 0; c_token++; break;
+        case LMPNG_ROUNDED: LM.cap_round = 1; c_token++; break;
+        case LMPNG_SQUARE: LM.cap_round = 2; c_token++; break;
+        case LMPNG_COLOR: LM.monochrome = 0; c_token++; break;
+        case LMPNG_MONOCHROME: LM.monochrome = 1; c_token++; break;
+        case LMPNG_IGNORED: c_token++; break;
+        case LMPNG_TINY: LM.default_fontsize = 7; c_token++; break;
+        case LMPNG_SMALL: LM.default_fontsize = 9; c_token++; break;
+        case LMPNG_MEDIUM: LM.default_fontsize = 12; c_token++; break;
+        case LMPNG_LARGE: LM.default_fontsize = 14; c_token++; break;
+        case LMPNG_GIANT: LM.default_fontsize = 18; c_token++; break;
+        case LMPNG_POINTSCALE:
+            c_token++;
+            if (!END_OF_COMMAND) (void)real_expression();
+            break;
+        default: {
+            double sz;
+            if (sscanf(gp_input_line + token[c_token].start_index, "%lf", &sz) == 1 && sz > 0 && sz < 999) {
+                LM.default_fontsize = sz;
+                c_token++;
+                break;
+            }
+            int_error(c_token, "unrecognized terminal option");
+        }
+        }
+    }
+
+    if (LM.monochrome) term->flags |= TERM_MONOCHROME;
+    if (LM.enhanced) term->put_text = LMPNG_put_text; else term->put_text = LMPNG_put_text_plain;
+    if (LM.enhanced) term->flags |= TERM_ENHANCED_TEXT; else term->flags &= ~TERM_ENHANCED_TEXT;
+
+    LMPNG_apply_size();
+    LM.font = LM.default_font;
+    LM.fontname = LM.default_fontname;
+    LM.fontsize = LM.default_fontsize;
+    LMPNG_apply_font_metrics();
+
+    sprintf(term_options, "size %d,%d ", LM.opt_width, LM.opt_height);
+    strcat(term_options, LM.enhanced ? "enhanced " : "noenhanced ");
+    strcat(term_options, LM.monochrome ? "monochrome " : "color ");
+    if (LM.transparent) strcat(term_options, "transparent ");
+    if (LM.crop) strcat(term_options, "crop ");
+    strcat(term_options, LM.cap_round == 0 ? "butt " : LM.cap_round == 1 ? "rounded " : "square ");
+    if (LM.lw_factor != 1.0) sprintf(term_options + strlen(term_options), "linewidth %.1f ", LM.lw_factor);
+    if (LM.dash_factor != 1.0) sprintf(term_options + strlen(term_options), "dashlength %.1f ", LM.dash_factor);
+    if (LM.bg_set) sprintf(term_options + strlen(term_options), "background \"#%06x\" ", LM.bg);
+    if (LM.fontscale != 1.0) sprintf(term_options + strlen(term_options), "fontscale %.1f ", LM.fontscale);
+    if (strlen(term_options) + strlen(LM.default_fontname) < sizeof(term_options) - 32)
+        sprintf(term_options + strlen(term_options), "font \"%s,%g\"", LM.default_fontname, LM.default_fontsize);
+}
+
+TERM_PUBLIC void
+LMPNG_init(void)
+{
+    LM.lt = LT_BLACK;
+    LM.lw = 1.0;
+    LM.opacity = 1.0;
+    LM.rgb = 0;
+    LM.ndash = 0;
+    LM.axis_dash = 0;
+    LM.angle = 0;
+    LM.just = LEFT;
+    LM.npath = 0;
+}
+
+TERM_PUBLIC void
+LMPNG_reset(void)
+{
+    if (LM.img) { lmr_destroy(LM.img); LM.img = NULL; }
+    free(LM.path);
+    LM.path = NULL;
+    LM.npath = 0;
+}
+
+TERM_PUBLIC void
+LMPNG_graphics(void)
+{
+    unsigned bg;
+    if (LM.img) lmr_destroy(LM.img);
+    LM.width = LM.opt_width;
+    LM.height = LM.opt_height;
+    bg = LM.transparent ? 0x00ffffffu : (0xff000000u | LM.bg);
+    LM.img = lmr_create(LM.width, LM.height, bg);
+    if (!LM.img) int_error(NO_CARET, "png: cannot allocate %dx%d canvas", LM.width, LM.height);
+    LM.npath = 0;
+    LM.have_last = 0;
+    LM.lt = LT_BLACK;
+    LM.rgb = 0;
+    LM.opacity = 1.0;
+    LM.ndash = 0;
+    LM.axis_dash = 0;
+    LM.font = LM.default_font;
+    LM.fontsize = LM.default_fontsize;
+}
+
+TERM_PUBLIC void
+LMPNG_text(void)
+{
+    lmr *out;
+    LMPNG_flush_path();
+    if (!LM.img) return;
+    out = LM.img;
+    if (LM.crop) {
+        int x0, y0, x1, y1;
+        unsigned bg = LM.transparent ? 0x00ffffffu : (0xff000000u | LM.bg);
+        if (lmr_content_bbox(LM.img, bg, &x0, &y0, &x1, &y1)) {
+            lmr *c = lmr_crop(LM.img, x0, y0, x1, y1);
+            if (c) out = c;
+        }
+    }
+    if (lmr_write_png(out, gpoutfile) != 0)
+        int_warn(NO_CARET, "png: error writing output");
+    fflush(gpoutfile);
+    if (out != LM.img) lmr_destroy(out);
+    lmr_destroy(LM.img);
+    LM.img = NULL;
+}
+
+/* ------------------------------------------------------------ lines */
+
+TERM_PUBLIC void
+LMPNG_move(unsigned int x, unsigned int y)
+{
+    if (LM.have_last && LM.npath >= 1 && LM.lastx == x && LM.lasty == y) return;
+    LMPNG_flush_path();
+    LM.lastx = x; LM.lasty = y; LM.have_last = 1;
+}
+
+TERM_PUBLIC void
+LMPNG_vector(unsigned int x, unsigned int y)
+{
+    if (!LM.img) return;
+    if (LM.npath == 0) {
+        if (!LM.have_last) { LM.lastx = x; LM.lasty = y; LM.have_last = 1; }
+        LM.cappath = LM.cap_round;
+        LMPNG_path_add(LMX(LM.lastx), LMY(LM.lasty));
+    }
+    LMPNG_path_add(LMX(x), LMY(y));
+    LM.lastx = x; LM.lasty = y;
+}
+
+TERM_PUBLIC void
+LMPNG_linetype(int lt)
+{
+    LMPNG_flush_path();
+    LM.lt = lt;
+    LM.axis_dash = (lt == LT_AXIS);
+    if (lt == LT_AXIS && LM.monochrome) LM.rgb = 0;
+    LM.rgb = LMPNG_pen_rgb(lt);
+    if (lt == LT_AXIS) LM.rgb = 0x000000;
+    LM.opacity = 1.0;
+    if (lt == LT_SOLID || lt >= 0) {
+        if (lt == LT_SOLID) LM.ndash = 0;
+    }
+}
+
+TERM_PUBLIC void
+LMPNG_dashtype(int type, t_dashtype *custom)
+{
+    static const double defaults[5][7] = {
+        {0}, {5, 8}, {2, 4}, {8, 4, 2, 4}, {9, 4, 1, 4, 1, 4}
+    };
+    double scale = LM.lw * LM.lw_factor * LM.dash_factor * 0.5;
+    int j;
+    LMPNG_flush_path();
+    LM.ndash = 0;
+    switch (type) {
+    case DASHTYPE_SOLID:
+    case DASHTYPE_AXIS:
+        break;
+    case DASHTYPE_CUSTOM:
+        if (custom) {
+            for (j = 0; j < 8 && custom->pattern[j] > 0; j++)
+                LM.dash[LM.ndash++] = custom->pattern[j] * scale;
+            if (LM.ndash & 1) { LM.dash[LM.ndash] = LM.dash[LM.ndash - 1]; LM.ndash++; }
+        }
+        break;
+    default: {
+        int d = type % 5;
+        if (d <= 0) break;
+        for (j = 0; j < 7 && defaults[d][j] > 0; j++)
+            LM.dash[LM.ndash++] = defaults[d][j] * scale;
+        break;
+    }
+    }
+}
+
+TERM_PUBLIC void
+LMPNG_linewidth(double lw)
+{
+    LMPNG_flush_path();
+    LM.lw = lw;
+}
+
+/* ------------------------------------------------------------ color */
+
+TERM_PUBLIC int
+LMPNG_make_palette(t_sm_palette *palette)
+{
+    (void)palette;
+    return 0; /* continuous colors */
+}
+
+TERM_PUBLIC void
+LMPNG_set_color(t_colorspec *colorspec)
+{
+    LMPNG_flush_path();
+    switch (colorspec->type) {
+    case TC_LT:
+        LM.rgb = LMPNG_pen_rgb(colorspec->lt);
+        LM.opacity = 1.0;
+        break;
+    case TC_RGB:
+        LM.rgb = colorspec->lt & 0xffffff;
+        LM.opacity = 1.0 - (double)((colorspec->lt >> 24) & 0xff) / 255.0;
+        break;
+    case TC_FRAC:
+    case TC_Z:
+    case TC_CB:
+        LM.rgb = rgb_from_colorspec(colorspec) & 0xffffff;
+        LM.opacity = 1.0;
+        break;
+    default:
+        break;
+    }
+}
+
+/* ------------------------------------------------------------ fills */
+
+TERM_PUBLIC void
+LMPNG_filled_polygon(int points, gpiPoint *corners)
+{
+    int fillpar = corners->style >> 4, style = corners->style & 0xf, i;
+    double *xy;
+    unsigned argb;
+    if (!LM.img || points < 3) return;
+    LMPNG_flush_path();
+    xy = (double *)gp_alloc(sizeof(double) * 2 * points, "lmpng polygon");
+    for (i = 0; i < points; i++) {
+        xy[2 * i] = LMX(corners[i].x);
+        xy[2 * i + 1] = LMY(corners[i].y);
+    }
+    switch (style) {
+    case FS_EMPTY:
+        lmr_fill_polygon(LM.img, xy, points, LM.transparent ? 0x00ffffffu : (0xff000000u | LM.bg));
+        break;
+    case FS_PATTERN:
+    case FS_TRANSPARENT_PATTERN:
+        lmr_fill_polygon_pattern(LM.img, xy, points, LMPNG_argb(),
+                                 style == FS_PATTERN ? (0xff000000u | LM.bg) : 0u, fillpar % 10);
+        break;
+    case FS_SOLID:
+    case FS_TRANSPARENT_SOLID:
+    default: {
+        double op = LM.opacity;
+        if (op >= 1.0 && fillpar >= 0 && fillpar < 100) {
+            /* "fillstyle solid <density>": blend toward white; transparent variant keeps alpha */
+            if (style == FS_TRANSPARENT_SOLID) op = fillpar * 0.01;
+            else {
+                unsigned r = (LM.rgb >> 16) & 255, g = (LM.rgb >> 8) & 255, b = LM.rgb & 255;
+                double f = fillpar * 0.01;
+                r = (unsigned)(255 - (255 - (int)r) * f + 0.5);
+                g = (unsigned)(255 - (255 - (int)g) * f + 0.5);
+                b = (unsigned)(255 - (255 - (int)b) * f + 0.5);
+                argb = 0xff000000u | (r << 16) | (g << 8) | b;
+                lmr_fill_polygon(LM.img, xy, points, argb);
+                free(xy);
+                return;
+            }
+        }
+        argb = ((unsigned)(op * 255.0 + 0.5) << 24) | (LM.rgb & 0xffffff);
+        lmr_fill_polygon(LM.img, xy, points, argb);
+        break;
+    }
+    }
+    free(xy);
+}
+
+TERM_PUBLIC void
+LMPNG_fillbox(int style, unsigned int x, unsigned int y, unsigned int w, unsigned int h)
+{
+    gpiPoint c[4];
+    c[0].x = x;     c[0].y = y;
+    c[1].x = x + w; c[1].y = y;
+    c[2].x = x + w; c[2].y = y + h;
+    c[3].x = x;     c[3].y = y + h;
+    c[0].style = style;
+    LMPNG_filled_polygon(4, c);
+}
+
+TERM_PUBLIC void
+LMPNG_image(unsigned int m, unsigned int n, coordval *image, gpiPoint *corner, t_imagecolor color_mode)
+{
+    unsigned *pix;
+    unsigned i, j;
+    double x0, y0, x1, y1;
+    if (!LM.img || m == 0 || n == 0) return;
+    LMPNG_flush_path();
+    pix = (unsigned *)gp_alloc(sizeof(unsigned) * m * n, "lmpng image");
+    for (j = 0; j < n; j++) {
+        for (i = 0; i < m; i++) {
+            unsigned a = 255, r, g, b;
+            if (color_mode == IC_PALETTE) {
+                double v = *image++;
+                if (isnan(v)) { pix[j * m + i] = 0; continue; }
+                {
+                    unsigned rgb = rgb_from_gray(v);
+                    r = (rgb >> 16) & 255; g = (rgb >> 8) & 255; b = rgb & 255;
+                }
+            } else {
+                rgb_color c1;
+                rgb255_color c255;
+                c1.r = *image++; c1.g = *image++; c1.b = *image++;
+                if (color_mode == IC_RGBA) a = (unsigned)(*image++ + 0.5);
+                if (a > 255) a = 255;
+                rgb255_from_rgb1(c1, &c255);
+                r = c255.r; g = c255.g; b = c255.b;
+            }
+            pix[j * m + i] = (a << 24) | (r << 16) | (g << 8) | b;
+        }
+    }
+    /* corner[0] top-left, corner[1] bottom-right (terminal coords, y up) */
+    x0 = (double)corner[0].x; y0 = LM.height - 1 - (double)corner[0].y + 1.0;
+    x1 = (double)corner[1].x; 
+    {
+        double yb = LM.height - 1 - (double)corner[1].y + 1.0;
+        /* image box in device space: top-left (x0, top), bottom-right (x1, bottom) */
+        double top = y0 < yb ? y0 : yb, bottom = y0 < yb ? yb : y0;
+        (void)bottom;
+        lmr_draw_image(LM.img, pix, (int)m, (int)n, x0, y0, x1, y0, x0, yb);
+        (void)top;
+    }
+    free(pix);
+}
+
+/* ------------------------------------------------------------ points */
+
+static void
+LMPNG_stroke_pts(const double *xy, int n, double w)
+{
+    lmr_stroke(LM.img, xy, n, w, LMPNG_argb(), LMR_CAP_BUTT, LMR_JOIN_MITER, NULL, 0);
+}
+
+TERM_PUBLIC void
+LMPNG_point(unsigned int x, unsigned int y, int number)
+{
+    double cx = LMX(x), cy = LMY(y);
+    double s = term_pointsize * term->h_tic / 2.0 * 1.0;
+    double w = LM.lw * LM.lw_factor;
+    double p[12];
+    int k, i;
+    if (!LM.img) return;
+    LMPNG_flush_path();
+    if (number < 0) { /* dot */
+        double r = 0.5 * (w > 1 ? w : 1);
+        double sq[8] = { cx - r, cy - r, cx + r, cy - r, cx + r, cy + r, cx - r, cy + r };
+        lmr_fill_polygon(LM.img, sq, 4, LMPNG_argb());
+        return;
+    }
+    if (s < 1.0) s = 1.0;
+    k = number % 15;
+    switch (k) {
+    case 0: /* plus */
+        p[0] = cx - s; p[1] = cy; p[2] = cx + s; p[3] = cy; LMPNG_stroke_pts(p, 2, w);
+        p[0] = cx; p[1] = cy - s; p[2] = cx; p[3] = cy + s; LMPNG_stroke_pts(p, 2, w);
+        break;
+    case 1: /* x */
+        p[0] = cx - s; p[1] = cy - s; p[2] = cx + s; p[3] = cy + s; LMPNG_stroke_pts(p, 2, w);
+        p[0] = cx - s; p[1] = cy + s; p[2] = cx + s; p[3] = cy - s; LMPNG_stroke_pts(p, 2, w);
+        break;
+    case 2: /* star */
+        p[0] = cx - s; p[1] = cy; p[2] = cx + s; p[3] = cy; LMPNG_stroke_pts(p, 2, w);
+        p[0] = cx; p[1] = cy - s; p[2] = cx; p[3] = cy + s; LMPNG_stroke_pts(p, 2, w);
+        p[0] = cx - s; p[1] = cy - s; p[2] = cx + s; p[3] = cy + s; LMPNG_stroke_pts(p, 2, w);
+        p[0] = cx - s; p[1] = cy + s; p[2] = cx + s; p[3] = cy - s; LMPNG_stroke_pts(p, 2, w);
+        break;
+    case 3: case 4: { /* box, filled box */
+        double sq[10] = { cx - s, cy - s, cx + s, cy - s, cx + s, cy + s, cx - s, cy + s, cx - s, cy - s };
+        if (k == 4) lmr_fill_polygon(LM.img, sq, 4, LMPNG_argb());
+        else LMPNG_stroke_pts(sq, 5, w);
+        break;
+    }
+    case 5: case 6: { /* circle, filled circle */
+        double c[66];
+        int n = 24;
+        for (i = 0; i < n; i++) { c[2 * i] = cx + s * cos(2 * M_PI * i / n); c[2 * i + 1] = cy + s * sin(2 * M_PI * i / n); }
+        if (k == 6) lmr_fill_polygon(LM.img, c, n, LMPNG_argb());
+        else { c[2 * n] = c[0]; c[2 * n + 1] = c[1]; lmr_stroke(LM.img, c, n + 1, w, LMPNG_argb(), LMR_CAP_BUTT, LMR_JOIN_ROUND, NULL, 0); }
+        break;
+    }
+    case 7: case 8: case 9: case 10: { /* triangles: up, filled up, down, filled down */
+        double d = (k >= 9) ? -1.0 : 1.0;
+        double t[8] = { cx, cy - d * 1.33 * s, cx - 1.33 * s, cy + d * 0.67 * s, cx + 1.33 * s, cy + d * 0.67 * s, cx, cy - d * 1.33 * s };
+        if (k == 8 || k == 10) lmr_fill_polygon(LM.img, t, 3, LMPNG_argb());
+        else LMPNG_stroke_pts(t, 4, w);
+        break;
+    }
+    case 11: case 12: { /* diamond, filled diamond */
+        double d[10] = { cx, cy - 1.41 * s, cx + 1.41 * s, cy, cx, cy + 1.41 * s, cx - 1.41 * s, cy, cx, cy - 1.41 * s };
+        if (k == 12) lmr_fill_polygon(LM.img, d, 4, LMPNG_argb());
+        else LMPNG_stroke_pts(d, 5, w);
+        break;
+    }
+    case 13: case 14: { /* pentagon, filled pentagon */
+        double pg[12] = { cx, cy - 1.33 * s, cx + 1.265 * s, cy - 0.411 * s, cx + 0.782 * s, cy + 1.067 * s,
+                          cx - 0.782 * s, cy + 1.076 * s, cx - 1.265 * s, cy - 0.411 * s, cx, cy - 1.33 * s };
+        if (k == 14) lmr_fill_polygon(LM.img, pg, 5, LMPNG_argb());
+        else LMPNG_stroke_pts(pg, 6, w);
+        break;
+    }
+    }
+}
+
+/* ------------------------------------------------------------ text */
+
+TERM_PUBLIC int
+LMPNG_text_angle(float ang)
+{
+    LM.angle = ang;
+    return TRUE;
+}
+
+TERM_PUBLIC int
+LMPNG_justify_text(enum JUSTIFY mode)
+{
+    LM.just = mode;
+    return TRUE;
+}
+
+TERM_PUBLIC int
+LMPNG_set_font(const char *font)
+{
+    if (!font || !*font) {
+        LM.font = LM.default_font;
+        LM.fontname = LM.default_fontname;
+        LM.fontsize = LM.default_fontsize;
+    } else {
+        char *name = NULL;
+        lmr_font f = LM.font;
+        double size = LM.fontsize;
+        if (*font == ',') {
+            /* size only */
+            double sz;
+            if (sscanf(font + 1, "%lf", &sz) == 1 && sz > 0) size = sz;
+        } else {
+            LMPNG_parse_font(font, &name, &size, &f, 0);
+            LM.font = f;
+            free(name);
+        }
+        LM.fontsize = size;
+    }
+    return TRUE;
+}
+
+static void
+LMPNG_note_box(double x0, double y0, double x1, double y1)
+{
+    if (!LM.box_valid) {
+        LM.box[0] = x0; LM.box[1] = y0; LM.box[2] = x1; LM.box[3] = y1;
+        LM.box_valid = 1;
+        return;
+    }
+    if (x0 < LM.box[0]) LM.box[0] = x0;
+    if (y0 < LM.box[1]) LM.box[1] = y0;
+    if (x1 > LM.box[2]) LM.box[2] = x1;
+    if (y1 > LM.box[3]) LM.box[3] = y1;
+}
+
+/* Draw one run of text with its baseline origin at device (bx,by). Returns the advance. */
+static double
+LMPNG_draw_run(const char *s, lmr_font f, double px, double bx, double by, int show)
+{
+    double w = lmr_text_width(f, px, s);
+    double a = LM.angle * M_PI / 180.0;
+    if (show) lmr_text_draw(LM.img, f, px, s, bx, by, a, LMPNG_argb());
+    {
+        double asc, desc, cs = cos(a), sn = sin(a);
+        double ux = -sn, uy = -cs; /* text "up" in device coords */
+        double x[4], y[4];
+        int i;
+        lmr_font_metrics(f, px, &asc, &desc);
+        x[0] = bx + asc * ux;         y[0] = by + asc * uy;
+        x[1] = bx - desc * ux;        y[1] = by - desc * uy;
+        x[2] = bx + w * cs + asc * ux; y[2] = by - w * sn + asc * uy;
+        x[3] = bx + w * cs - desc * ux; y[3] = by - w * sn - desc * uy;
+        for (i = 0; i < 4; i++) LMPNG_note_box(x[i], y[i], x[i], y[i]);
+    }
+    return w;
+}
+
+/* Device-space baseline origin for a string anchored (vertically centered) at terminal (x,y). */
+static void
+LMPNG_anchor(unsigned int x, unsigned int y, double px, double *bx, double *by)
+{
+    double a = LM.angle * M_PI / 180.0;
+    double down = 0.36 * px; /* centre of digit height below the baseline */
+    *bx = LMX(x) + sin(a) * down;
+    *by = LMY(y) + cos(a) * down;
+}
+
+TERM_PUBLIC void
+LMPNG_put_text_plain(unsigned int x, unsigned int y, const char *str)
+{
+    double px = LM.fontsize * LM.fontscale * LMPNG_PX_PER_PT;
+    double bx, by, w, a = LM.angle * M_PI / 180.0;
+    if (!LM.img || !*str) return;
+    LMPNG_flush_path();
+    LMPNG_anchor(x, y, px, &bx, &by);
+    w = lmr_text_width(LM.font, px, str);
+    if (LM.just == CENTRE) { bx -= w / 2 * cos(a); by += w / 2 * sin(a); }
+    else if (LM.just == RIGHT) { bx -= w * cos(a); by += w * sin(a); }
+    LMPNG_draw_run(str, LM.font, px, bx, by, 1);
+}
+
+TERM_PUBLIC void
+LMPNG_enhanced_open(char *fontname, double fontsize, double base, TBOOLEAN widthflag, TBOOLEAN showflag, int overprint)
+{
+    if (overprint == 3) { LM.save_x = LM.pen_x; LM.save_y = LM.pen_y; return; }
+    if (overprint == 4) { LM.pen_x = LM.save_x; LM.pen_y = LM.save_y; return; }
+    if (!LM.enh_open) {
+        LM.enh_open = 1;
+        enhanced_cur_text = &enhanced_text[0];
+        LM.enh_font = fontname;
+        LM.enh_size = fontsize;
+        LM.enh_base = base;
+        LM.enh_show = showflag;
+        LM.enh_overprint = overprint;
+        LM.enh_widthflag = widthflag;
+    }
+}
+
+TERM_PUBLIC void
+LMPNG_enhanced_flush(void)
+{
+    lmr_font f = LM.font;
+    double size = LM.enh_size * LMPNG_PX_PER_PT, a = LM.angle * M_PI / 180.0, cs = cos(a), sn = sin(a), w;
+    double bx, by;
+    char *fontcopy = NULL;
+    if (!LM.enh_open) return;
+    LM.enh_open = 0;
+    *enhanced_cur_text = '\0';
+    if (LM.enh_font && *LM.enh_font) {
+        double dummy = 0;
+        LMPNG_parse_font(LM.enh_font, &fontcopy, &dummy, &f, 0);
+        free(fontcopy);
+        /* inherit bold/italic only when the name did not ask for them but the parent had them */
+    }
+    bx = LM.pen_x - sn * LM.enh_base * LMPNG_PX_PER_PT;
+    by = LM.pen_y - cs * LM.enh_base * LMPNG_PX_PER_PT;
+    w = LMPNG_draw_run(enhanced_text, f, size, bx, by, LM.enh_show && !LM.enh_sizeonly);
+    if (LM.enh_overprint == 1) {
+        LM.pen_x += w / 2 * cs;
+        LM.pen_y -= w / 2 * sn;
+    } else if (LM.enh_widthflag) {
+        LM.pen_x += w * cs;
+        LM.pen_y -= w * sn;
+    }
+}
+
+TERM_PUBLIC void
+LMPNG_put_text(unsigned int x, unsigned int y, const char *str)
+{
+    char *original = (char *)str;
+    char *fontcopy;
+    double px = LM.fontsize * LM.fontscale * LMPNG_PX_PER_PT, bx, by, a = LM.angle * M_PI / 180.0;
+    JUSTIFY just = LM.just;
+    if (!LM.img) return;
+    if (ignore_enhanced_text || !LM.enhanced || !*str || (!strpbrk(str, "{}^_@&~") && !contains_unicode(str))) {
+        LMPNG_put_text_plain(x, y, str);
+        return;
+    }
+    LMPNG_flush_path();
+    LMPNG_anchor(x, y, px, &bx, &by);
+
+    enhanced_fontscale = LM.fontscale;
+    strncpy(enhanced_escape_format, "&#x%2.2x;", sizeof(enhanced_escape_format));
+
+    LM.enh_open = 0;
+    LM.enh_show = 1;
+    LM.enh_overprint = 0;
+    LM.enh_sizeonly = (just == RIGHT || just == CENTRE);
+    LM.pen_x = bx;
+    LM.pen_y = by;
+
+    fontcopy = gp_strdup(LM.fontname ? LM.fontname : "Sans");
+    while (*(str = enhanced_recursion((char *)str, TRUE, fontcopy, LM.fontsize * LM.fontscale, 0.0, TRUE, TRUE, 0))) {
+        (term->enhanced_flush)();
+        enh_err_check(str);
+        if (!*++str) break;
+    }
+    (term->enhanced_flush)();
+    free(fontcopy);
+
+    if (LM.enh_sizeonly) {
+        /* second pass: draw, shifted back by the measured advance */
+        double adv = (LM.pen_x - bx) * cos(a) - (LM.pen_y - by) * sin(a);
+        double shift = (just == RIGHT) ? adv : adv / 2;
+        LM.enh_sizeonly = 0;
+        LM.pen_x = bx - shift * cos(a);
+        LM.pen_y = by + shift * sin(a);
+        str = original;
+        enhanced_fontscale = LM.fontscale;
+        LM.enh_open = 0;
+        fontcopy = gp_strdup(LM.fontname ? LM.fontname : "Sans");
+        while (*(str = enhanced_recursion((char *)str, TRUE, fontcopy, LM.fontsize * LM.fontscale, 0.0, TRUE, TRUE, 0))) {
+            (term->enhanced_flush)();
+            enh_err_check(str);
+            if (!*++str) break;
+        }
+        (term->enhanced_flush)();
+        free(fontcopy);
+    }
+}
+
+TERM_PUBLIC void
+LMPNG_boxed_text(unsigned int x, unsigned int y, int option)
+{
+    double mx = LM.box_xmargin, my = LM.box_ymargin;
+    double rect[10];
+    switch (option) {
+    case TEXTBOX_INIT:
+        LM.box_valid = 0;
+        (void)x; (void)y;
+        break;
+    case TEXTBOX_MARGINS:
+        LM.box_xmargin = 1.0 * (double)x / 100.0 * LM.fontsize * LM.fontscale * LMPNG_PX_PER_PT * 0.5;
+        LM.box_ymargin = 1.0 * (double)y / 100.0 * LM.fontsize * LM.fontscale * LMPNG_PX_PER_PT * 0.5;
+        break;
+    case TEXTBOX_OUTLINE:
+    case TEXTBOX_BACKGROUNDFILL:
+        if (!LM.box_valid || !LM.img) break;
+        rect[0] = LM.box[0] - mx; rect[1] = LM.box[1] - my;
+        rect[2] = LM.box[2] + mx; rect[3] = LM.box[1] - my;
+        rect[4] = LM.box[2] + mx; rect[5] = LM.box[3] + my;
+        rect[6] = LM.box[0] - mx; rect[7] = LM.box[3] + my;
+        rect[8] = rect[0]; rect[9] = rect[1];
+        if (option == TEXTBOX_OUTLINE)
+            lmr_stroke(LM.img, rect, 5, LM.lw * LM.lw_factor, LMPNG_argb(), LMR_CAP_BUTT, LMR_JOIN_MITER, NULL, 0);
+        else
+            lmr_fill_polygon(LM.img, rect, 4, LMPNG_argb());
+        break;
+    default:
+        break;
+    }
+}
+
+#endif /* TERM_BODY */
+
+#ifdef TERM_TABLE
+
+TERM_TABLE_START(lmpng_driver)
+    "png", "PNG images (lmplot built-in rasterizer, DejaVu fonts)",
+    LMPNG_XMAX, LMPNG_YMAX, 16, 8, 6, 6,
+    LMPNG_options, LMPNG_init, LMPNG_reset, LMPNG_text, null_scale, LMPNG_graphics,
+    LMPNG_move, LMPNG_vector, LMPNG_linetype, LMPNG_put_text, LMPNG_text_angle,
+    LMPNG_justify_text, LMPNG_point, do_arrow, LMPNG_set_font, do_pointsize,
+    TERM_CAN_MULTIPLOT | TERM_BINARY | TERM_CAN_DASH | TERM_ALPHA_CHANNEL | TERM_LINEWIDTH | TERM_FONTSCALE
+        | TERM_ENHANCED_TEXT,
+    0 /* suspend */, 0 /* resume */, LMPNG_fillbox, LMPNG_linewidth
+    , LMPNG_make_palette,
+    0 /* previous_palette */,
+    LMPNG_set_color,
+    LMPNG_filled_polygon
+    , LMPNG_image
+    , LMPNG_enhanced_open, LMPNG_enhanced_flush, do_enh_writec
+    , NULL /* layer */
+    , NULL /* path */
+    , 1.0  /* tscale */
+    , NULL /* hypertext */
+    , LMPNG_boxed_text
+    , NULL /* modify_plots */
+    , LMPNG_dashtype
+TERM_TABLE_END(lmpng_driver)
+
+#undef LAST_TERM
+#define LAST_TERM lmpng_driver
+
+TERM_TABLE_START(lmpngcairo_driver)
+    "pngcairo", "PNG images (alias of png: lmplot built-in rasterizer)",
+    LMPNG_XMAX, LMPNG_YMAX, 16, 8, 6, 6,
+    LMPNG_options, LMPNG_init, LMPNG_reset, LMPNG_text, null_scale, LMPNG_graphics,
+    LMPNG_move, LMPNG_vector, LMPNG_linetype, LMPNG_put_text, LMPNG_text_angle,
+    LMPNG_justify_text, LMPNG_point, do_arrow, LMPNG_set_font, do_pointsize,
+    TERM_CAN_MULTIPLOT | TERM_BINARY | TERM_CAN_DASH | TERM_ALPHA_CHANNEL | TERM_LINEWIDTH | TERM_FONTSCALE
+        | TERM_ENHANCED_TEXT,
+    0 /* suspend */, 0 /* resume */, LMPNG_fillbox, LMPNG_linewidth
+    , LMPNG_make_palette,
+    0 /* previous_palette */,
+    LMPNG_set_color,
+    LMPNG_filled_polygon
+    , LMPNG_image
+    , LMPNG_enhanced_open, LMPNG_enhanced_flush, do_enh_writec
+    , NULL /* layer */
+    , NULL /* path */
+    , 1.0  /* tscale */
+    , NULL /* hypertext */
+    , LMPNG_boxed_text
+    , NULL /* modify_plots */
+    , LMPNG_dashtype
+TERM_TABLE_END(lmpngcairo_driver)
+
+#undef LAST_TERM
+#define LAST_TERM lmpngcairo_driver
+
+#endif /* TERM_TABLE */
+#endif /* TERM_PROTO_ONLY */
+
+#ifdef TERM_HELP
+START_HELP(png)
+"1 png",
+"?commands set terminal png",
+"?set terminal png",
+"?set term png",
+"?terminal png",
+"?term png",
+" lmplot's built-in PNG terminal. Syntax:",
+"       set terminal png {size <x>,<y>} {font \"<name>,<size>\"} {fontscale <s>}",
+"                        {{no}enhanced} {{no}transparent} {{no}crop}",
+"                        {background <rgb>} {linewidth <lw>} {dashlength <dl>}",
+"                        {butt|rounded|square} {color|monochrome}",
+"",
+" Text is drawn from embedded DejaVu Sans, Serif and Mono; font names containing",
+" mono/courier select Mono, serif/times select Serif, and everything else Sans.",
+" `pngcairo` is accepted as an alias for `png`."
+END_HELP(png)
+#endif

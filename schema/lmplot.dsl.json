@@ -1,0 +1,26 @@
+{
+  "dsl.schema": 2,
+  "name": "lmplot",
+  "types": {
+    "Plot": {
+      "methods": {
+        "cmd": [{"params": ["string"], "returns": "void"}],
+        "script": [{"params": ["string"], "returns": "void"}],
+        "load": [{"params": ["string"], "returns": "void"}],
+        "data": [{"params": ["string", "string"], "returns": "void"}],
+        "png": [{"params": ["string", "int", "int"], "returns": "void"}],
+        "svg": [{"params": ["string", "int", "int"], "returns": "void"}],
+        "close": [{"params": [], "returns": "void"}],
+        "num": [{"params": ["string"], "returns": "float"}],
+        "str": [{"params": ["string"], "returns": "string"}],
+        "terminals": [{"params": [], "returns": "string"}],
+        "echo": [{"params": ["string"], "returns": "void"}],
+        "version": [{"params": [], "returns": "string"}]
+      }
+    }
+  },
+  "functions": {},
+  "context": {
+    "plot": "Plot"
+  }
+}

@@ -1,0 +1,33 @@
+diff --git a/src/term.h b/src/term.h
+index 37f01ae..5f5f32d 100644
+--- a/src/term.h
++++ b/src/term.h
+@@ -92,7 +92,7 @@
+ # ifdef OS2
+ #  include "pm.trm"		/* OS/2 Presentation Manager */
+ # endif
+-# ifdef _WIN32
++# if defined(_WIN32) && !defined(LMPLOT_EMBED)
+ #  include "win.trm"		/* MS-Windows */
+ # endif
+ #else /* include all applicable terminals not commented out */
+@@ -119,7 +119,7 @@
+ /****************************************************************************/
+ 
+ /* Windows */
+-#ifdef _WIN32
++#if defined(_WIN32) && !defined(LMPLOT_EMBED)
+ /* Windows GDI/GDI+/Direct2D */
+ # include "win.trm"
+ #endif
+@@ -360,6 +360,10 @@
+ #include "metapost.trm"
+ #endif
+ 
++#ifdef LMPLOT_EMBED
++# include "lmpng.trm"	/* lmplot native png terminal */
++#endif
++
+ /* ConTeXt */
+ #include "context.trm"
+ 

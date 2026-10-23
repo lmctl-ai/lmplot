@@ -1,0 +1,17 @@
+diff --git a/src/version.c b/src/version.c
+index 7516022..72206f7 100644
+--- a/src/version.c
++++ b/src/version.c
+@@ -37,7 +37,12 @@
+ 
+ const double gnuplot_ver = 6.1;
+ const char gnuplot_version[] = "6.1";
++#ifdef LMPLOT_VERSION
++/* modified build: the gnuplot license requires distinguishing version identification */
++const char gnuplot_patchlevel[] = "0 (lmplot " LMPLOT_VERSION ")";
++#else
+ const char gnuplot_patchlevel[] = "0";
++#endif
+ #ifdef DEVELOPMENT_VERSION
+ #include "timestamp.h"
+ #else
