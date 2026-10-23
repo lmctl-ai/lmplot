@@ -40,7 +40,7 @@ Machine checked 2026-10-22 on x86_64 Linux (WSL2), 4 cores, GCC.
 
 ## Tests
 
-`./test.sh` → 23 checks, ~20 s with a warm build:
+`./test.sh` → 24 checks, ~20 s with a warm build:
 
 1. SDK pin; 2. gnuplot pin plus patches; 3. build; 4. `--version` exact;
 5. embedded schema byte-identical to `schema/lmplot.dsl.json`; 6. host
@@ -57,7 +57,8 @@ gives byte-identical images (all 83); 18–19. multi-host combo examples
 (or skip with a clear message); 20. video examples render frames and encode
 MP4/GIF with `ffmpeg`; 21. a failing gnuplot command exits 3 with a `run` error
 and stops the program; 22. `plot.data` / `stats` / `plot.num` / `plot.str`
-round trip; 23. usage (2) and load (3) exit codes.
+round trip; 23. `Plot.num` complex/array rejection, `EOD` datablock lines, and
+write error handling; 24. usage (2) and load (3) exit codes.
 
 Gotchas found: `lmplot gnuplot -e 'set terminal'` waits on stdin for the
 built-in pager when stdin is open (patch `0006` skips paging unless the

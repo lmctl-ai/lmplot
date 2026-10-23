@@ -12,7 +12,7 @@ order.
 - `03-schema-v0.md` — the `Plot` API (12 methods) and its rules.
 - `04-png-terminal.md` — the native PNG terminal and rasterizer: pieces,
   options, fidelity decisions, known gaps.
-- `05-build-run-test.md` — measured build times and sizes, run modes, the 23
+- `05-build-run-test.md` — measured build times and sizes, run modes, the 24
   checks of `test.sh`.
 - `06-ci.md` — GitHub Actions matrix, release flow, what the platforms caught.
 - `07-examples.md` — the 36 standalone examples, 2 combo examples (`lmcad`/`lmdraw`),
