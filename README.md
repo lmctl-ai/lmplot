@@ -26,10 +26,10 @@
 | <img src="docs/images/enzyme_michaelis_menten.png" width="290"> | <img src="docs/images/damped_driven_resonance.png" width="290"> | <img src="docs/images/quadrature_convergence.png" width="290"> |
 | Competitive vs non-competitive OLS<br>`lmctl autorun https://raw.githubusercontent.com/lmctl-ai/lmplot/main/examples/enzyme_michaelis_menten.lms` | Magnification backbone & phase lag<br>`lmctl autorun https://raw.githubusercontent.com/lmctl-ai/lmplot/main/examples/damped_driven_resonance.lms` | Fitted orders 2 and 4, Gauss wins at 8 points<br>`lmctl autorun https://raw.githubusercontent.com/lmctl-ai/lmplot/main/examples/quadrature_convergence.lms` |
 
-| Black–Scholes call & Greeks dashboard | Linear regression & `stats` round-trip | |
+| Black–Scholes call & Greeks dashboard | Projectile with drag: best angle 41° (`lmdraw` + `lmplot`) | Linear regression & `stats` round-trip |
 | --- | --- | --- |
-| <img src="docs/images/option_greeks_dashboard.png" width="290"> | <img src="docs/images/stats.png" width="290"> | |
-| Reproduces Hull's 4.76 / 0.81, parity to 1e-14<br>`lmctl autorun https://raw.githubusercontent.com/lmctl-ai/lmplot/main/examples/option_greeks_dashboard.lms` | LCG data, `stats` & derived labels<br>`lmctl autorun https://raw.githubusercontent.com/lmctl-ai/lmplot/main/examples/stats.lms` | |
+| <img src="docs/images/option_greeks_dashboard.png" width="290"> | <img src="docs/images/projectile_drag.png" width="290"> | <img src="docs/images/stats.png" width="290"> |
+| Reproduces Hull's 4.76 / 0.81, parity to 1e-14<br>`lmctl autorun https://raw.githubusercontent.com/lmctl-ai/lmplot/main/examples/option_greeks_dashboard.lms`  | RK4 angle sweep; lmdraw diagram placed with `set pixmap`<br>`lmctl autorun https://raw.githubusercontent.com/lmctl-ai/lmplot/main/examples/combo/projectile_drag.lms` | LCG data, `stats` & derived labels<br>`lmctl autorun https://raw.githubusercontent.com/lmctl-ai/lmplot/main/examples/stats.lms` |
 
 | Surfaces and colour (`pm3d`) | Filled curves | Clustered & stacked histograms |
 | --- | --- | --- |

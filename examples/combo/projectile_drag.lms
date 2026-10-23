@@ -1,0 +1,162 @@
+# Projectile with air drag (lmdraw + lmplot): why 45 degrees is not the best launch angle.
+# 1. lmdraw draws the free-body diagram (gravity mg, drag -k m |v| v, launch angle).
+# 2. lmplot integrates x'' = -k |v| x', y'' = -g - k |v| y' with RK4 for every launch angle
+#    from 10 to 80 degrees, finds the angle of maximum range, and checks the vacuum case
+#    against the closed form R = v0^2 sin(2 theta) / g.
+# 3. One lmplot figure holds the trajectories, the range-vs-angle sweep and, via
+#    `set pixmap`, the lmdraw diagram (no image tools needed).
+# Writes images/projectile_drag.png (900x560).
+out = ARGV.len() > 0 ? ARGV[0] : "build/projectile_drag.dslb";
+mkdir("images");
+mkdir("build/examples");
+mkdir("build/rendered");
+
+draw = _dsl_ cli="lmdraw" install="github:lmctl-ai/lmdraw@latest";
+scene.canvas(330, 250, "#ffffff");
+scene.line(20.0, 215.0, 310.0, 215.0, "#94a3b8", 1.5);
+scene.text(165.0, 22.0, 14.0, "Forces on the ball in flight", "#0f172a").set_attr("text-anchor", "middle");
+# Launch angle at the origin
+scene.line(30.0, 215.0, 110.0, 215.0, "#475569", 1.2);
+scene.line(30.0, 215.0, 87.0, 158.0, "#475569", 1.2).set_attr("stroke-dasharray", "4 3");
+scene.path("M 75 215 A 45 45 0 0 0 62 183", "none", "#475569", 1.4);
+scene.text(80.0, 200.0, 13.0, "θ", "#334155");
+# Ball and forces
+scene.circle(190.0, 105.0, 13.0, "#334155");
+scene.arrow(190.0, 105.0, 270.0, 65.0, "#16a34a", 3.0);
+scene.text(236.0, 55.0, 13.0, "velocity v", "#15803d");
+scene.arrow(190.0, 105.0, 135.0, 132.0, "#dc2626", 3.0);
+scene.text(70.0, 150.0, 13.0, "drag  k m |v| v", "#b91c1c");
+scene.arrow(190.0, 105.0, 190.0, 185.0, "#2563eb", 3.0);
+scene.text(198.0, 182.0, 13.0, "gravity m g", "#1d4ed8");
+scene.text(165.0, 240.0, 11.5, "drag grows as v²: flatter launches lose less", "#475569").set_attr("text-anchor", "middle");
+scene.render_png("build/rendered/projectile_fbd.png", 330, 250, 1);
+end _dsl_
+savedsl(draw, "build/projectile_fbd.dslb");
+r = system ${dsl_cli(draw)} --dsl build/projectile_fbd.dslb;
+assert(r.code == 0);
+
+p = _dsl_ cli="lmplot" install="github:lmctl-ai/lmplot@latest";
+let v0 = 50.0;
+let g = 9.81;
+let k = 0.004;
+let dt = 0.01;
+let pi = 3.141592653589793;
+
+# One RK4 flight; returns the range (linear interpolation at y = 0). Optionally records the path.
+fn flight(theta_deg: float, kk: float) -> float {
+  let th = theta_deg * 3.141592653589793 / 180.0;
+  let x = 0.0;
+  let y = 0.0;
+  let vx = 50.0 * cos(th);
+  let vy = 50.0 * sin(th);
+  let px = 0.0;
+  let py = 0.0;
+  let steps = 0;
+  while ((y >= 0.0 || steps == 0) && steps < 20000) {
+    px = x;
+    py = y;
+    let s1 = sqrt(vx * vx + vy * vy);
+    let ax1 = 0.0 - kk * s1 * vx;
+    let ay1 = 0.0 - 9.81 - kk * s1 * vy;
+    let vx2 = vx + 0.005 * ax1;
+    let vy2 = vy + 0.005 * ay1;
+    let s2 = sqrt(vx2 * vx2 + vy2 * vy2);
+    let ax2 = 0.0 - kk * s2 * vx2;
+    let ay2 = 0.0 - 9.81 - kk * s2 * vy2;
+    let vx3 = vx + 0.005 * ax2;
+    let vy3 = vy + 0.005 * ay2;
+    let s3 = sqrt(vx3 * vx3 + vy3 * vy3);
+    let ax3 = 0.0 - kk * s3 * vx3;
+    let ay3 = 0.0 - 9.81 - kk * s3 * vy3;
+    let vx4 = vx + 0.01 * ax3;
+    let vy4 = vy + 0.01 * ay3;
+    let s4 = sqrt(vx4 * vx4 + vy4 * vy4);
+    let ax4 = 0.0 - kk * s4 * vx4;
+    let ay4 = 0.0 - 9.81 - kk * s4 * vy4;
+    x = x + 0.01 * (vx + 2.0 * vx2 + 2.0 * vx3 + vx4) / 6.0;
+    y = y + 0.01 * (vy + 2.0 * vy2 + 2.0 * vy3 + vy4) / 6.0;
+    vx = vx + 0.01 * (ax1 + 2.0 * ax2 + 2.0 * ax3 + ax4) / 6.0;
+    vy = vy + 0.01 * (ay1 + 2.0 * ay2 + 2.0 * ay3 + ay4) / 6.0;
+    steps = steps + 1;
+  }
+  return px + (x - px) * py / (py - y);
+}
+
+fn path(theta_deg: float, kk: float) -> string {
+  let th = theta_deg * 3.141592653589793 / 180.0;
+  let x = 0.0;
+  let y = 0.0;
+  let vx = 50.0 * cos(th);
+  let vy = 50.0 * sin(th);
+  let rows = "0 0\n";
+  let steps = 0;
+  while (y >= 0.0 && steps < 20000) {
+    let s = sqrt(vx * vx + vy * vy);
+    let ax = 0.0 - kk * s * vx;
+    let ay = 0.0 - 9.81 - kk * s * vy;
+    let vxm = vx + 0.005 * ax;
+    let vym = vy + 0.005 * ay;
+    let sm = sqrt(vxm * vxm + vym * vym);
+    x = x + 0.01 * vxm;
+    y = y + 0.01 * vym;
+    vx = vx + 0.01 * (0.0 - kk * sm * vxm);
+    vy = vy + 0.01 * (0.0 - 9.81 - kk * sm * vym);
+    steps = steps + 1;
+    if (steps % 10 == 0 && y >= 0.0) { rows = rows + str(x) + " " + str(y) + "\n"; }
+  }
+  return rows;
+}
+
+let sweep = "";
+let best_r = 0.0;
+let best_th = 0.0;
+for (i in range(10, 81)) {
+  let th = float(i);
+  let rv = flight(th, 0.0);
+  let rd = flight(th, k);
+  if (rd > best_r) {
+    best_r = rd;
+    best_th = th;
+  }
+  sweep = sweep + str(th) + " " + str(rv) + " " + str(rd) + "\n";
+}
+plot.data("SWEEP", sweep);
+let r45_vac = flight(45.0, 0.0);
+let r45_drag = flight(45.0, k);
+plot.echo("vacuum range at 45 deg " + str(r45_vac) + " m (closed form " + str(v0 * v0 / g) + ")");
+plot.echo("with drag: best angle " + str(best_th) + " deg, range " + str(best_r) + " m; at 45 deg " + str(r45_drag) + " m");
+plot.assert_close(r45_vac, v0 * v0 / g, 0.05);
+plot.data("VAC", path(45.0, 0.0));
+plot.data("D45", path(45.0, k));
+plot.data("DBEST", path(best_th, k));
+
+plot.png("images/projectile_drag.png", 900, 560);
+plot.cmd("set encoding utf8");
+plot.cmd("set multiplot");
+plot.cmd("set label 99 sprintf('Projectile with quadratic drag (v_0 = 50 m/s, k = 0.004 /m): best angle %.0f°, not 45°', " + str(best_th) + ") at screen 0.5, 0.965 center font ',13'");
+
+# Left: trajectories
+plot.script("set lmargin at screen 0.085\nset rmargin at screen 0.60\nset tmargin at screen 0.88\nset bmargin at screen 0.12");
+plot.cmd("set xlabel 'distance (m)'; set ylabel 'height (m)'");
+plot.cmd("set xrange [0:270]; set yrange [0:80]");
+plot.cmd("set grid lc rgb '#e2e8f0'");
+plot.cmd("set key top right opaque box lc rgb '#cbd5e1' font ',9.5'");
+plot.cmd("plot $VAC with lines lw 2.2 dt 2 lc rgb '#64748b' title sprintf('vacuum, 45°: %.0f m (= v_0^2/g)', " + str(r45_vac) + "), $D45 with lines lw 2.6 lc rgb '#2563eb' title sprintf('drag, 45°: %.0f m', " + str(r45_drag) + "), $DBEST with lines lw 2.6 lc rgb '#dc2626' title sprintf('drag, %.0f°: %.0f m', " + str(best_th) + ", " + str(best_r) + ")");
+
+# Right top: the lmdraw free-body diagram, placed as a pixmap.
+plot.cmd("set pixmap 1 'build/rendered/projectile_fbd.png' at screen 0.62, 0.50 width screen 0.3667");
+
+# Right bottom: range against launch angle
+plot.script("set lmargin at screen 0.69\nset rmargin at screen 0.97\nset tmargin at screen 0.44\nset bmargin at screen 0.12");
+plot.cmd("set xlabel 'launch angle θ (°)'; set ylabel 'range (m)' offset 1,0");
+plot.cmd("set xrange [10:80]; set yrange [0:340]; set xtics 10, 10, 80 font ',9'; set ytics 0, 50, 250 font ',9'");
+plot.cmd("set key at graph 0.98, 0.98 right top font ',8.5' samplen 1.5 opaque box lc rgb '#cbd5e1'");
+plot.cmd("set arrow 1 from " + str(best_th) + ", 0 to " + str(best_th) + ", " + str(best_r) + " nohead dt 3 lc rgb '#dc2626'");
+plot.cmd("plot $SWEEP using 1:2 with lines lw 2 dt 2 lc rgb '#64748b' title 'vacuum', $SWEEP using 1:3 with lines lw 2.4 lc rgb '#dc2626' title 'drag'");
+plot.cmd("unset multiplot");
+plot.close();
+end _dsl_
+savedsl(p, out);
+r = system ${dsl_cli(p)} --dsl ${out};
+assert(r.code == 0);
+println("wrote images/projectile_drag.png");

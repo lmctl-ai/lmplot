@@ -190,6 +190,17 @@ else
   ok "combo example sir_epidemic_draw_plot skipped (sibling host lmdraw or ffmpeg not on PATH)"
 fi
 
+# lmdraw diagram placed into the lmplot figure with `set pixmap` (no ffmpeg).
+if command -v lmdraw >/dev/null 2>&1; then
+  rm -f images/projectile_drag.png
+  "$LMSCRIPT" examples/combo/projectile_drag.lms >"$WORK/c-proj.log" 2>&1 || { cat "$WORK/c-proj.log" >&2; fail "combo projectile_drag"; }
+  [ "$(png_size images/projectile_drag.png)" = "900x560" ] || fail "projectile_drag.png is not a 900x560 PNG"
+  mv images/projectile_drag.png build/examples/projectile_drag.png
+  ok "combo example projectile_drag (lmdraw diagram as pixmap, RK4 sweep, vacuum range asserted)"
+else
+  ok "combo example projectile_drag skipped (sibling host lmdraw not on PATH)"
+fi
+
 # Video examples: frames via lmplot, encoding via ffmpeg (skipped when ffmpeg is absent).
 if command -v ffmpeg >/dev/null 2>&1; then
   mkdir -p build/video

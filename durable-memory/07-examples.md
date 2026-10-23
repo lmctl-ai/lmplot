@@ -100,3 +100,27 @@ produce `images/<name>.mp4` and `images/<name>.png` (plus
 `images/quantum_packet.gif`, copied to `docs/images/quantum_packet.gif` by
 `examples/render-all.sh`). `test.sh` runs them when `ffmpeg` is installed,
 verifies GIF/MP4 outputs, and moves them into `build/video/`.
+
+## Worked examples with asserted answers (2026-10-23 QA pass)
+
+Each prints its numbers and stops with exit 3 (`plot.assert_close`) if a known
+answer is missed, so `test.sh` and `lmctl autorun` double as correctness checks.
+
+| example | known answer checked |
+| --- | --- |
+| `phased_array_polar.lms` | 8-element uniform array: nulls asin(0.25)=14.48°, asin(0.75)=48.59°; first side lobe −12.8 dB (array factor via gnuplot complex `sum[]`) |
+| `quadrature_convergence.lms` | `fit` slope of trapezoid error 2, Simpson 4 on ∫₀^{π/2} eˣcos x = (e^{π/2}−1)/2 |
+| `option_greeks_dashboard.lms` | Hull's Black–Scholes example C = 4.76, P = 0.81, put–call parity to 1e-9 |
+| `combo/projectile_drag.lms` | vacuum range at 45° = v₀²/g; drag optimum found by sweep (41°) |
+| `combo/nozzle_cad_plot.lms` | exit Mach 3.10 for A_e/A* = 6.02, γ = 9/7; lmcad render at 1 px = 0.163 mm so the analytic wall overlays the CAD edge |
+
+Gotchas found:
+- lmcad `Shape.rotate` takes radians (the first nozzle used degrees and got a
+  random tilt).
+- pm3d surfaces are drawn after lines even with `depthorder`; a curve on a
+  surface needs a second multiplot layer with the same view
+  (`potential_vortex_surface.lms`).
+- `gamma` is a gnuplot built-in; user functions need another name.
+- `stats` on an image file ignores pixel columns; go through `set table $T`.
+- `set pixmap` (needs lmplot ≥ 0.1.1) places PNGs from sibling hosts, so
+  composites no longer need ffmpeg (`combo/projectile_drag.lms`).

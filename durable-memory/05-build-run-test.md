@@ -40,7 +40,7 @@ Machine checked 2026-10-22 on x86_64 Linux (WSL2), 4 cores, GCC.
 
 ## Tests
 
-`./test.sh` → 27 checks, ~20 s with a warm build:
+`./test.sh` → 28 checks, ~20 s with a warm build:
 
 1. SDK pin; 2. gnuplot pin plus patches; 3. build; 4. `--version` exact;
 5. embedded schema byte-identical to `schema/lmplot.dsl.json`; 6. host

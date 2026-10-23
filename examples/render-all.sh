@@ -73,6 +73,14 @@ else
   echo "note: skipping sir_epidemic_draw_plot.lms regeneration (lmdraw or ffmpeg not on PATH)"
 fi
 
+if command -v lmdraw >/dev/null 2>&1; then
+  "$LMSCRIPT" examples/combo/projectile_drag.lms >/dev/null
+  mv images/projectile_drag.png "$BUILD_DIR/examples/projectile_drag.png"
+  cp "$BUILD_DIR/examples/projectile_drag.png" docs/images/projectile_drag.png
+else
+  echo "note: skipping projectile_drag.lms regeneration (lmdraw not on PATH)"
+fi
+
 # 3. Video / animation examples via ffmpeg
 if command -v ffmpeg >/dev/null 2>&1; then
   "$LMSCRIPT" examples/video/quantum_packet.lms >/dev/null
