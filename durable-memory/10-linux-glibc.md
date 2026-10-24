@@ -7,3 +7,7 @@ Both published Linux architectures build on Ubuntu 22.04. test.sh uses scripts/c
 Local Ubuntu 22.04 verification: all 29 test.sh checks pass, including 38 examples and 111 byte-identical images. The three README hero scripts (kepler_rv_fit, potential_vortex_surface, quant_trading_dashboard) also pass in separate fresh directories using build/lmplot on PATH. The stripped Linux x64 binary is 5,584,200 bytes; NEEDED is libm.so.6, libc.so.6, ld-linux-x86-64.so.2, with maximum GLIBC_2.35. No relinkable-object asset is required or generated.
 
 --version remains exactly lmplot X.Y.Z for the installer and release-tag check. The minimum Linux runtime is documented next to the README quickstart and in --notices.
+
+## Published v0.2.1 verification
+
+All five tag-platform jobs and release job passed in [CI](https://github.com/lmctl-ai/lmplot/actions/runs/40056248703). The release has all five binaries, checksums, notices and the required gnuplot patch archive, with no relink-object asset. Empty-directory lmctl autorun with a fresh isolated tool cache selected v0.2.1 and wrote images/kepler_rv_fit.png (76,262 bytes). Both downloaded Linux binaries passed the dependency/ABI checker and SHA256SUMS verification. Linux x64 is 5,584,200 bytes; SHA-256: 238feed2600f7c9ea3ddcd3dcb6391cd73b322a630b22c88b0e31a9a25491e15.
