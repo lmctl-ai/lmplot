@@ -1,7 +1,7 @@
 # lmplot durable memory
 
 Design and investigation notes for the lmplot host (gnuplot embedded in one
-static executable, scripted by lmscript `_dsl_` bytecode). Read in numeric
+executable, using dynamic glibc >= 2.35 on Linux and scripted by lmscript `_dsl_` bytecode). Read in numeric
 order.
 
 - `01-purpose-and-place.md` — what lmplot is; relation to gnuplot,
@@ -19,3 +19,5 @@ order.
   4 video/GIF examples, `examples/render-all.sh`, and `docs/images/`.
 - `08-open-items.md` — open items by area.
 - `09-resource-limits.md` — the total memory budget (`LMPLOT_MAX_MEMORY_MB`), how gnuplot's malloc is counted.
+
+- `10-linux-glibc.md` — dynamic system glibc baseline, dependency policy and rollout evidence.

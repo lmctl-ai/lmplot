@@ -1,7 +1,7 @@
 # The native PNG terminal
 
 gnuplot's PNG terminals need libgd (+ libpng, zlib, freetype) or Cairo/Pango
-(+ glib, fontconfig). None can be linked into a dependency-free static
+(+ glib, fontconfig). None can be linked into a single-executable
 executable without vendoring dozens of libraries per platform, so lmplot has
 its own: terminal names `png` and `pngcairo` (the latter an alias so existing
 scripts run unchanged) in `third_party/gnuplot/term/lmpng.trm` (shipped as

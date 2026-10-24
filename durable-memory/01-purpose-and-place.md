@@ -17,7 +17,7 @@ Two ways to drive it:
   gnuplot keeps drawing. `plot.cmd("...")` runs gnuplot commands,
   `plot.num("STATS_slope")` reads values back.
 - `lmplot gnuplot [options] [files]` is the whole gnuplot command line,
-  unchanged, for people who just want a static gnuplot.
+  unchanged, for people who just want a single-executable gnuplot.
 
 ## Place in the stack
 

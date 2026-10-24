@@ -19,9 +19,11 @@ Machine checked 2026-10-22 on x86_64 Linux (WSL2), 4 cores, GCC.
 
 - Clean Release build (cmake + ninja, 4 cores): **~14 s**; that is the
   whole of gnuplot (about 60 C files) plus the host.
-- Binary: **6.7 MB stripped** (7.4 MB unstripped), `-static` by default
-  (`LMPLOT_FULL_STATIC=ON`). 2.4 MB of that is the embedded fonts.
-  `ldd` reports "not a dynamic executable" (asserted in `test.sh`).
+- Local v0.2.1 Linux x64 binary: 5,584,200 bytes stripped.
+- Linux binaries use dynamic glibc >= 2.35 and static libstdc++/libgcc.
+  All third-party code is static, including the embedded fonts. test.sh checks
+  the ELF NEEDED allowlist and rejects GLIBC symbol requirements above 2.35.
+  Published builds use Ubuntu 22.04 for both Linux architectures.
 - Cross compile checks, not run locally: `zig cc -target x86_64-windows-gnu`
   (4.7 MB `lmplot.exe`) and `-target aarch64-macos` both link.
 - CMake generates, into `build/generated/`: the embedded schema and notices
@@ -32,7 +34,7 @@ Machine checked 2026-10-22 on x86_64 Linux (WSL2), 4 cores, GCC.
 
 ## Run
 
-- `lmplot --version` → `lmplot 0.1.0`; `--notices`; `--dsl-schema [--json]`;
+- `lmplot --version` → `lmplot 0.2.1`; `--notices`; `--dsl-schema [--json]`;
   `--dsl-signatures`; `--dsl FILE...`; `gnuplot ...`.
 - `--dsl` loads and verifies every bytecode file first, then runs them in
   order, printing `{"ok": true, "result": null}` after each; the first error
@@ -40,19 +42,19 @@ Machine checked 2026-10-22 on x86_64 Linux (WSL2), 4 cores, GCC.
 
 ## Tests
 
-`./test.sh` → 28 checks, ~20 s with a warm build:
+`./test.sh` → 29 checks, ~20 s with a warm build:
 
 1. SDK pin; 2. gnuplot pin plus patches; 3. build; 4. `--version` exact;
 5. embedded schema byte-identical to `schema/lmplot.dsl.json`; 6. host
 registry equals the compiler's `--dsl-signatures`; 7. `--notices` text;
-8. static linking (Linux `ldd`, macOS `otool -L`, Windows `objdump -p` shows
+8. system-library policy (Linux ELF/glibc allowlist, macOS `otool -L`, Windows `objdump -p` shows
 no MinGW runtime DLLs); 9. `lmplot gnuplot` dumb plot; 10. `lmplot gnuplot`
 defaults to the dumb terminal (no window system exists); 11. png and svg
 terminals listed; 12. all README `.lms` links exist; 13. all README
 `docs/images/*` files exist with valid PNG/GIF magic bytes and size budgets;
-14. all 36 standalone examples compile to bytecode v5; 15. all 36 examples run
+14. all 38 standalone examples compile to bytecode v5; 15. all 38 examples run
 and report ok; 16. every example wrote PNGs with a valid signature; 17. rerun
-gives byte-identical images (all 83); 18–19. multi-host combo examples
+gives byte-identical images (all 111); 18–19. multi-host combo examples
 (`lmcad` + `lmplot`, `lmdraw` + `lmplot`) run when sibling hosts are on `PATH`
 (or skip with a clear message); 20. video examples render frames and encode
 MP4/GIF with `ffmpeg`; 21. a failing gnuplot command exits 3 with a `run` error
