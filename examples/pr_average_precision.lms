@@ -1,0 +1,84 @@
+# Precision-recall curve and average precision (AP) for a synthetic detector on an
+# imbalanced problem: 400 cases, 15% positive. Labels and scores come from a Park-Miller
+# generator (byte-identical reruns). The threshold sweep and AP are computed here:
+# AP = sum over thresholds of (R_k - R_{k-1}) * P_k, the step-wise definition used by
+# scikit-learn. The random-ranking baseline is the prevalence, so AP must beat it.
+# Writes images/pr_average_precision.png (800x640).
+out = ARGV.len() > 0 ? ARGV[0] : "build/pr_average_precision.dslb";
+mkdir("images");
+mkdir("build");
+
+let seed = 77003;
+let n = 400;
+let labels = [];
+let scores = [];
+for (i in range(0, n)) {
+  # 12 uniform draws give a Gaussian (Irwin-Hall); one more decides the label.
+  let g = -6.0;
+  for (k in range(0, 12)) {
+    seed = (seed * 16807) % 2147483647;
+    g = g + num(seed) / 2147483647.0;
+  }
+  seed = (seed * 16807) % 2147483647;
+  let positive = num(seed) / 2147483647.0 < 0.15 ? 1 : 0;
+  # Logistic score: positives are shifted by +1.6 standard deviations.
+  let z = 1.6 * num(positive) + g;
+  labels = push(labels, positive);
+  scores = push(scores, 1.0 / (1.0 + pow(2.718281828459045, -z)));
+}
+
+let pos = 0;
+for (i in range(0, n)) { pos = pos + labels[i]; }
+let prevalence = num(pos) / num(n);
+
+# Threshold sweep from the highest score down: precision and recall at each threshold.
+let ts = sort(scores);
+let pr = "";
+let ap = 0.0;
+let recall_prev = 0.0;
+let f1_best = -1.0;
+let f1_p = 0.0;
+let f1_r = 0.0;
+let f1_t = 0.0;
+for (k in range(0, n)) {
+  let t = ts[n - 1 - k];
+  let tp = 0;
+  let fp = 0;
+  for (i in range(0, n)) {
+    if (scores[i] >= t) {
+      if (labels[i] == 1) { tp = tp + 1; } else { fp = fp + 1; }
+    }
+  }
+  let precision = num(tp) / num(tp + fp);
+  let recall = num(tp) / num(pos);
+  ap = ap + (recall - recall_prev) * precision;
+  recall_prev = recall;
+  let f1_den = precision + recall;
+  let f1 = f1_den > 0.0 ? 2.0 * precision * recall / f1_den : 0.0;
+  if (f1 > f1_best) { f1_best = f1; f1_p = precision; f1_r = recall; f1_t = t; }
+  pr = pr + str(recall) + " " + str(precision) + " " + str(t) + "\n";
+}
+
+assert(ap <= 1.0);
+assert(ap > prevalence);
+
+p = _dsl_ cli="lmplot" install="github:lmctl-ai/lmplot@latest";
+plot.data("PR", ${pr});
+plot.data("F1", ${str(f1_r) + " " + str(f1_p) + "\n"});
+plot.echo(${"AP = " + str(ap) + ", prevalence = " + str(prevalence) + ", best F1 = " + str(f1_best) + " at score " + str(f1_t)});
+
+plot.png("images/pr_average_precision.png", 800, 640);
+plot.cmd("set title sprintf('Precision-recall curve: AP = %.3f', " + ${str(ap)} + ")");
+plot.cmd("set xlabel 'Recall'");
+plot.cmd("set ylabel 'Precision'");
+plot.cmd("set xrange [0:1]");
+plot.cmd("set yrange [0:1.02]");
+plot.cmd("set grid lc rgb '#e2e8f0' lw 1");
+plot.cmd("set key top right opaque box lc rgb '#cbd5e1' samplen 2.2");
+plot.cmd("plot $PR using 1:2 with filledcurves x1 fc rgb '#dcfce7' fs transparent solid 0.7 notitle, $PR using 1:2 with lines lw 2.8 lc rgb '#15803d' title 'classifier', " + ${str(prevalence)} + " with lines dt 2 lw 1.8 lc rgb '#64748b' title sprintf('random ranking = prevalence %.2f', " + ${str(prevalence)} + "), $F1 using 1:2 with points pt 7 ps 1.4 lc rgb '#b45309' title sprintf('best F1 = %.3f', " + ${str(f1_best)} + ")");
+plot.close();
+end _dsl_
+savedsl(p, out);
+r = system ${dsl_cli(p)} --dsl ${out};
+assert(r.code == 0);
+println("wrote images/pr_average_precision.png");

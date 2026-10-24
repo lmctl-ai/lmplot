@@ -1,0 +1,8 @@
+# PNG dimensions for the ML-evaluation and field-overlay examples (checked by test.sh).
+roc_auc.png 800x640
+pr_average_precision.png 800x640
+confusion_matrix.png 800x720
+poisson_contours.png 960x500
+cavity_quiver.png 800x720
+symlog_outlier.png 900x520
+residual_scatter.png 800x560

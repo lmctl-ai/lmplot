@@ -1,0 +1,75 @@
+# Residual scatter for a straight-line regression: 80 synthetic observations y = 2 + 1.5 x
+# with Gaussian noise whose spread grows with x. The ordinary least-squares fit is computed
+# here; the residuals are plotted against the fitted values with the zero reference, +-2 RMSE
+# bands, and R^2 and RMSE in the title. Checks: the residuals of an OLS fit with an intercept
+# sum to zero, and the fitted slope is within 0.1 of the true slope 1.5.
+# Writes images/residual_scatter.png (800x560).
+out = ARGV.len() > 0 ? ARGV[0] : "build/residual_scatter.dslb";
+mkdir("images");
+mkdir("build");
+
+let seed = 31337;
+let n = 80;
+let xs = [];
+let ys = [];
+for (i in range(0, n)) {
+  seed = (seed * 16807) % 2147483647;
+  let x = 10.0 * num(seed) / 2147483647.0;
+  # Irwin-Hall Gaussian (12 uniforms, mean 0, sd 1), scaled by a spread that grows with x.
+  let g = -6.0;
+  for (k in range(0, 12)) {
+    seed = (seed * 16807) % 2147483647;
+    g = g + num(seed) / 2147483647.0;
+  }
+  xs = push(xs, x);
+  ys = push(ys, 2.0 + 1.5 * x + (0.6 + 0.08 * x) * g);
+}
+
+let sx = 0.0;
+let sy = 0.0;
+let sxx = 0.0;
+let sxy = 0.0;
+for (i in range(0, n)) {
+  sx = sx + xs[i];
+  sy = sy + ys[i];
+  sxx = sxx + xs[i] * xs[i];
+  sxy = sxy + xs[i] * ys[i];
+}
+let slope = (num(n) * sxy - sx * sy) / (num(n) * sxx - sx * sx);
+let intercept = (sy - slope * sx) / num(n);
+let mean_y = sy / num(n);
+
+let res = "";
+let res_sum = 0.0;
+let rss = 0.0;
+let tss = 0.0;
+for (i in range(0, n)) {
+  let yhat = intercept + slope * xs[i];
+  let r = ys[i] - yhat;
+  res = res + str(yhat) + " " + str(r) + "\n";
+  res_sum = res_sum + r;
+  rss = rss + r * r;
+  tss = tss + (ys[i] - mean_y) * (ys[i] - mean_y);
+}
+let r2 = 1.0 - rss / tss;
+let rmse = sqrt(rss / num(n));
+assert(abs(res_sum) < 0.000000001);
+assert(abs(slope - 1.5) < 0.1);
+
+p = _dsl_ cli="lmplot" install="github:lmctl-ai/lmplot@latest";
+plot.data("RES", ${res});
+plot.echo(${"slope = " + str(slope) + ", intercept = " + str(intercept) + ", R^2 = " + str(r2) + ", RMSE = " + str(rmse)});
+
+plot.png("images/residual_scatter.png", 800, 560);
+plot.cmd("set title sprintf('Residuals vs fitted: R^2 = %.3f, RMSE = %.3f', " + ${str(r2)} + ", " + ${str(rmse)} + ")");
+plot.cmd("set xlabel 'Fitted value y-hat'");
+plot.cmd("set ylabel 'Residual y - y-hat'");
+plot.cmd("set grid lc rgb '#e2e8f0' lw 1");
+plot.cmd("set key top left opaque box lc rgb '#cbd5e1' samplen 2.2");
+plot.cmd("plot " + ${str(-2.0 * rmse)} + " with lines dt 3 lw 1.4 lc rgb '#94a3b8' title sprintf('+-2 RMSE = %.2f', " + ${str(2.0 * rmse)} + "), " + ${str(2.0 * rmse)} + " with lines dt 3 lw 1.4 lc rgb '#94a3b8' notitle, 0 with lines lw 1.8 lc rgb '#334155' title 'zero residual', $RES using 1:2 with points pt 7 ps 1.1 lc rgb '#0f766e' title 'residual'");
+plot.close();
+end _dsl_
+savedsl(p, out);
+r = system ${dsl_cli(p)} --dsl ${out};
+assert(r.code == 0);
+println("wrote images/residual_scatter.png");

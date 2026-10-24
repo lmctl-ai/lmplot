@@ -82,6 +82,23 @@ lmctl autorun https://raw.githubusercontent.com/lmctl-ai/lmplot/main/examples/co
 | `lmctl autorun https://raw.githubusercontent.com/lmctl-ai/lmplot/main/examples/stats.lms` | (lmplot) | generate data in lmscript, `stats`, compute, label and plot |
 | `lmctl autorun https://raw.githubusercontent.com/lmctl-ai/lmplot/main/examples/turntable.lms` | (lmplot) | a loop rendering a rotating surface as 8 frames |
 
+## Model evaluation and field overlays
+
+Metrics and fields are computed in the lmscript program (sorting, arrays and the
+solver run at compile time) and handed to gnuplot as datablocks with `${...}`
+interpolation, so no host feature is needed. Every program checks its own
+numbers and stops with exit 3 if one is wrong.
+
+| Command | Domain | Story & features |
+| --- | --- | --- |
+| `lmctl autorun https://raw.githubusercontent.com/lmctl-ai/lmplot/main/examples/roc_auc.lms` | Machine learning | ROC curve of a 300-case synthetic classifier: every observed score is a threshold, AUC by the trapezoid rule checked against the Mann–Whitney pair count, Youden-J operating point marked |
+| `lmctl autorun https://raw.githubusercontent.com/lmctl-ai/lmplot/main/examples/pr_average_precision.lms` | Machine learning | Precision–recall curve of a 400-case detector with 15% positives: average precision as the step-wise sum $\sum (R_k - R_{k-1}) P_k$, prevalence baseline and best-F1 point |
+| `lmctl autorun https://raw.githubusercontent.com/lmctl-ai/lmplot/main/examples/confusion_matrix.lms` | Machine learning | 3-class confusion matrix (240 cases): counts and row percentages in each cell, label colour chosen per cell for contrast, accuracy checked against the diagonal |
+| `lmctl autorun https://raw.githubusercontent.com/lmctl-ai/lmplot/main/examples/poisson_contours.lms` | Numerical PDE | Poisson equation $\nabla^2\phi = -f$ solved by SOR on a 41×41 grid; the exact cubic-per-variable solution is reproduced to 1e-9, and eight contour lines of $\phi$ are drawn over the heat map |
+| `lmctl autorun https://raw.githubusercontent.com/lmctl-ai/lmplot/main/examples/cavity_quiver.lms` | Fluid mechanics | Lid-driven cavity: streamfunction heat map with auto-scaled velocity arrows; an analytic creeping-flow-like field, with wall conditions and continuity checked |
+| `lmctl autorun https://raw.githubusercontent.com/lmctl-ai/lmplot/main/examples/symlog_outlier.lms` | Statistics | Monthly commit counts with one 63,000-commit month on a symlog axis (linear to 100, logarithmic beyond), tick labels in the original units |
+| `lmctl autorun https://raw.githubusercontent.com/lmctl-ai/lmplot/main/examples/residual_scatter.lms` | Statistics | Least-squares line through 80 heteroscedastic points; residuals against fitted values with the zero line, ±2 RMSE band, R² and RMSE; zero-sum residuals checked |
+
 ## Video & animations (`examples/video/`)
 
 Because a program can write any number of images, a movie or animated GIF is a
@@ -100,6 +117,7 @@ lmctl autorun https://raw.githubusercontent.com/lmctl-ai/lmplot/main/examples/vi
 | `lmctl autorun https://raw.githubusercontent.com/lmctl-ai/lmplot/main/examples/video/wave.lms` | a wave packet travelling along a string, 96 frames, 800x450 |
 | `lmctl autorun https://raw.githubusercontent.com/lmctl-ai/lmplot/main/examples/video/ripple.lms` | an expanding pm3d ripple with an orbiting camera, 90 frames |
 | `lmctl autorun https://raw.githubusercontent.com/lmctl-ai/lmplot/main/examples/video/lissajous.lms` | a Lissajous curve drawn progressively with a moving head, 120 frames |
+| `lmctl autorun https://raw.githubusercontent.com/lmctl-ai/lmplot/main/examples/video/standing_wave.lms` | standing waves on a membrane: two superposed modes with different frequencies, pm3d heat map of $u(x, y, t)$, 40 frames at 10 fps, MP4 + PNG |
 
 `system` runs a program without a shell and returns `{code, stdout, ...}`; the
 programs check it with `assert(r.code == 0)`. Write the ffmpeg command as plain

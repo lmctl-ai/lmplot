@@ -1,0 +1,101 @@
+# Lid-driven cavity flow in the unit square: the streamfunction as a heat map with velocity
+# arrows on top. The field is an analytic creeping-flow-like solution,
+#   psi(x, y) = x^2 (1-x)^2 y^2 (1-y),  u = d(psi)/dy,  v = -d(psi)/dx,
+# which vanishes on the three fixed walls and gives the lid (y = 1) a tangential velocity
+# u = -x^2 (1-x)^2 that is zero at both corners. This is a cavity-like field, not a
+# Navier-Stokes solve. The program checks the walls, and the continuity equation
+# du/dx + dv/dy = 0 with central differences on a 41 x 41 grid (exact in theory, so the
+# residual measures the discretisation error only).
+# The arrows are scaled so the fastest one is 0.06 of the domain.
+# Writes images/cavity_quiver.png (800x720).
+out = ARGV.len() > 0 ? ARGV[0] : "build/cavity_quiver.dslb";
+mkdir("images");
+mkdir("build");
+
+fn psi(x, y) {
+  return x * x * (1.0 - x) * (1.0 - x) * y * y * (1.0 - y);
+}
+fn ux(x, y) {
+  return x * x * (1.0 - x) * (1.0 - x) * (2.0 * y - 3.0 * y * y);
+}
+fn vy(x, y) {
+  return -2.0 * x * (1.0 - x) * (1.0 - 2.0 * x) * y * y * (1.0 - y);
+}
+
+let n = 41;
+let h = 1.0 / 40.0;
+
+# Walls: psi = 0 on all four sides; u = 0 on x = 0 and x = 1; v = 0 on y = 0 and y = 1;
+# and u = 0 on the bottom wall. The lid (y = 1) keeps a tangential profile.
+for (k in range(0, n)) {
+  let t = num(k) * h;
+  assert(psi(0.0, t) == 0.0);
+  assert(psi(1.0, t) == 0.0);
+  assert(psi(t, 0.0) == 0.0);
+  assert(psi(t, 1.0) == 0.0);
+  assert(ux(0.0, t) == 0.0);
+  assert(ux(1.0, t) == 0.0);
+  assert(ux(t, 0.0) == 0.0);
+  assert(vy(t, 0.0) == 0.0);
+  assert(vy(t, 1.0) == 0.0);
+}
+
+# Streamfunction grid (x fastest, blank line between rows of constant y) and the
+# continuity residual du/dx + dv/dy by central differences at interior nodes.
+let psi_max = 0.0;
+let speed_max = 0.0;
+let div_max = 0.0;
+let psi_rows = "";
+for (j in range(0, n)) {
+  let y = num(j) * h;
+  for (i in range(0, n)) {
+    let x = num(i) * h;
+    let p = psi(x, y);
+    if (p > psi_max) { psi_max = p; }
+    psi_rows = psi_rows + str(x) + " " + str(y) + " " + str(p) + "\n";
+    if (i > 0 && i < n - 1 && j > 0 && j < n - 1) {
+      let du = (ux(x + h, y) - ux(x - h, y)) / (2.0 * h);
+      let dv = (vy(x, y + h) - vy(x, y - h)) / (2.0 * h);
+      if (abs(du + dv) > div_max) { div_max = abs(du + dv); }
+      let speed = sqrt(ux(x, y) * ux(x, y) + vy(x, y) * vy(x, y));
+      if (speed > speed_max) { speed_max = speed; }
+    }
+  }
+  psi_rows = psi_rows + "\n";
+}
+# Central differences are second-order: at h = 1/40 the residual is ~1e-3 (O(h^2)), not zero.
+assert(div_max < 0.002);
+
+# Arrow grid: 9 x 9 nodes strictly inside the cavity, all scaled by the same factor.
+let arrows = "";
+let scale = 0.06 / speed_max;
+for (j in range(0, 9)) {
+  for (i in range(0, 9)) {
+    let x = 0.1 + num(i) * 0.1;
+    let y = 0.1 + num(j) * 0.1;
+    arrows = arrows + str(x) + " " + str(y) + " " + str(ux(x, y) * scale) + " " + str(vy(x, y) * scale) + "\n";
+  }
+}
+
+p = _dsl_ cli="lmplot" install="github:lmctl-ai/lmplot@latest";
+plot.data("PSI", ${psi_rows});
+plot.data("ARROW", ${arrows});
+plot.echo(${"psi_max = " + str(psi_max) + ", fastest speed = " + str(speed_max) + ", max |div| = " + str(div_max)});
+
+plot.png("images/cavity_quiver.png", 800, 720);
+plot.cmd("set title 'Lid-driven cavity: streamfunction and velocity (cavity-like analytic field)' font ',11'");
+plot.cmd("set xlabel 'x'");
+plot.cmd("set ylabel 'y'");
+plot.cmd("set xrange [0:1]");
+plot.cmd("set yrange [0:1]");
+plot.cmd("set size ratio -1");
+plot.cmd("set cbrange [0:" + ${str(psi_max)} + "]");
+plot.cmd("set cblabel 'psi'");
+plot.cmd("set palette defined (0 '#440154', 0.25 '#3b528b', 0.5 '#21918c', 0.75 '#5ec962', 1 '#fde725')");
+plot.cmd("plot $PSI using 1:2:3 with image notitle, $ARROW using 1:2:3:4 with vectors head filled lw 1.6 lc rgb '#0f172a' notitle");
+plot.close();
+end _dsl_
+savedsl(p, out);
+r = system ${dsl_cli(p)} --dsl ${out};
+assert(r.code == 0);
+println("wrote images/cavity_quiver.png");

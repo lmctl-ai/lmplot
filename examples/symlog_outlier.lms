@@ -1,0 +1,50 @@
+# Symmetric-log axis for a bar chart with one extreme value: 24 months of commit counts
+# between 20 and 900, plus one bulk-reformat month with 63,000 commits. On a linear axis the
+# ordinary months would be invisible; the symlog axis is linear for |y| <= 100 and
+# logarithmic beyond (continuous at 100, as in matplotlib's symlog):
+#   S(y) = y / 100                  for |y| <= 100
+#   S(y) = sign(y) (1 + log10(|y|/100))  otherwise
+# gnuplot draws the bars at S(y) and labels the ticks with the original counts. The
+# transform is evaluated in gnuplot; the program checks S(63000) = 1 + log10(630).
+# Writes images/symlog_outlier.png (900x520).
+out = ARGV.len() > 0 ? ARGV[0] : "build/symlog_outlier.dslb";
+mkdir("images");
+mkdir("build");
+p = _dsl_ cli="lmplot" install="github:lmctl-ai/lmplot@latest";
+
+# Commit counts from an integer generator (Park-Miller, reduced to 20..900 per month).
+let seed = 4242;
+let rows = "";
+for (m in range(0, 24)) {
+  seed = (seed * 16807) % 2147483647;
+  let c = 20 + seed % 881;
+  if (m == 15) { c = 63000; }
+  rows = rows + str(m) + " " + str(c) + "\n";
+}
+plot.data("COMMITS", rows);
+
+plot.cmd("sym(y) = abs(y) <= 100 ? y / 100.0 : sgn(y) * (1.0 + log10(abs(y) / 100.0))");
+plot.assert_close(plot.num("sym(63000)"), plot.num("1.0 + log10(630.0)"), 0.000000001);
+plot.assert_close(plot.num("sym(100)"), 1.0, 0.000000001);
+
+plot.png("images/symlog_outlier.png", 900, 520);
+plot.cmd("set title 'Commits per month: symlog axis keeps 20-900 readable beside a 63,000 outlier' font ',11'");
+plot.cmd("set xlabel 'Month'");
+plot.cmd("set ylabel 'Commits per month (symlog, linear to 100)'");
+plot.cmd("set xrange [-0.7:23.7]");
+plot.cmd("set yrange [0:4.2]");
+plot.cmd("set boxwidth 0.72 relative");
+plot.cmd("set style fill solid 0.85 border -1");
+plot.cmd("set grid ytics lc rgb '#e2e8f0' lw 1");
+plot.cmd("set xtics ('M1' 0, 'M4' 3, 'M8' 7, 'M12' 11, 'M16' 15, 'M20' 19, 'M24' 23) nomirror");
+plot.cmd("set ytics (\"10\" sym(10), \"100\" sym(100), \"1,000\" sym(1000), \"10,000\" sym(10000), \"63,000\" sym(63000))");
+plot.cmd("set arrow 1 from -0.7, sym(100) to 23.7, sym(100) nohead dt 2 lw 1.2 lc rgb '#64748b'");
+plot.cmd("set label 2 '63,000-commit bulk reformat' at 15.45, sym(63000) - 0.1 left font ',9' tc rgb '#b45309'");
+plot.cmd("unset key");
+plot.cmd("plot $COMMITS using 1:(sym($2)) with boxes lc rgb '#2563eb' notitle, $COMMITS using 1:(sym($2)):(sprintf('%d', $2)) with labels offset 0,0.6 font ',7' notitle");
+plot.close();
+end _dsl_
+savedsl(p, out);
+r = system ${dsl_cli(p)} --dsl ${out};
+assert(r.code == 0);
+println("wrote images/symlog_outlier.png");

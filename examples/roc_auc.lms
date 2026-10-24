@@ -1,0 +1,97 @@
+# ROC curve and area under it (AUC) for a synthetic binary classifier with 300 cases
+# (40% positive). Labels and scores come from a Park-Miller generator, so every run is
+# byte-identical. The threshold sweep and AUC are computed here, and AUC is checked
+# against the Mann-Whitney count of (positive, negative) score pairs, an independent
+# exact formula.
+# Writes images/roc_auc.png (800x640).
+out = ARGV.len() > 0 ? ARGV[0] : "build/roc_auc.dslb";
+mkdir("images");
+mkdir("build");
+
+let seed = 20261;
+let n = 300;
+let labels = [];
+let scores = [];
+for (i in range(0, n)) {
+  # Each case uses 13 uniform draws: 12 for a Gaussian (Irwin-Hall) and 1 for the label.
+  let g = -6.0;
+  for (k in range(0, 12)) {
+    seed = (seed * 16807) % 2147483647;
+    g = g + num(seed) / 2147483647.0;
+  }
+  seed = (seed * 16807) % 2147483647;
+  let positive = num(seed) / 2147483647.0 < 0.4 ? 1 : 0;
+  # Logistic score: positives are shifted by +1.2 standard deviations.
+  let z = 1.2 * num(positive) + g;
+  labels = push(labels, positive);
+  scores = push(scores, 1.0 / (1.0 + pow(2.718281828459045, -z)));
+}
+
+let pos = 0;
+for (i in range(0, n)) { pos = pos + labels[i]; }
+let neg = n - pos;
+
+# Threshold sweep: every observed score is a threshold, from the highest down to the lowest.
+let ts = sort(scores);
+let roc = "0 0 1.5\n";
+let tpr_prev = 0.0;
+let auc = 0.0;
+let fpr_prev = 0.0;
+let best_j = -1.0;
+let best_t = 0.0;
+let best_fpr = 0.0;
+let best_tpr = 0.0;
+for (k in range(0, n)) {
+  let t = ts[n - 1 - k];
+  let tp = 0;
+  let fp = 0;
+  for (i in range(0, n)) {
+    if (scores[i] >= t) {
+      if (labels[i] == 1) { tp = tp + 1; } else { fp = fp + 1; }
+    }
+  }
+  let tpr = num(tp) / num(pos);
+  let fpr = num(fp) / num(neg);
+  auc = auc + (fpr - fpr_prev) * (tpr + tpr_prev) / 2.0;
+  if (tpr - fpr > best_j) { best_j = tpr - fpr; best_t = t; best_fpr = fpr; best_tpr = tpr; }
+  roc = roc + str(fpr) + " " + str(tpr) + " " + str(t) + "\n";
+  tpr_prev = tpr;
+  fpr_prev = fpr;
+}
+
+# Mann-Whitney: the probability that a random positive outscores a random negative.
+let wins = 0.0;
+for (i in range(0, n)) {
+  if (labels[i] == 1) {
+    for (j in range(0, n)) {
+      if (labels[j] == 0) {
+        if (scores[i] > scores[j]) { wins = wins + 1.0; }
+      }
+    }
+  }
+}
+let mann_whitney = wins / (num(pos) * num(neg));
+assert(abs(auc - mann_whitney) < 0.000000000001);
+
+p = _dsl_ cli="lmplot" install="github:lmctl-ai/lmplot@latest";
+plot.data("ROC", ${roc});
+plot.echo(${"AUC = " + str(auc) + ", Youden J = " + str(best_j) + " at score " + str(best_t)});
+
+plot.png("images/roc_auc.png", 800, 640);
+plot.cmd("set title sprintf('ROC curve: AUC = %.3f', " + ${str(auc)} + ")");
+plot.cmd("set xlabel 'False positive rate'");
+plot.cmd("set ylabel 'True positive rate'");
+plot.cmd("set xrange [0:1]");
+plot.cmd("set yrange [0:1]");
+plot.cmd("set size ratio -1");
+plot.cmd("set grid lc rgb '#e2e8f0' lw 1");
+plot.cmd("set key bottom right opaque box lc rgb '#cbd5e1' samplen 2.2");
+plot.cmd("set label 1 'Youden point' at " + ${str(best_fpr)} + ", " + ${str(best_tpr)} + " left offset 1.2, -0.8 font ',9' tc rgb '#b45309'");
+plot.data("YOU", ${str(best_fpr) + " " + str(best_tpr) + "\n"});
+plot.cmd("plot x with lines dt 2 lw 1.8 lc rgb '#64748b' title 'chance (AUC 0.5)', $ROC using 1:2 with filledcurves x1 fc rgb '#dbeafe' fs transparent solid 0.7 notitle, $ROC using 1:2 with lines lw 2.8 lc rgb '#1d4ed8' title 'classifier', $YOU using 1:2 with points pt 7 ps 1.4 lc rgb '#b45309' title sprintf('Youden J = %.3f', " + ${str(best_j)} + ")");
+plot.close();
+end _dsl_
+savedsl(p, out);
+r = system ${dsl_cli(p)} --dsl ${out};
+assert(r.code == 0);
+println("wrote images/roc_auc.png");

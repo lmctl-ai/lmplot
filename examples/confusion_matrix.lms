@@ -1,0 +1,92 @@
+# Three-class confusion matrix for a synthetic classifier: 240 cases, 80 per true class.
+# Each case draws its prediction from a per-class distribution (Park-Miller generator,
+# byte-identical reruns). The counts, row percentages and accuracy are computed here and
+# checked: every row sums to its class size and the diagonal is the accuracy numerator.
+# Cell text colour is chosen per cell (white on dark cells, ink on light cells), so the
+# count stays legible across the colour scale.
+# Writes images/confusion_matrix.png (800x720).
+out = ARGV.len() > 0 ? ARGV[0] : "build/confusion_matrix.dslb";
+mkdir("images");
+mkdir("build");
+
+let names = ["cat", "dog", "bird"];
+let per_class = 80;
+let k_classes = 3;
+# Row c gives P(predict 0), P(predict 1) for true class c; the rest goes to class 2.
+let p_zero = [0.82, 0.15, 0.05];
+let p_one = [0.12, 0.70, 0.25];
+let seed = 90210;
+let counts = [0, 0, 0, 0, 0, 0, 0, 0, 0];
+for (c in range(0, k_classes)) {
+  for (i in range(0, per_class)) {
+    seed = (seed * 16807) % 2147483647;
+    let u = num(seed) / 2147483647.0;
+    let pred = u < p_zero[c] ? 0 : (u < p_zero[c] + p_one[c] ? 1 : 2);
+    counts[c * k_classes + pred] = counts[c * k_classes + pred] + 1;
+  }
+}
+
+let total = 0;
+let diagonal = 0;
+let vmax = 0;
+for (c in range(0, k_classes)) {
+  let row = 0;
+  for (j in range(0, k_classes)) {
+    row = row + counts[c * k_classes + j];
+    if (counts[c * k_classes + j] > vmax) { vmax = counts[c * k_classes + j]; }
+  }
+  assert(row == per_class);
+  total = total + row;
+  diagonal = diagonal + counts[c * k_classes + c];
+}
+assert(total == per_class * k_classes);
+let accuracy = num(diagonal) / num(total);
+
+# Data for gnuplot: heat cells (x = predicted, y = true), and two label sets per cell.
+# Label text is double-quoted: gnuplot splits unquoted or single-quoted fields at spaces.
+# The count is written at the cell centre and the row percentage just below it.
+let heat = "";
+let cnt_rows = "";
+let pct_rows = "";
+for (c in range(0, k_classes)) {
+  for (j in range(0, k_classes)) {
+    let v = counts[c * k_classes + j];
+    let frac = num(v) / num(vmax);
+    # Dark cells take white text; light cells take the ink colour (0xRRGGBB for gnuplot).
+    let ink = frac > 0.5 ? 16777215 : 986410;
+    let row_pct = 100.0 * num(v) / num(per_class);
+    heat = heat + str(j) + " " + str(c) + " " + str(v) + "\n";
+    cnt_rows = cnt_rows + str(j) + " " + str(c) + " \"" + str(v) + "\" " + str(ink) + "\n";
+    pct_rows = pct_rows + str(j) + " " + str(c) + " \"" + str(round(row_pct)) + "% of row\" " + str(ink) + "\n";
+  }
+  heat = heat + "\n";
+  cnt_rows = cnt_rows + "\n";
+  pct_rows = pct_rows + "\n";
+}
+
+p = _dsl_ cli="lmplot" install="github:lmctl-ai/lmplot@latest";
+plot.data("HEAT", ${heat});
+plot.data("CNT", ${cnt_rows});
+plot.data("PCT", ${pct_rows});
+plot.echo(${"accuracy = " + str(accuracy) + " (" + str(diagonal) + " of " + str(total) + ")"});
+
+plot.png("images/confusion_matrix.png", 800, 720);
+plot.cmd("set title sprintf('Confusion matrix: accuracy %.3f (%d of %d cases)', " + ${str(accuracy)} + ", " + ${str(diagonal)} + ", " + ${str(total)} + ")");
+plot.cmd("set xlabel 'Predicted class'");
+plot.cmd("set ylabel 'True class'");
+plot.cmd("set xrange [-0.5:2.5]");
+plot.cmd("set yrange [2.5:-0.5]");
+plot.cmd("set xtics ('cat' 0, 'dog' 1, 'bird' 2) nomirror");
+plot.cmd("set ytics ('cat' 0, 'dog' 1, 'bird' 2) nomirror");
+plot.cmd("set cbrange [0:" + ${str(vmax)} + "]");
+plot.cmd("set cblabel 'cases'");
+plot.cmd("set palette defined (0 '#f1f5f9', 0.5 '#60a5fa', 1 '#1e3a8a')");
+plot.cmd("set size ratio -1");
+plot.cmd("unset key");
+plot.cmd("plot $HEAT using 1:2:3 with image notitle, $CNT using 1:2:3:4 with labels textcolor rgb variable font ',20' notitle, $PCT using 1:($2+0.28):3:4 with labels textcolor rgb variable font ',10' notitle");
+plot.close();
+end _dsl_
+savedsl(p, out);
+r = system ${dsl_cli(p)} --dsl ${out};
+assert(r.code == 0);
+println("wrote images/confusion_matrix.png");

@@ -40,7 +40,7 @@ for img in pm3d.png fillcrvs.png histograms.png contours.png heatmaps.png spider
   cp "examples/renders/$img" "docs/images/$img"
 done
 
-# Copy the 8 new standalone showcase renders to docs/images/
+# Copy the showcase renders (computation + visual story) to docs/images/
 for showcase in \
   kepler_rv_fit.png \
   blackbody_planck.png \
@@ -51,7 +51,14 @@ for showcase in \
   enzyme_michaelis_menten.png \
   damped_driven_resonance.png \
   quadrature_convergence.png \
-  option_greeks_dashboard.png
+  option_greeks_dashboard.png \
+  roc_auc.png \
+  pr_average_precision.png \
+  confusion_matrix.png \
+  poisson_contours.png \
+  cavity_quiver.png \
+  symlog_outlier.png \
+  residual_scatter.png
 do
   cp "$BUILD_DIR/examples/$showcase" "docs/images/$showcase"
 done
@@ -90,6 +97,10 @@ if command -v ffmpeg >/dev/null 2>&1; then
   cp "$BUILD_DIR/video/quantum_packet.gif" docs/images/quantum_packet.gif
 else
   echo "note: skipping quantum_packet.gif regeneration (ffmpeg not on PATH)"
+  "$LMSCRIPT" examples/video/standing_wave.lms >/dev/null
+  mv images/standing_wave.mp4 "$BUILD_DIR/video/standing_wave.mp4"
+  mv images/standing_wave.png "$BUILD_DIR/video/standing_wave.png"
+  cp "$BUILD_DIR/video/standing_wave.png" docs/images/standing_wave.png
 fi
 
 rm -rf images
