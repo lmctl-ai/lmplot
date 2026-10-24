@@ -1,7 +1,7 @@
 # Examples
 
-36 standalone programs in `examples/`, 2 multi-host combo programs in
-`examples/combo/` (`lmcad` + `lmplot`, `lmdraw` + `lmplot`), and 4
+45 standalone programs in `examples/`, 3 multi-host combo programs in
+`examples/combo/` (`lmcad` + `lmplot`, `lmdraw` + `lmplot`), and 5
 video/animation programs in `examples/video/` (`lmplot` + `ffmpeg`). Every
 `.lms` program is self-contained and self-executing: after `savedsl(p, out);`,
 it runs `r = system ${dsl_cli(p)} --dsl ${out}; assert(r.code == 0);` and writes
@@ -10,7 +10,7 @@ or `.mp4`/`.gif`) in the current working directory, so
 `lmctl autorun https://raw.githubusercontent.com/lmctl-ai/lmplot/main/examples/<name>.lms`
 works from an empty directory. All are checked by `./test.sh` (valid PNG/GIF
 magic bytes, size budgets, byte-identical reruns, and moving outputs to
-`build/examples/`). `./examples/render-all.sh` regenerates the 22 checked-in
+`build/examples/`). `./examples/render-all.sh` regenerates the 32 checked-in
 gallery assets in `docs/images/` and `examples/renders/`.
 
 ## Showcase examples (`examples/*.lms`)
@@ -91,9 +91,59 @@ complete table is in `examples/README.md`.
   examples use a deterministic LCG written in the DSL, keeping all images
   byte-identical on rerun.
 
+## Model evaluation and field overlays (`examples/`)
+
+Seven programs for model evaluation and field overlays: ROC, precision-recall,
+confusion matrix, Poisson contours, cavity quiver, symlog axis and residual scatter.
+The metrics and fields are computed by the lmscript program and
+passed to gnuplot as datablocks with `${...}` interpolation. No host API was added:
+every figure uses `plot.data`, `plot.cmd`, `plot.num`, `plot.assert_close`.
+
+- `roc_auc.lms`: 300 cases from a Park-Miller generator (Irwin-Hall Gaussian
+  scores, 40% positive). Every observed score is a threshold, sorted in lmscript;
+  AUC by the trapezoid rule is asserted against the Mann-Whitney pair count
+  (|difference| < 1e-12). Youden J is marked on the curve.
+- `pr_average_precision.lms`: 400 cases, 15% positive. AP is the step-wise sum
+  of (R_k - R_{k-1}) P_k, asserted to lie between the prevalence and 1.
+- `confusion_matrix.lms`: 3 classes, 80 cases each, from per-class prediction
+  distributions. Asserted: each row sums to its class size. Count and row percentage
+  are two label datablocks; label colour is white on cells above half the maximum.
+- `poisson_contours.lms`: Laplace(phi) = -f on a 41 x 41 grid, SOR (omega 1.8) to
+  update 1e-13. phi = x(1-x) y(1-y)(1 + 2x + 3y) is cubic in each variable, and the
+  five-point stencil is exact for such polynomials, so the discrete solution must
+  equal phi on every node: asserted to 1e-9. Contours come from `set table` on the
+  grid, then `plot ... with lines` over the `with image` heat map.
+- `cavity_quiver.lms`: analytic psi = x^2(1-x)^2 y^2(1-y); u = psi_y, v = -psi_x.
+  The walls and continuity (central differences, residual ~1e-3 at h = 1/40, from the
+  O(h^2) truncation) are asserted. This is a cavity-like field, not a Navier-Stokes
+  solve; the lid velocity is -x^2(1-x)^2.
+- `symlog_outlier.lms`: symlog transform in gnuplot (linear to 100, logarithmic
+  beyond, continuous at 100); tick labels are the original counts. The transformed
+  height of 63,000 is asserted to equal 1 + log10(630).
+- `residual_scatter.lms`: least squares in lmscript, asserted zero-sum residuals
+  and slope within 0.1 of 1.5.
+- `video/standing_wave.lms`: u(x, y, t) = sin(2 pi x) sin(pi y) cos(w1 t) +
+  0.6 sin(3 pi x) sin(2 pi y) cos(w2 t), with w_mn = pi sqrt(m^2 + n^2). Frames are
+  `splot u(x, y, t) with pm3d` in map view; the frequencies and edge zeros are asserted
+  with `plot.assert_close`.
+
+Gotchas found writing these:
+- lmscript top level has arrays (`push`, `sort`, index assignment), `num()`,
+  `sqrt`, `pow`, `abs`, `round`, `%`; it has no `sin`, `cos`, `exp`, `log`, `float`,
+  and no `1e-12` literal (write `0.000000000001`). The `_dsl_` block has the math
+  but no arrays.
+- `${expr}` inside `_dsl_` inserts a compile-time value (multi-line strings are fine).
+  A loop variable declared inside the block cannot be interpolated; use `str(t)`
+  there instead.
+- gnuplot datablock fields with spaces must be double-quoted: `'83% of row'` is split
+  at the space and the whole series is skipped with "no valid points".
+- `with labels textcolor rgb variable` needs integer 0xRRGGBB values, not hex strings.
+- `unset surface` removes the pm3d surface, so a pm3d map draws nothing; keep it set.
+- Verified with the pinned lmscript 0.2.369 (CI) as well as 0.2.411.
+
 ## Video & animated GIF examples (`examples/video/`)
 
-`quantum_packet.lms`, `wave.lms`, `ripple.lms`, `lissajous.lms`: a `_dsl_` loop
+`quantum_packet.lms`, `wave.lms`, `ripple.lms`, `lissajous.lms`, `standing_wave.lms`: a `_dsl_` loop
 writes `build/video/<name>/frame-<k>.png`, then plain lmscript runs
 `r = system ${dsl_cli(p)} --dsl ${out}; assert(r.code == 0);` and `ffmpeg` to
 produce `images/<name>.mp4` and `images/<name>.png` (plus

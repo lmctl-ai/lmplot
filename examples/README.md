@@ -84,8 +84,8 @@ lmctl autorun https://raw.githubusercontent.com/lmctl-ai/lmplot/main/examples/co
 
 ## Model evaluation and field overlays
 
-Metrics and fields are computed in the lmscript program (sorting, arrays and the
-solver run at compile time) and handed to gnuplot as datablocks with `${...}`
+Metrics and fields are computed by the lmscript program before its bytecode is
+written (sorting, arrays and the solver run there) and handed to gnuplot as datablocks with `${...}`
 interpolation, so no host feature is needed. Every program checks its own
 numbers and stops with exit 3 if one is wrong.
 

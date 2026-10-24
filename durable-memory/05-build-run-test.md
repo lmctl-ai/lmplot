@@ -42,7 +42,7 @@ Machine checked 2026-10-22 on x86_64 Linux (WSL2), 4 cores, GCC.
 
 ## Tests
 
-`./test.sh` → 29 checks, ~20 s with a warm build:
+`./test.sh` → 30 checks, ~20 s with a warm build:
 
 1. SDK pin; 2. gnuplot pin plus patches; 3. build; 4. `--version` exact;
 5. embedded schema byte-identical to `schema/lmplot.dsl.json`; 6. host
@@ -52,9 +52,9 @@ no MinGW runtime DLLs); 9. `lmplot gnuplot` dumb plot; 10. `lmplot gnuplot`
 defaults to the dumb terminal (no window system exists); 11. png and svg
 terminals listed; 12. all README `.lms` links exist; 13. all README
 `docs/images/*` files exist with valid PNG/GIF magic bytes and size budgets;
-14. all 38 standalone examples compile to bytecode v5; 15. all 38 examples run
+14. all 45 standalone examples compile to bytecode v5; 15. all 45 examples run
 and report ok; 16. every example wrote PNGs with a valid signature; 17. rerun
-gives byte-identical images (all 111); 18–19. multi-host combo examples
+gives byte-identical images (all 118); 18–19. multi-host combo examples
 (`lmcad` + `lmplot`, `lmdraw` + `lmplot`) run when sibling hosts are on `PATH`
 (or skip with a clear message); 20. video examples render frames and encode
 MP4/GIF with `ffmpeg`; 21. a failing gnuplot command exits 3 with a `run` error
