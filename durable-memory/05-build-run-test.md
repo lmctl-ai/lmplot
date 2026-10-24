@@ -4,7 +4,7 @@ Machine checked 2026-10-22 on x86_64 Linux (WSL2), 4 cores, GCC.
 
 ## Toolchain
 
-- cpp-dsl-sdk header `cpp/dslvm.hpp` pinned by `sdk.lock` (commit
+- lmcode-cpp header `cpp/dslvm.hpp` pinned by `sdk.lock` (commit
   `ef861844`, same bytes as lmhtml's copy, sha256 `6a537aa6...`).
   `scripts/sync-sdk.sh --verify` is the first `test.sh` check.
 - gnuplot pinned by `gnuplot.lock` (`fbeb88ea`, 2023-09-08, 6.1.0-dev),

@@ -5,7 +5,7 @@ executable, using dynamic glibc >= 2.35 on Linux and scripted by lmscript `_dsl_
 order.
 
 - `01-purpose-and-place.md` — what lmplot is; relation to gnuplot,
-  cpp-dsl-sdk, lmscript and the sibling hosts; scope boundary.
+  lmcode-cpp, lmscript and the sibling hosts; scope boundary.
 - `02-gnuplot-embedding.md` — license compatibility and why MIT; the pinned
   checkout plus `patches/`; what is compiled; the embedding hook; Windows
   approach.

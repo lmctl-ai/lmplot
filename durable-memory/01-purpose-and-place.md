@@ -27,7 +27,7 @@ Two ways to drive it:
   `patches/*.patch` are applied. Nothing of gnuplot is committed here; the
   license requires modifications to travel as patches (see
   `02-gnuplot-embedding.md`).
-- **cpp-dsl-sdk** (`include/dslvm.hpp`, header-only, bytecode v5) is vendored
+- **lmcode-cpp** (`include/dslvm.hpp`, header-only, bytecode v5) is vendored
   as `cpp/dslvm.hpp`, pinned by `sdk.lock` exactly like lmhtml and lmcad. It
   executes `_dsl_` bytecode; it knows nothing about plotting.
 - **lmscript**, published through npm as `@lmctl-ai/lmctl`, compiles `_dsl_`

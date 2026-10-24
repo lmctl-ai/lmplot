@@ -2,7 +2,7 @@ Third-party notices for lmplot
 ==============================
 
 lmplot's own code (cpp/, schema/, scripts/, examples/, tests; including the
-vendored `cpp/dslvm.hpp` runtime from the cpp-dsl-sdk project and the deflate
+vendored `cpp/dslvm.hpp` runtime from the lmcode-cpp project and the deflate
 encoder from lmcad) is Copyright (c) 2026 Lattice Systems LLC, MIT license (see
 LICENSE). This file covers third-party components shipped in or linked into the
 distributed binaries. `lmplot --notices` prints it.
