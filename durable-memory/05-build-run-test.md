@@ -11,7 +11,7 @@ Machine checked 2026-10-22 on x86_64 Linux (WSL2), 4 cores, GCC.
   shallow-fetched into git-ignored `third_party/gnuplot` and patched by
   `scripts/sync-gnuplot.sh` (`--verify` hashes the patch set).
 - Compiler for `.lms`: `scripts/select-compiler.sh`; `LMSCRIPT_BIN` overrides.
-  CI pins `@lmctl-ai/lmctl@0.2.419` (verified locally).
+  CI pins `@lmctl-ai/lmctl@0.2.420` (verified locally).
 - Vendored, small: `vendor/stb_truetype.h`, four DejaVu fonts,
   `cpp/raster/deflate.hpp` (lmcad).
 
