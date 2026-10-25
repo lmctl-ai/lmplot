@@ -6,7 +6,7 @@
 out = ARGV.len() > 0 ? ARGV[0] : "build/stats.dslb";
 mkdir("images");
 mkdir("build");
-p = _dsl_ cli="lmplot" install="github:lmctl-ai/lmplot@latest";
+p = _lmcode_ cli="lmplot" install="github:lmctl-ai/lmplot@latest";
 
 # 1. Noisy line y = 2.5 + 0.8 x, from a deterministic LCG (no rand(), so reruns are byte-identical).
 let seed = 12345;
@@ -70,7 +70,7 @@ plot.cmd("set arrow 2 from graph 0, first 20 to " + str(x_at_20) + ", 20 nohead 
 plot.cmd("set label 2 'y = 20 at x = " + plot.str("sprintf('%.1f', " + str(x_at_20) + ")") + "' at 22.5, 16 left");
 plot.cmd("plot $D using 1:2 with points pt 7 ps 1 lc 'dark-violet' title 'data', fit_a + fit_b*x with lines lw 2 lc 'orange-red' title 'fit', mu with lines dt 3 lc 'grey30' title 'mean y'");
 plot.close();
-end _dsl_
+end _lmcode_
 savedsl(p, out);
 r = system ${dsl_cli(p)} --dsl ${out};
 assert(r.code == 0);

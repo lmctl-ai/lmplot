@@ -2,7 +2,7 @@
 out = ARGV.len() > 0 ? ARGV[0] : "build/fillcrvs.dslb";
 mkdir("images");
 mkdir("build");
-p = _dsl_ cli="lmplot" install="github:lmctl-ai/lmplot@latest";
+p = _lmcode_ cli="lmplot" install="github:lmctl-ai/lmplot@latest";
 # Image 1: the many filledcurve closing modes (x2, default, y1=, xy=, x1, y2).
 plot.png("images/fillcrvs-1.png", 800, 600);
 plot.cmd("set key outside");
@@ -27,7 +27,7 @@ plot.cmd("set label 2 'gnuplot' at 0.02,-0.6 center front");
 plot.script("set parametric\nset xrange [-1:1]\nset yrange [-1:1.6]");
 plot.script("plot [t=-pi:pi] sin(t),cos(t) with filledcurve xy=0,0 lt 15, sin(t)/8-0.5,cos(t)/8+0.4 with filledcurve lt 3, sin(t)/8+0.5,cos(t)/8+0.4 with filledcurve lt 3, t/5,abs(t/5)-0.8 with filledcurve xy=0.1,-0.5 lt 1, t/3,1.52-abs(t/pi) with filledcurve xy=0,1.8 lt -1");
 plot.close();
-end _dsl_
+end _lmcode_
 savedsl(p, out);
 r = system ${dsl_cli(p)} --dsl ${out};
 assert(r.code == 0);

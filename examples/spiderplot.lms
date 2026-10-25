@@ -4,7 +4,7 @@
 out = ARGV.len() > 0 ? ARGV[0] : "build/spiderplot.dslb";
 mkdir("images");
 mkdir("build");
-p = _dsl_ cli="lmplot" install="github:lmctl-ai/lmplot@latest";
+p = _lmcode_ cli="lmplot" install="github:lmctl-ai/lmplot@latest";
 # One data row with a header line: the column heads become the axis names.
 plot.data("DATA", "A\tB\tC\tD\tE\tF\n15\t75\t20\t43\t90\t50\n");
 plot.cmd("set spiderplot");
@@ -39,7 +39,7 @@ plot.cmd("set grid spider lt black lc 'grey' lw 0.5 back");
 plot.cmd("set key reverse");
 plot.cmd("plot keyentry with spiderplot lc 3 lw 3 title 'Array #1', for [i=1:|Array1|] Array1 using (Array1[i]) lc 3 lw 3 title sprintf('Scale %d',i), newspiderplot, keyentry with spiderplot lc 4 lw 2 title 'Array #2', for [j=1:|Array2|] Array2 using (Array2[j]) lc 4 lw 2 notitle");
 plot.close();
-end _dsl_
+end _lmcode_
 savedsl(p, out);
 r = system ${dsl_cli(p)} --dsl ${out};
 assert(r.code == 0);

@@ -5,7 +5,7 @@
 out = ARGV.len() > 0 ? ARGV[0] : "build/kepler_rv_fit.dslb";
 mkdir("images");
 mkdir("build");
-p = _dsl_ cli="lmplot" install="github:lmctl-ai/lmplot@latest";
+p = _lmcode_ cli="lmplot" install="github:lmctl-ai/lmplot@latest";
 
 fn sin_approx(x: float) -> float {
   let pi = 3.141592653589793;
@@ -108,7 +108,7 @@ plot.cmd("plot '+' using 1:(-" + str(rms_res) + "):(" + str(rms_res) + ") with f
 
 plot.cmd("unset multiplot");
 plot.close();
-end _dsl_
+end _lmcode_
 savedsl(p, out);
 r = system ${dsl_cli(p)} --dsl ${out};
 assert(r.code == 0);

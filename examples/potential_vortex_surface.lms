@@ -4,7 +4,7 @@
 out = ARGV.len() > 0 ? ARGV[0] : "build/potential_vortex_surface.dslb";
 mkdir("images");
 mkdir("build");
-p = _dsl_ cli="lmplot" install="github:lmctl-ai/lmplot@latest";
+p = _lmcode_ cli="lmplot" install="github:lmctl-ai/lmplot@latest";
 
 # Landau free energy: F(x, y) = 0.25*(x^2 - 1.44)^2 + 0.55*y^2 - 0.12*x + 0.08*x*y^2 + 0.85
 # Sample the minimum-energy transition path along y = 0 for x in [-1.35, 1.35]
@@ -69,7 +69,7 @@ plot.cmd("unset border; unset xtics; unset ytics; unset ztics; unset colorbox; u
 plot.cmd("splot $PATH using 1:2:($3+0.03) with lines lw 4.4 lc rgb '#ffffff' notitle, $PATH using 1:2:($3+0.03) with lines lw 2.6 lc rgb '#e11d48' notitle, $PATH using 1:2:(0) with lines lw 2.0 dt 2 lc rgb '#e11d48' notitle");
 plot.cmd("unset multiplot");
 plot.close();
-end _dsl_
+end _lmcode_
 savedsl(p, out);
 r = system ${dsl_cli(p)} --dsl ${out};
 assert(r.code == 0);

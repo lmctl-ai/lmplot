@@ -4,7 +4,7 @@
 out = ARGV.len() > 0 ? ARGV[0] : "build/transparent.dslb";
 mkdir("images");
 mkdir("build");
-p = _dsl_ cli="lmplot" install="github:lmctl-ai/lmplot@latest";
+p = _lmcode_ cli="lmplot" install="github:lmctl-ai/lmplot@latest";
 plot.cmd("set encoding utf8");
 plot.cmd("set style fill solid 1.0 noborder");
 plot.cmd("set style function filledcurves y1=0");
@@ -40,7 +40,7 @@ plot.cmd("set style fill transparent pattern 4 bo");
 plot.cmd("set title 'Transparent pattern-filled curves'");
 plot.cmd(gauss);
 plot.close();
-end _dsl_
+end _lmcode_
 savedsl(p, out);
 r = system ${dsl_cli(p)} --dsl ${out};
 assert(r.code == 0);

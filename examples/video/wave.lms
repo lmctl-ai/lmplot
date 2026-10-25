@@ -4,7 +4,7 @@
 mkdir("images");
 mkdir("build/video/wave");
 out = ARGV.len() > 0 ? ARGV[0] : "build/video/wave.dslb";
-p = _dsl_ cli="lmplot" install="github:lmctl-ai/lmplot@latest";
+p = _lmcode_ cli="lmplot" install="github:lmctl-ai/lmplot@latest";
 plot.cmd("set xrange [-10:10]");
 plot.cmd("set yrange [-1.2:1.2]");
 plot.cmd("set grid");
@@ -19,7 +19,7 @@ for (k in range(0, frames)) {
   plot.cmd("plot exp(-(x-(" + str(t) + ")+6)**2/4) * cos(4*(x-(" + str(t) + "))) lw 2 lc rgb '#1f77b4', exp(-(x-(" + str(t) + ")+6)**2/4) lw 1 dt 2 lc rgb 'gray50', -exp(-(x-(" + str(t) + ")+6)**2/4) lw 1 dt 2 lc rgb 'gray50'");
   plot.close();
 }
-end _dsl_
+end _lmcode_
 savedsl(p, out);
 r = system ${dsl_cli(p)} --dsl ${out};
 assert(r.code == 0);

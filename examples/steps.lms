@@ -10,7 +10,7 @@ if (!file_exists("examples/data/hemisphr.dat")) {
   mkdir("examples/data");
   write_file("examples/data/hemisphr.dat", http_get("https://raw.githubusercontent.com/lmctl-ai/lmplot/main/examples/data/hemisphr.dat"));
 }
-p = _dsl_ cli="lmplot" install="github:lmctl-ai/lmplot@latest";
+p = _lmcode_ cli="lmplot" install="github:lmctl-ai/lmplot@latest";
 # Image 1: the three step styles over the raw points.
 plot.png("images/steps-1.png", 800, 600);
 plot.cmd("set title 'Compare steps, fsteps and histeps'");
@@ -23,7 +23,7 @@ plot.cmd("set title \"Histogram built from unsorted data by 'smooth frequency'\"
 plot.script("set ylabel 'counts per bin'\nset xlabel 'bins'\nset key right\nset style fill solid 1.0");
 plot.cmd("plot 'examples/data/hemisphr.dat' u (floor($1*20)):(1) smooth freq with fillsteps title 'with fillsteps'");
 plot.close();
-end _dsl_
+end _lmcode_
 savedsl(p, out);
 r = system ${dsl_cli(p)} --dsl ${out};
 assert(r.code == 0);

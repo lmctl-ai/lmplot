@@ -2,7 +2,7 @@
 out = ARGV.len() > 0 ? ARGV[0] : "build/hidden.dslb";
 mkdir("images");
 mkdir("build");
-p = _dsl_ cli="lmplot" install="github:lmctl-ai/lmplot@latest";
+p = _lmcode_ cli="lmplot" install="github:lmctl-ai/lmplot@latest";
 plot.script("set samples 20\nset isosamples 20\nset hidden3d");
 # Image 1: a bell-shaped surface.
 plot.png("images/hidden-1.png", 800, 600);
@@ -21,7 +21,7 @@ plot.png("images/hidden-3.png", 800, 600);
 plot.script("unset grid\nset ztics autofreq\nset border 31\nset view 75,230\nset contour");
 plot.cmd("splot sin(x) * cos(y)");
 plot.close();
-end _dsl_
+end _lmcode_
 savedsl(p, out);
 r = system ${dsl_cli(p)} --dsl ${out};
 assert(r.code == 0);

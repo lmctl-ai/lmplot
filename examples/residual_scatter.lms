@@ -56,7 +56,7 @@ let rmse = sqrt(rss / num(n));
 assert(abs(res_sum) < 0.000000001);
 assert(abs(slope - 1.5) < 0.1);
 
-p = _dsl_ cli="lmplot" install="github:lmctl-ai/lmplot@latest";
+p = _lmcode_ cli="lmplot" install="github:lmctl-ai/lmplot@latest";
 plot.data("RES", ${res});
 plot.echo(${"slope = " + str(slope) + ", intercept = " + str(intercept) + ", R^2 = " + str(r2) + ", RMSE = " + str(rmse)});
 
@@ -68,7 +68,7 @@ plot.cmd("set grid lc rgb '#e2e8f0' lw 1");
 plot.cmd("set key top left opaque box lc rgb '#cbd5e1' samplen 2.2");
 plot.cmd("plot " + ${str(-2.0 * rmse)} + " with lines dt 3 lw 1.4 lc rgb '#94a3b8' title sprintf('+-2 RMSE = %.2f', " + ${str(2.0 * rmse)} + "), " + ${str(2.0 * rmse)} + " with lines dt 3 lw 1.4 lc rgb '#94a3b8' notitle, 0 with lines lw 1.8 lc rgb '#334155' title 'zero residual', $RES using 1:2 with points pt 7 ps 1.1 lc rgb '#0f766e' title 'residual'");
 plot.close();
-end _dsl_
+end _lmcode_
 savedsl(p, out);
 r = system ${dsl_cli(p)} --dsl ${out};
 assert(r.code == 0);

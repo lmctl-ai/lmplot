@@ -13,7 +13,7 @@ if (!file_exists("examples/data/GM1_sugar.pdb")) {
   mkdir("examples/data");
   write_file("examples/data/GM1_sugar.pdb", http_get("https://raw.githubusercontent.com/lmctl-ai/lmplot/main/examples/data/GM1_sugar.pdb"));
 }
-p = _dsl_ cli="lmplot" install="github:lmctl-ai/lmplot@latest";
+p = _lmcode_ cli="lmplot" install="github:lmctl-ai/lmplot@latest";
 # --- 1: parallel axes with manipulated ranges ---
 plot.png("images/parallel-1.png", 800, 600);
 plot.cmd("set title 'Parallel Axis Plot' font ',15'");
@@ -65,7 +65,7 @@ plot.cmd("set title 'Parallel Axis Plot' font ',15'");
 # deterministic stand-in for rand(0): a fixed pseudo-random-looking function
 plot.cmd("plot sample [x=1:20] '+' using (abs(sin(7.3*$1*$1))):0 lc palette title 'random', '' u ($1) title 'x', '' u (-$1) title '-x', '' u (a*$1) title 'a*x', '' u (a*$1+b) title 'a*x+b', '' u (exp($1)) title 'e^x', '' u (1/$1) title '1/x'");
 plot.close();
-end _dsl_
+end _lmcode_
 savedsl(p, out);
 r = system ${dsl_cli(p)} --dsl ${out};
 assert(r.code == 0);

@@ -6,7 +6,7 @@
 out = ARGV.len() > 0 ? ARGV[0] : "build/turntable.dslb";
 mkdir("images");
 mkdir("build");
-p = _dsl_ cli="lmplot" install="github:lmctl-ai/lmplot@latest";
+p = _lmcode_ cli="lmplot" install="github:lmctl-ai/lmplot@latest";
 
 # scene set up once: identical axes, ranges and colours in every frame
 plot.cmd("set samples 40, 40");
@@ -35,7 +35,7 @@ for (k in range(0, frames)) {
   plot.close();
   plot.echo("frame " + str(k) + " -> " + file);
 }
-end _dsl_
+end _lmcode_
 savedsl(p, out);
 r = system ${dsl_cli(p)} --dsl ${out};
 assert(r.code == 0);

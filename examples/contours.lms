@@ -2,7 +2,7 @@
 out = ARGV.len() > 0 ? ARGV[0] : "build/contours.dslb";
 mkdir("images");
 mkdir("build");
-p = _dsl_ cli="lmplot" install="github:lmctl-ai/lmplot@latest";
+p = _lmcode_ cli="lmplot" install="github:lmctl-ai/lmplot@latest";
 plot.script("set samples 20\nset isosamples 21\nset xlabel 'X axis'\nset ylabel 'Y axis'");
 plot.script("set zlabel 'Z ' offset 1, 0\nset view 60, 30, 0.85, 1.1");
 plot.script("set key at screen 1.0, 0.9\nset style textbox opaque noborder margins 0.5, 0.5");
@@ -28,7 +28,7 @@ plot.cmd("set contour both");
 plot.cmd("set hidden3d");
 plot.cmd("splot x**2-y**2 with lines, x**2-y**2 with labels boxed notitle");
 plot.close();
-end _dsl_
+end _lmcode_
 savedsl(p, out);
 r = system ${dsl_cli(p)} --dsl ${out};
 assert(r.code == 0);

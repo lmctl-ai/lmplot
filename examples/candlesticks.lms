@@ -6,7 +6,7 @@ if (!file_exists("examples/data/candlesticks.dat")) {
   mkdir("examples/data");
   write_file("examples/data/candlesticks.dat", http_get("https://raw.githubusercontent.com/lmctl-ai/lmplot/main/examples/data/candlesticks.dat"));
 }
-p = _dsl_ cli="lmplot" install="github:lmctl-ai/lmplot@latest";
+p = _lmcode_ cli="lmplot" install="github:lmctl-ai/lmplot@latest";
 plot.script("set xrange [0:11]\nset yrange [0:10]\nset boxwidth 0.2");
 # Image 1: open/close states, hollow when open < close.
 plot.png("images/candlesticks-1.png", 800, 600);
@@ -20,7 +20,7 @@ plot.cmd("set style fill empty");
 plot.cmd("set title 'box-and-whisker with median bar and whiskerbars'");
 plot.cmd("plot 'examples/data/candlesticks.dat' using 1:3:2:6:5 with candlesticks lt 3 lw 2 title 'Quartiles' whiskerbars, '' using 1:4:4:4:4 with candlesticks lt -1 lw 2 notitle");
 plot.close();
-end _dsl_
+end _lmcode_
 savedsl(p, out);
 r = system ${dsl_cli(p)} --dsl ${out};
 assert(r.code == 0);

@@ -79,7 +79,7 @@ for (m in range(1, 9)) {
   levels = levels + (m > 1 ? "," : "") + str(phi_max * num(m) / 9.0);
 }
 
-p = _dsl_ cli="lmplot" install="github:lmctl-ai/lmplot@latest";
+p = _lmcode_ cli="lmplot" install="github:lmctl-ai/lmplot@latest";
 plot.data("PHI", ${phi_rows});
 plot.data("SRC", ${f_rows});
 plot.echo(${"SOR sweeps = " + str(sweeps) + ", max |phi - exact| = " + str(err) + ", max phi = " + str(phi_max)});
@@ -113,7 +113,7 @@ plot.cmd("set cblabel 'phi'");
 plot.cmd("plot $PHI using 1:2:3 with image notitle, $CONT using 1:2 with lines lw 1.4 lc rgb '#f8fafc' notitle");
 plot.cmd("unset multiplot");
 plot.close();
-end _dsl_
+end _lmcode_
 savedsl(p, out);
 r = system ${dsl_cli(p)} --dsl ${out};
 assert(r.code == 0);

@@ -9,7 +9,7 @@ if (!file_exists("examples/data/arrowstyle.dat")) {
   mkdir("examples/data");
   write_file("examples/data/arrowstyle.dat", http_get("https://raw.githubusercontent.com/lmctl-ai/lmplot/main/examples/data/arrowstyle.dat"));
 }
-p = _dsl_ cli="lmplot" install="github:lmctl-ai/lmplot@latest";
+p = _lmcode_ cli="lmplot" install="github:lmctl-ai/lmplot@latest";
 
 # --- 1: independent colours and dash styles ---
 plot.png("images/lines_arrows-1.png", 800, 600);
@@ -73,7 +73,7 @@ plot.script("do for [i=1:8] { y = -90-10*i; set arrow i from -500,y rto 1000,0 a
 plot.cmd("set title 'Top: plot with vectors arrowstyle 1, Bottom: explicit arrows'");
 plot.cmd("plot 'examples/data/arrowstyle.dat' using 1:2:(0):3 notitle with vectors arrowstyle 3");
 plot.close();
-end _dsl_
+end _lmcode_
 savedsl(p, out);
 r = system ${dsl_cli(p)} --dsl ${out};
 assert(r.code == 0);

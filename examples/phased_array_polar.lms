@@ -7,7 +7,7 @@
 out = ARGV.len() > 0 ? ARGV[0] : "build/phased_array_polar.dslb";
 mkdir("images");
 mkdir("build");
-p = _dsl_ cli="lmplot" install="github:lmctl-ai/lmplot@latest";
+p = _lmcode_ cli="lmplot" install="github:lmctl-ai/lmplot@latest";
 
 # Array factor, evaluated by gnuplot (complex arithmetic and sum[] are built in).
 # t = angle from broadside (radians). psi = k d (sin t - sin t0) with k d = pi.
@@ -74,7 +74,7 @@ plot.cmd("set label 8 'uniform (dashed)' at screen 0.745, 0.15 left font ',9.5'"
 plot.cmd("ang(i) = (90.0 - deg(i))*pi/180; clip(v) = (v < -40 ? -40 : v)");
 plot.cmd("plot GT using (ang($1)):(clip($2)) with filledcurve r=-40 lc rgb '#3b82f6', GT using (ang($1)):(clip($2)) with lines lw 2.6 lc rgb '#1d4ed8', GU using (ang($1)):(clip($2)) with lines lw 1.8 dt 2 lc rgb '#dc2626'");
 plot.close();
-end _dsl_
+end _lmcode_
 savedsl(p, out);
 r = system ${dsl_cli(p)} --dsl ${out};
 assert(r.code == 0);

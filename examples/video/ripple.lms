@@ -4,7 +4,7 @@
 mkdir("images");
 mkdir("build/video/ripple");
 out = ARGV.len() > 0 ? ARGV[0] : "build/video/ripple.dslb";
-p = _dsl_ cli="lmplot" install="github:lmctl-ai/lmplot@latest";
+p = _lmcode_ cli="lmplot" install="github:lmctl-ai/lmplot@latest";
 plot.cmd("set samples 60, 60");
 plot.cmd("set isosamples 60, 60");
 plot.cmd("set xrange [-10:10]");
@@ -27,7 +27,7 @@ for (k in range(0, frames)) {
   plot.cmd("splot cos(sqrt(x**2+y**2) - " + str(phase) + ") * exp(-sqrt(x**2+y**2)/8) with pm3d");
   plot.close();
 }
-end _dsl_
+end _lmcode_
 savedsl(p, out);
 r = system ${dsl_cli(p)} --dsl ${out};
 assert(r.code == 0);

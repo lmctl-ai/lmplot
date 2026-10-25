@@ -6,7 +6,7 @@ if (!file_exists("examples/data/silver.dat")) {
   mkdir("examples/data");
   write_file("examples/data/silver.dat", http_get("https://raw.githubusercontent.com/lmctl-ai/lmplot/main/examples/data/silver.dat"));
 }
-p = _dsl_ cli="lmplot" install="github:lmctl-ai/lmplot@latest";
+p = _lmcode_ cli="lmplot" install="github:lmctl-ai/lmplot@latest";
 # Image 1: plain filledcurves between columns 2 and 3, outlined with lines.
 plot.png("images/fillbetween-1.png", 800, 600);
 plot.script("set style data lines\nset xrange [10:*]\nset yrange [0:175]");
@@ -26,7 +26,7 @@ plot.script("set xrange [250:500]\nset autoscale y");
 plot.cmd("set title 'Fill area between two curves (above/below)'");
 plot.cmd("plot 'examples/data/silver.dat' u 1:2:($3+$1/50.) w filledcurves above title 'Above', '' u 1:2:($3+$1/50.) w filledcurves below title 'Below', '' u 1:2 lt -1 lw 2 title 'curve 1', '' u 1:($3+$1/50.) lt 3 lw 2 title 'curve 2'");
 plot.close();
-end _dsl_
+end _lmcode_
 savedsl(p, out);
 r = system ${dsl_cli(p)} --dsl ${out};
 assert(r.code == 0);

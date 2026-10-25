@@ -90,12 +90,12 @@ it:
 out = ARGV.len() > 0 ? ARGV[0] : "build/sine.dslb";
 mkdir("images");
 mkdir("build");
-p = _dsl_ cli="lmplot" install="github:lmctl-ai/lmplot@latest";
+p = _lmcode_ cli="lmplot" install="github:lmctl-ai/lmplot@latest";
 plot.png("images/sine.png", 800, 500);
 plot.cmd("set title 'sin(x) and a fit'");
 plot.cmd("plot sin(x) lw 2, x - x**3/6 dt 2");
 plot.close();
-end _dsl_
+end _lmcode_
 savedsl(p, out);
 r = system ${dsl_cli(p)} --dsl ${out};   # run it with the binary it was compiled against
 assert(r.code == 0);

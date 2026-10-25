@@ -2,7 +2,7 @@
 out = ARGV.len() > 0 ? ARGV[0] : "build/vector.dslb";
 mkdir("images");
 mkdir("build");
-p = _dsl_ cli="lmplot" install="github:lmctl-ai/lmplot@latest";
+p = _lmcode_ cli="lmplot" install="github:lmctl-ai/lmplot@latest";
 plot.script("r(x,y)=sqrt(x*x+y*y)\nx0=1.\nq1=1\nq2=-1\ncoef=.7");
 plot.script("v1(x,y)=q1/(r((x-x0),y))\nv2(x,y)=q2/(r((x+x0),y))\nvtot(x,y)=v1(x,y)+v2(x,y)");
 plot.script("e1x(x,y)=q1*(x-x0)/r(x-x0,y)**3\ne1y(x,y)=q1*y/r(x-x0,y)**3");
@@ -29,7 +29,7 @@ plot.script("reset\nset xr [-10:10]\nset yr [-10:10]\nset key under Left reverse
 plot.cmd("set title 'Dipole: equipotential lines and electric field direction'");
 plot.cmd("plot $field2xy u 1:2:(0.5*dx1($1,$2)):(0.5*dy1($1,$2)) w vec title 'field', $equipo2 w l title 'equipotentials'");
 plot.close();
-end _dsl_
+end _lmcode_
 savedsl(p, out);
 r = system ${dsl_cli(p)} --dsl ${out};
 assert(r.code == 0);

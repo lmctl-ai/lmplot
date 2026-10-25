@@ -6,7 +6,7 @@
 mkdir("images");
 mkdir("build/video/quantum_packet");
 out = ARGV.len() > 0 ? ARGV[0] : "build/video/quantum_packet.dslb";
-p = _dsl_ cli="lmplot" install="github:lmctl-ai/lmplot@latest";
+p = _lmcode_ cli="lmplot" install="github:lmctl-ai/lmplot@latest";
 
 plot.cmd("set encoding utf8");
 plot.cmd("set xrange [-10:10]");
@@ -47,7 +47,7 @@ for (k in range(0, frames)) {
   plot.cmd("plot barrier(x) with filledcurves y1=0 lc rgb '#fde68a' title 'Potential barrier V(x)', barrier(x) with lines lw 1.8 lc rgb '#d97706' notitle, prob(x) with filledcurves y1=0 lc rgb '#3b82f6' title 'Probability density |ψ(x,t)|²', prob(x) with lines lw 2.4 lc rgb '#1d4ed8' notitle, re_psi(x) with lines lw 1.8 lc rgb '#dc2626' title 'Re ψ(x,t)', im_psi(x) with lines lw 1.5 dt 2 lc rgb '#059669' title 'Im ψ(x,t)'");
   plot.close();
 }
-end _dsl_
+end _lmcode_
 savedsl(p, out);
 r = system ${dsl_cli(p)} --dsl ${out};
 assert(r.code == 0);

@@ -12,7 +12,7 @@ mkdir("images");
 mkdir("build/rendered");
 mkdir("build/examples");
 
-draw = _dsl_ cli="lmdraw" install="github:lmctl-ai/lmdraw@latest";
+draw = _lmcode_ cli="lmdraw" install="github:lmctl-ai/lmdraw@latest";
 scene.canvas(360, 560, "#f8fafc");
 
 let bg_grad = scene.linear_gradient("card_bg", 0.0, 0.0, 0.0, 1.0);
@@ -110,12 +110,12 @@ scene.text(42.0, 505.0, 11.5, "• NPI Distancing (t >= 22 d): R_t = 1.48 (-54% 
 scene.text(42.0, 524.0, 11.5, "• Peak active I(t) cut from 19.1% to 6.2% (-68%)", "#059669");
 
 scene.render_png("build/rendered/seir_schematic.png", 360, 560, 1);
-end _dsl_
+end _lmcode_
 savedsl(draw, "build/seir_draw.dslb");
 r = system ${dsl_cli(draw)} --dsl build/seir_draw.dslb;
 assert(r.code == 0);
 
-p = _dsl_ cli="lmplot" install="github:lmctl-ai/lmplot@latest";
+p = _lmcode_ cli="lmplot" install="github:lmctl-ai/lmplot@latest";
 
 # Integrate SEIR ODEs over 160 days (dt = 0.5 day, 320 steps) with the midpoint method:
 # Baseline: beta0 = 3.2 * gamma, sigma = 1/4.5 = 0.2222, gamma = 1/7.0 = 0.142857
@@ -232,7 +232,7 @@ plot.cmd("plot $SEIR using 2:4 with lines lw 2.6 lc rgb '#dc2626' title 'Unmitig
 
 plot.cmd("unset multiplot");
 plot.close();
-end _dsl_
+end _lmcode_
 savedsl(p, out);
 r = system ${dsl_cli(p)} --dsl ${out};
 assert(r.code == 0);

@@ -64,7 +64,7 @@ for (c in range(0, k_classes)) {
   pct_rows = pct_rows + "\n";
 }
 
-p = _dsl_ cli="lmplot" install="github:lmctl-ai/lmplot@latest";
+p = _lmcode_ cli="lmplot" install="github:lmctl-ai/lmplot@latest";
 plot.data("HEAT", ${heat});
 plot.data("CNT", ${cnt_rows});
 plot.data("PCT", ${pct_rows});
@@ -85,7 +85,7 @@ plot.cmd("set size ratio -1");
 plot.cmd("unset key");
 plot.cmd("plot $HEAT using 1:2:3 with image notitle, $CNT using 1:2:3:4 with labels textcolor rgb variable font ',20' notitle, $PCT using 1:($2+0.28):3:4 with labels textcolor rgb variable font ',10' notitle");
 plot.close();
-end _dsl_
+end _lmcode_
 savedsl(p, out);
 r = system ${dsl_cli(p)} --dsl ${out};
 assert(r.code == 0);

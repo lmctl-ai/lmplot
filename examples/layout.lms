@@ -12,7 +12,7 @@ if (!file_exists("examples/data/silver.dat")) {
   mkdir("examples/data");
   write_file("examples/data/silver.dat", http_get("https://raw.githubusercontent.com/lmctl-ai/lmplot/main/examples/data/silver.dat"));
 }
-p = _dsl_ cli="lmplot" install="github:lmctl-ai/lmplot@latest";
+p = _lmcode_ cli="lmplot" install="github:lmctl-ai/lmplot@latest";
 # The histogram/line data files live in examples/data (paths relative to repo root).
 let hist = "plot 'examples/data/immigration.dat' using 2 with histograms, '' using 7 with histograms, '' using 8 with histograms, '' using 11 with histograms";
 
@@ -80,7 +80,7 @@ plot.cmd("set xlabel 'Immigration to U.S. by Decade'");
 plot.cmd("plot 'examples/data/immigration.dat' using 21:xtic(1) lt 4");
 plot.cmd("unset multiplot");
 plot.close();
-end _dsl_
+end _lmcode_
 savedsl(p, out);
 r = system ${dsl_cli(p)} --dsl ${out};
 assert(r.code == 0);

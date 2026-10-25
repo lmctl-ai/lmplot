@@ -6,7 +6,7 @@ if (!file_exists("examples/data/battery.dat")) {
   mkdir("examples/data");
   write_file("examples/data/battery.dat", http_get("https://raw.githubusercontent.com/lmctl-ai/lmplot/main/examples/data/battery.dat"));
 }
-p = _dsl_ cli="lmplot" install="github:lmctl-ai/lmplot@latest";
+p = _lmcode_ cli="lmplot" install="github:lmctl-ai/lmplot@latest";
 plot.script("set xlabel 'Resistance [Ohm]'\nset ylabel 'Power [W]'\nn(x)=1.53**2*x/(5.67+x)**2");
 # Image 1: both x and y errors.
 plot.png("images/errorbars-1.png", 800, 600);
@@ -24,7 +24,7 @@ plot.script("set logscale y\nset bars small");
 plot.cmd("set title 'yerrorbars in log scale, small bars'");
 plot.cmd("plot [0:50] 'examples/data/battery.dat' u 1:2:4 t 'Power' w yerr, n(x) t 'Theory' w lines");
 plot.close();
-end _dsl_
+end _lmcode_
 savedsl(p, out);
 r = system ${dsl_cli(p)} --dsl ${out};
 assert(r.code == 0);

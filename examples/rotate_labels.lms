@@ -8,7 +8,7 @@ if (!file_exists("examples/data/table.dat")) {
   mkdir("examples/data");
   write_file("examples/data/table.dat", http_get("https://raw.githubusercontent.com/lmctl-ai/lmplot/main/examples/data/table.dat"));
 }
-p = _dsl_ cli="lmplot" install="github:lmctl-ai/lmplot@latest";
+p = _lmcode_ cli="lmplot" install="github:lmctl-ai/lmplot@latest";
 
 # --- 1: textboxes (two side by side panels via multiplot) ---
 plot.png("images/rotate_labels-1.png", 1000, 500);
@@ -66,7 +66,7 @@ plot.cmd("set ytics 1,1,12 nomirror");
 plot.cmd("set border 3");
 plot.cmd("plot $Data using 1:1:2:3:0 with labels rotate variable tc variable font ',20'");
 plot.close();
-end _dsl_
+end _lmcode_
 savedsl(p, out);
 r = system ${dsl_cli(p)} --dsl ${out};
 assert(r.code == 0);

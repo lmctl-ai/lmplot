@@ -10,7 +10,7 @@
 out = ARGV.len() > 0 ? ARGV[0] : "build/symlog_outlier.dslb";
 mkdir("images");
 mkdir("build");
-p = _dsl_ cli="lmplot" install="github:lmctl-ai/lmplot@latest";
+p = _lmcode_ cli="lmplot" install="github:lmctl-ai/lmplot@latest";
 
 # Commit counts from an integer generator (Park-Miller, reduced to 20..900 per month).
 let seed = 4242;
@@ -43,7 +43,7 @@ plot.cmd("set label 2 '63,000-commit bulk reformat' at 15.45, sym(63000) - 0.1 l
 plot.cmd("unset key");
 plot.cmd("plot $COMMITS using 1:(sym($2)) with boxes lc rgb '#2563eb' notitle, $COMMITS using 1:(sym($2)):(sprintf('%d', $2)) with labels offset 0,0.6 font ',7' notitle");
 plot.close();
-end _dsl_
+end _lmcode_
 savedsl(p, out);
 r = system ${dsl_cli(p)} --dsl ${out};
 assert(r.code == 0);

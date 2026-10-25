@@ -2,7 +2,7 @@
 out = ARGV.len() > 0 ? ARGV[0] : "build/simple.dslb";
 mkdir("images");
 mkdir("build");
-p = _dsl_ cli="lmplot" install="github:lmctl-ai/lmplot@latest";
+p = _lmcode_ cli="lmplot" install="github:lmctl-ai/lmplot@latest";
 plot.png("images/simple.png", 800, 600);
 plot.cmd("set title 'Simple Plots' font ',16'");
 plot.cmd("set key left box");
@@ -10,7 +10,7 @@ plot.cmd("set samples 50");
 plot.cmd("set style data points");
 plot.cmd("plot [-10:10] sin(x), atan(x), cos(atan(x))");
 plot.close();
-end _dsl_
+end _lmcode_
 savedsl(p, out);
 r = system ${dsl_cli(p)} --dsl ${out};
 assert(r.code == 0);

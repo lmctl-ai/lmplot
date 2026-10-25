@@ -73,7 +73,7 @@ for (i in range(0, n)) {
 let mann_whitney = wins / (num(pos) * num(neg));
 assert(abs(auc - mann_whitney) < 0.000000000001);
 
-p = _dsl_ cli="lmplot" install="github:lmctl-ai/lmplot@latest";
+p = _lmcode_ cli="lmplot" install="github:lmctl-ai/lmplot@latest";
 plot.data("ROC", ${roc});
 plot.echo(${"AUC = " + str(auc) + ", Youden J = " + str(best_j) + " at score " + str(best_t)});
 
@@ -90,7 +90,7 @@ plot.cmd("set label 1 'Youden point' at " + ${str(best_fpr)} + ", " + ${str(best
 plot.data("YOU", ${str(best_fpr) + " " + str(best_tpr) + "\n"});
 plot.cmd("plot x with lines dt 2 lw 1.8 lc rgb '#64748b' title 'chance (AUC 0.5)', $ROC using 1:2 with filledcurves x1 fc rgb '#dbeafe' fs transparent solid 0.7 notitle, $ROC using 1:2 with lines lw 2.8 lc rgb '#1d4ed8' title 'classifier', $YOU using 1:2 with points pt 7 ps 1.4 lc rgb '#b45309' title sprintf('Youden J = %.3f', " + ${str(best_j)} + ")");
 plot.close();
-end _dsl_
+end _lmcode_
 savedsl(p, out);
 r = system ${dsl_cli(p)} --dsl ${out};
 assert(r.code == 0);

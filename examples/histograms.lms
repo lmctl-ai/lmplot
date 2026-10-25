@@ -6,7 +6,7 @@ if (!file_exists("examples/data/immigration.dat")) {
   mkdir("examples/data");
   write_file("examples/data/immigration.dat", http_get("https://raw.githubusercontent.com/lmctl-ai/lmplot/main/examples/data/immigration.dat"));
 }
-p = _dsl_ cli="lmplot" install="github:lmctl-ai/lmplot@latest";
+p = _lmcode_ cli="lmplot" install="github:lmctl-ai/lmplot@latest";
 plot.cmd("set datafile missing '-'");
 plot.cmd("set key noenhanced");  # keep underscores in names like United_Kingdom literal
 plot.script("set style data histogram\nset style fill solid border -1\nset boxwidth 0.9");
@@ -28,7 +28,7 @@ plot.script("set xtics nomirror rotate by -45 scale 0 font ',8'\nset ytics font 
 plot.cmd("set xlabel '(note: histogram titles have specified offset relative to X-axis label)' offset 0,-2");
 plot.cmd("plot newhistogram 'Northern Europe', 'examples/data/immigration.dat' using 'Sweden':xtic(1) t col, '' u 'Denmark' t col, '' u 'Norway' t col, newhistogram 'Southern Europe', '' u 'Greece':xtic(1) t col, '' u 'Romania' t col, '' u 'Yugoslavia' t col, newhistogram 'British Isles', '' u 'Ireland':xtic(1) t col, '' u 'United_Kingdom' t col");
 plot.close();
-end _dsl_
+end _lmcode_
 savedsl(p, out);
 r = system ${dsl_cli(p)} --dsl ${out};
 assert(r.code == 0);

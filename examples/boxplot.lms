@@ -10,7 +10,7 @@ if (!file_exists("examples/data/energy_circles.dat")) {
   mkdir("examples/data");
   write_file("examples/data/energy_circles.dat", http_get("https://raw.githubusercontent.com/lmctl-ai/lmplot/main/examples/data/energy_circles.dat"));
 }
-p = _dsl_ cli="lmplot" install="github:lmctl-ai/lmplot@latest";
+p = _lmcode_ cli="lmplot" install="github:lmctl-ai/lmplot@latest";
 # Image 1: two boxplots with custom x tics.
 plot.png("images/boxplot-1.png", 800, 600);
 plot.script("set style fill solid 0.5 border -1\nset style boxplot outliers pointtype 7\nset style data boxplot\nset boxwidth 0.5\nset pointsize 0.5\nunset key\nset border 2");
@@ -24,7 +24,7 @@ plot.script("set linetype 51 lc 'dark-red'\nset linetype 52 lc 'dark-red'\nset l
 plot.cmd("set title \"Distribution of energy usage of the continents, grouped by type of energy source\\n\"");
 plot.cmd("plot 'examples/data/energy_circles.dat' using (1):($8/1.e6):(0):4 lt 51 lc variable");
 plot.close();
-end _dsl_
+end _lmcode_
 savedsl(p, out);
 r = system ${dsl_cli(p)} --dsl ${out};
 assert(r.code == 0);

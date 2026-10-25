@@ -2,7 +2,7 @@
 out = ARGV.len() > 0 ? ARGV[0] : "build/pm3d.dslb";
 mkdir("images");
 mkdir("build");
-p = _dsl_ cli="lmplot" install="github:lmctl-ai/lmplot@latest";
+p = _lmcode_ cli="lmplot" install="github:lmctl-ai/lmplot@latest";
 plot.script("set xlabel 'x'\nset ylabel 'y'\nset key top\nset border 4095");
 plot.script("set xrange [-15:15]\nset yrange [-15:15]\nset zrange [-0.25:1]");
 plot.script("set samples 25\nset isosamples 20");
@@ -32,7 +32,7 @@ plot.script("reset\nset xrange [-15:15]\nset yrange [-15:15]\nset samples 100; s
 plot.script("set title 'gray map'\nset view map\nset pm3d\nset palette gray\nunset surface\nunset key");
 plot.cmd("splot sin(sqrt(x**2+y**2))/sqrt(x**2+y**2)");
 plot.close();
-end _dsl_
+end _lmcode_
 savedsl(p, out);
 r = system ${dsl_cli(p)} --dsl ${out};
 assert(r.code == 0);

@@ -7,7 +7,7 @@
 out = ARGV.len() > 0 ? ARGV[0] : "build/quadrature_convergence.dslb";
 mkdir("images");
 mkdir("build");
-p = _dsl_ cli="lmplot" install="github:lmctl-ai/lmplot@latest";
+p = _lmcode_ cli="lmplot" install="github:lmctl-ai/lmplot@latest";
 
 let a = 0.0;
 let b = 1.5707963267948966;
@@ -102,7 +102,7 @@ plot.cmd("set label 3 sprintf('slope −%.2f', " + str(order_s) + ") at 60, 1e-1
 plot.cmd("set label 4 '8 Gauss points beat\n1025 Simpson points' at 9, 1e-14 left font ',10' tc rgb '#059669'");
 plot.cmd("plot $NC using 1:2 with linespoints lw 2.4 pt 7 ps 1.1 lc rgb '#2563eb' title 'composite trapezoid  (error ∝ h^2)', $NC using 1:3 with linespoints lw 2.4 pt 5 ps 1.1 lc rgb '#d97706' title 'composite Simpson  (error ∝ h^4)', $GL using 1:2 with linespoints lw 2.4 pt 9 ps 1.3 lc rgb '#059669' title 'Gauss–Legendre  (exponential)', 10**ct * x**(-pt) with lines dt 2 lw 1.2 lc rgb '#93c5fd' notitle, 10**cs * x**(-ps) with lines dt 2 lw 1.2 lc rgb '#fcd34d' notitle");
 plot.close();
-end _dsl_
+end _lmcode_
 savedsl(p, out);
 r = system ${dsl_cli(p)} --dsl ${out};
 assert(r.code == 0);

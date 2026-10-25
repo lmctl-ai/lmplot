@@ -132,11 +132,11 @@ from the gnuplot demo directory (gnuplot license, see `../THIRD_PARTY_NOTICES`).
 out = ARGV.len() > 0 ? ARGV[0] : "build/mine.dslb";   # compile-time argv: output path
 mkdir("images");                                      # ordinary lmscript, outside the block
 mkdir("build");
-p = _dsl_ cli="lmplot" install="github:lmctl-ai/lmplot@latest";  # host binary supplies the schema
+p = _lmcode_ cli="lmplot" install="github:lmctl-ai/lmplot@latest";  # host binary supplies the schema
 plot.png("images/mine.png", 800, 600);                # inside the block: the Plot API
 plot.cmd("plot sin(x)");
 plot.close();
-end _dsl_
+end _lmcode_
 savedsl(p, out);
 r = system ${dsl_cli(p)} --dsl ${out};
 assert(r.code == 0);

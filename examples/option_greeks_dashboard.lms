@@ -7,7 +7,7 @@
 out = ARGV.len() > 0 ? ARGV[0] : "build/option_greeks_dashboard.dslb";
 mkdir("images");
 mkdir("build");
-p = _dsl_ cli="lmplot" install="github:lmctl-ai/lmplot@latest";
+p = _lmcode_ cli="lmplot" install="github:lmctl-ai/lmplot@latest";
 
 plot.cmd("K = 40.0; r = 0.10; s = 0.20");
 plot.cmd("d1(S,T) = (log(S/K) + (r + 0.5*s*s)*T) / (s*sqrt(T)); d2(S,T) = d1(S,T) - s*sqrt(T)");
@@ -77,7 +77,7 @@ plot.cmd("set key top right");
 plot.cmd("plot gam(x, 0.1) ls 1 title 'gamma, T = 0.1', gam(x, 1.0) ls 3 title 'gamma, T = 1.0', vega(x, 0.1) axes x1y2 ls 1 dt 3 title 'vega, T = 0.1', vega(x, 1.0) axes x1y2 ls 3 dt 3 title 'vega, T = 1.0'");
 plot.cmd("unset multiplot");
 plot.close();
-end _dsl_
+end _lmcode_
 savedsl(p, out);
 r = system ${dsl_cli(p)} --dsl ${out};
 assert(r.code == 0);
