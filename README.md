@@ -8,57 +8,57 @@
 
 | Exoplanet Doppler RV & O-C residuals | Landau 3D free-energy surface | Equity OHLC, Bollinger & drawdown |
 | --- | --- | --- |
-| <img src="docs/images/kepler_rv_fit.png" width="290"> | <img src="docs/images/potential_vortex_surface.png" width="290"> | <img src="docs/images/quant_trading_dashboard.png" width="290"> |
+| <img src="docs/images/kepler_rv_fit.png" width="290" alt="Exoplanet Doppler RV & O-C residuals"> | <img src="docs/images/potential_vortex_surface.png" width="290" alt="Landau 3D free-energy surface"> | <img src="docs/images/quant_trading_dashboard.png" width="290" alt="Equity OHLC, Bollinger & drawdown"> |
 | Keplerian fit, mass & χ² in DSL<br>`lmctl autorun https://raw.githubusercontent.com/lmctl-ai/lmplot/main/examples/kepler_rv_fit.lms` | Bistable `pm3d` surface & transition path<br>`lmctl autorun https://raw.githubusercontent.com/lmctl-ai/lmplot/main/examples/potential_vortex_surface.lms` | Candlesticks, ±2σ band, volume & drawdown<br>`lmctl autorun https://raw.githubusercontent.com/lmctl-ai/lmplot/main/examples/quant_trading_dashboard.lms` |
 
 | Rocket nozzle: geometry meets flow (`lmcad` + `lmplot`) | SEIR schematic + ODE phase plane (`lmdraw` + `lmplot`) | Quantum wave-packet scattering (`ffmpeg` GIF) |
 | --- | --- | --- |
-| <img src="docs/images/nozzle_cad_plot.png" width="290"> | <img src="docs/images/sir_epidemic_draw_plot.png" width="290"> | <img src="docs/images/quantum_packet.gif" width="290"> |
+| <img src="docs/images/nozzle_cad_plot.png" width="290" alt="Rocket nozzle: geometry meets flow (lmcad + lmplot)"> | <img src="docs/images/sir_epidemic_draw_plot.png" width="290" alt="SEIR schematic + ODE phase plane (lmdraw + lmplot)"> | <img src="docs/images/quantum_packet.gif" width="290" alt="Quantum wave-packet scattering (ffmpeg GIF)"> |
 | lmcad section and Mach, P, T on one mm axis<br>`lmctl autorun https://raw.githubusercontent.com/lmctl-ai/lmplot/main/examples/combo/nozzle_cad_plot.lms` | lmdraw model diagram + SEIR runs: peak cut 19% → 6%<br>`lmctl autorun https://raw.githubusercontent.com/lmctl-ai/lmplot/main/examples/combo/sir_epidemic_draw_plot.lms` | 60-frame dispersive wave packet<br>`lmctl autorun https://raw.githubusercontent.com/lmctl-ai/lmplot/main/examples/video/quantum_packet.lms` |
 
 | Planck blackbody & Wien locus | Urban heat island & transects | Phased-array beam steering |
 | --- | --- | --- |
-| <img src="docs/images/blackbody_planck.png" width="290"> | <img src="docs/images/urban_heat_island.png" width="290"> | <img src="docs/images/phased_array_polar.png" width="290"> |
+| <img src="docs/images/blackbody_planck.png" width="290" alt="Planck blackbody & Wien locus"> | <img src="docs/images/urban_heat_island.png" width="290" alt="Urban heat island & transects"> | <img src="docs/images/phased_array_polar.png" width="290" alt="Phased-array beam steering"> |
 | Stellar spectra & bolometric flux<br>`lmctl autorun https://raw.githubusercontent.com/lmctl-ai/lmplot/main/examples/blackbody_planck.lms` | 2D anomaly map & river cooling dip<br>`lmctl autorun https://raw.githubusercontent.com/lmctl-ai/lmplot/main/examples/urban_heat_island.lms` | Measured nulls & −12.8 dB side lobe vs taper<br>`lmctl autorun https://raw.githubusercontent.com/lmctl-ai/lmplot/main/examples/phased_array_polar.lms` |
 
 | Enzyme kinetics & Lineweaver–Burk | Driven damped harmonic resonance | Quadrature: three methods, one integral |
 | --- | --- | --- |
-| <img src="docs/images/enzyme_michaelis_menten.png" width="290"> | <img src="docs/images/damped_driven_resonance.png" width="290"> | <img src="docs/images/quadrature_convergence.png" width="290"> |
+| <img src="docs/images/enzyme_michaelis_menten.png" width="290" alt="Enzyme kinetics & Lineweaver–Burk"> | <img src="docs/images/damped_driven_resonance.png" width="290" alt="Driven damped harmonic resonance"> | <img src="docs/images/quadrature_convergence.png" width="290" alt="Quadrature: three methods, one integral"> |
 | Competitive vs non-competitive OLS<br>`lmctl autorun https://raw.githubusercontent.com/lmctl-ai/lmplot/main/examples/enzyme_michaelis_menten.lms` | Magnification backbone & phase lag<br>`lmctl autorun https://raw.githubusercontent.com/lmctl-ai/lmplot/main/examples/damped_driven_resonance.lms` | Fitted orders 2 and 4, Gauss wins at 8 points<br>`lmctl autorun https://raw.githubusercontent.com/lmctl-ai/lmplot/main/examples/quadrature_convergence.lms` |
 
 | Black–Scholes call & Greeks dashboard | Projectile with drag: best angle 41° (`lmdraw` + `lmplot`) | Linear regression & `stats` round-trip |
 | --- | --- | --- |
-| <img src="docs/images/option_greeks_dashboard.png" width="290"> | <img src="docs/images/projectile_drag.png" width="290"> | <img src="docs/images/stats.png" width="290"> |
+| <img src="docs/images/option_greeks_dashboard.png" width="290" alt="Black–Scholes call & Greeks dashboard"> | <img src="docs/images/projectile_drag.png" width="290" alt="Projectile with drag: best angle 41° (lmdraw + lmplot)"> | <img src="docs/images/stats.png" width="290" alt="Linear regression & stats round-trip"> |
 | Reproduces Hull's 4.76 / 0.81, parity to 1e-14<br>`lmctl autorun https://raw.githubusercontent.com/lmctl-ai/lmplot/main/examples/option_greeks_dashboard.lms`  | RK4 angle sweep; lmdraw diagram placed with `set pixmap`<br>`lmctl autorun https://raw.githubusercontent.com/lmctl-ai/lmplot/main/examples/combo/projectile_drag.lms` | LCG data, `stats` & derived labels<br>`lmctl autorun https://raw.githubusercontent.com/lmctl-ai/lmplot/main/examples/stats.lms` |
 
 | Surfaces and colour (`pm3d`) | Filled curves | Clustered & stacked histograms |
 | --- | --- | --- |
-| <img src="docs/images/pm3d.png" width="290"> | <img src="docs/images/fillcrvs.png" width="290"> | <img src="docs/images/histograms.png" width="290"> |
+| <img src="docs/images/pm3d.png" width="290" alt="Surfaces and colour (pm3d)"> | <img src="docs/images/fillcrvs.png" width="290" alt="Filled curves"> | <img src="docs/images/histograms.png" width="290" alt="Clustered & stacked histograms"> |
 | Radial sinc surface & map projection<br>`lmctl autorun https://raw.githubusercontent.com/lmctl-ai/lmplot/main/examples/pm3d.lms` | Parametric & bounded area fills<br>`lmctl autorun https://raw.githubusercontent.com/lmctl-ai/lmplot/main/examples/fillcrvs.lms` | Clustered, stacked & row-stacked bars<br>`lmctl autorun https://raw.githubusercontent.com/lmctl-ai/lmplot/main/examples/histograms.lms` |
 
 | 3D & base contours | Matrix heat maps | Spider (radar) plots |
 | --- | --- | --- |
-| <img src="docs/images/contours.png" width="290"> | <img src="docs/images/heatmaps.png" width="290"> | <img src="docs/images/spiderplot.png" width="290"> |
+| <img src="docs/images/contours.png" width="290" alt="3D & base contours"> | <img src="docs/images/heatmaps.png" width="290" alt="Matrix heat maps"> | <img src="docs/images/spiderplot.png" width="290" alt="Spider (radar) plots"> |
 | Surface + base isolines<br>`lmctl autorun https://raw.githubusercontent.com/lmctl-ai/lmplot/main/examples/contours.lms` | Matrix image with cell labels<br>`lmctl autorun https://raw.githubusercontent.com/lmctl-ai/lmplot/main/examples/heatmaps.lms` | Multi-axis radar overlay<br>`lmctl autorun https://raw.githubusercontent.com/lmctl-ai/lmplot/main/examples/spiderplot.lms` |
 
 | Enhanced text & Greek symbols | Transparency & hatch patterns | Polar butterfly curve |
 | --- | --- | --- |
-| <img src="docs/images/enhanced.png" width="290"> | <img src="docs/images/transparent.png" width="290"> | <img src="docs/images/polar.png" width="290"> |
+| <img src="docs/images/enhanced.png" width="290" alt="Enhanced text & Greek symbols"> | <img src="docs/images/transparent.png" width="290" alt="Transparency & hatch patterns"> | <img src="docs/images/polar.png" width="290" alt="Polar butterfly curve"> |
 | Superscripts, Symbol & UTF-8<br>`lmctl autorun https://raw.githubusercontent.com/lmctl-ai/lmplot/main/examples/enhanced_utf8.lms` | Alpha blending & pattern fills<br>`lmctl autorun https://raw.githubusercontent.com/lmctl-ai/lmplot/main/examples/transparent.lms` | Polar transcendental curve<br>`lmctl autorun https://raw.githubusercontent.com/lmctl-ai/lmplot/main/examples/polar.lms` |
 
 | ROC curve & AUC | Precision–recall & average precision | Confusion matrix, 3 classes |
 | --- | --- | --- |
-| <img src="docs/images/roc_auc.png" width="290"> | <img src="docs/images/pr_average_precision.png" width="290"> | <img src="docs/images/confusion_matrix.png" width="290"> |
+| <img src="docs/images/roc_auc.png" width="290" alt="ROC curve & AUC"> | <img src="docs/images/pr_average_precision.png" width="290" alt="Precision–recall & average precision"> | <img src="docs/images/confusion_matrix.png" width="290" alt="Confusion matrix, 3 classes"> |
 | Threshold sweep; AUC checked against Mann–Whitney<br>`lmctl autorun https://raw.githubusercontent.com/lmctl-ai/lmplot/main/examples/roc_auc.lms` | Imbalanced detector, AP vs prevalence<br>`lmctl autorun https://raw.githubusercontent.com/lmctl-ai/lmplot/main/examples/pr_average_precision.lms` | Counts, row %, contrast-aware cell text<br>`lmctl autorun https://raw.githubusercontent.com/lmctl-ai/lmplot/main/examples/confusion_matrix.lms` |
 
 | Poisson potential & contour lines | Lid-driven cavity & velocity arrows | Symlog axis with a 63,000 outlier |
 | --- | --- | --- |
-| <img src="docs/images/poisson_contours.png" width="290"> | <img src="docs/images/cavity_quiver.png" width="290"> | <img src="docs/images/symlog_outlier.png" width="290"> |
+| <img src="docs/images/poisson_contours.png" width="290" alt="Poisson potential & contour lines"> | <img src="docs/images/cavity_quiver.png" width="290" alt="Lid-driven cavity & velocity arrows"> | <img src="docs/images/symlog_outlier.png" width="290" alt="Symlog axis with a 63,000 outlier"> |
 | SOR solve, exact to 1e-9; contours over the heat map<br>`lmctl autorun https://raw.githubusercontent.com/lmctl-ai/lmplot/main/examples/poisson_contours.lms` | Streamfunction heat map with quiver arrows<br>`lmctl autorun https://raw.githubusercontent.com/lmctl-ai/lmplot/main/examples/cavity_quiver.lms` | Linear to 100, logarithmic beyond<br>`lmctl autorun https://raw.githubusercontent.com/lmctl-ai/lmplot/main/examples/symlog_outlier.lms` |
 
 | Regression residuals & R² | Standing waves (video, MP4 + PNG) | |
 | --- | --- | --- |
-| <img src="docs/images/residual_scatter.png" width="290"> | <img src="docs/images/standing_wave.png" width="290"> | |
+| <img src="docs/images/residual_scatter.png" width="290" alt="Regression residuals & R²"> | <img src="docs/images/standing_wave.png" width="290" alt="Standing waves (video, MP4 + PNG)"> |  |
 | Residuals vs fitted, ±2 RMSE band<br>`lmctl autorun https://raw.githubusercontent.com/lmctl-ai/lmplot/main/examples/residual_scatter.lms` | Two membrane modes, 40 frames at 10 fps<br>`lmctl autorun https://raw.githubusercontent.com/lmctl-ai/lmplot/main/examples/video/standing_wave.lms` | |
 
 Every image above is produced by a self-contained `.lms` program in `examples/` (runnable from any directory via the `lmctl autorun` command in its caption, writing `images/<name>.png`) and regenerated by `./examples/render-all.sh`. No X11, no Cairo, no libgd, no external fonts: the binary carries its own PNG rasterizer and DejaVu fonts, so `lmplot` runs on a bare container, a CI runner or a laptop with nothing else installed.
