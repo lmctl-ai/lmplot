@@ -9,7 +9,7 @@ output image(s) into `images/<name>.png` in the current working directory. Run
 any example directly from any directory:
 
 ```sh
-lmctl autorun https://raw.githubusercontent.com/lmctl-ai/lmplot/main/examples/kepler_rv_fit.lms
+lmctl https://raw.githubusercontent.com/lmctl-ai/lmplot/main/examples/kepler_rv_fit.lms
 ```
 
 `lmscript` / `lmctl` uses `lmplot` from `PATH` when present, otherwise it
@@ -24,63 +24,63 @@ second run produces identical bytes, and moves the rendered outputs into
 
 | Command | Domain | Story & features |
 | --- | --- | --- |
-| `lmctl autorun https://raw.githubusercontent.com/lmctl-ai/lmplot/main/examples/kepler_rv_fit.lms` | Astrophysics / Statistics | 44 phase-folded Doppler radial-velocity measurements of a warm-Jupiter host star, `stats` round-trip (`plot.num`), derived planet mass $M_p \sin i$ and $\chi^2_\nu$, 2-panel fit + O-C residuals |
-| `lmctl autorun https://raw.githubusercontent.com/lmctl-ai/lmplot/main/examples/blackbody_planck.lms` | Physics / Spectroscopy | Planck spectral radiance $B_\lambda(\lambda, T)$ across stellar photospheres (3800–6500 K), visible band highlight, Wien displacement locus and bolometric flux $\sigma T^4$ |
-| `lmctl autorun https://raw.githubusercontent.com/lmctl-ai/lmplot/main/examples/potential_vortex_surface.lms` | Condensed Matter / Surfaces | 3D Ginzburg–Landau double-well free-energy landscape $F(q_x, q_y)$ (`pm3d depthorder`), base contour projection and minimum-energy transition pathway |
-| `lmctl autorun https://raw.githubusercontent.com/lmctl-ai/lmplot/main/examples/urban_heat_island.lms` | Meteorology / Heatmaps | 24×24 km nocturnal urban heat island anomaly field $\Delta T(x, y)$ (`with image`) paired with West–East and South–North thermal dome transects and river cooling dip |
-| `lmctl autorun https://raw.githubusercontent.com/lmctl-ai/lmplot/main/examples/phased_array_polar.lms` | Electromagnetics / Polar | 8-element uniform linear antenna array ($d = \lambda/2$) steered to $\theta_0 = 30^\circ$, comparing uniform excitation vs cosine-pedestal side-lobe suppression in polar dB gain |
-| `lmctl autorun https://raw.githubusercontent.com/lmctl-ai/lmplot/main/examples/quant_trading_dashboard.lms` | Quantitative Finance | 60-day equity regime shift: OHLC candlesticks, 5-day moving average, $\pm 2\sigma$ Bollinger Band envelope, daily volume bars and underwater peak-to-trough drawdown |
-| `lmctl autorun https://raw.githubusercontent.com/lmctl-ai/lmplot/main/examples/enzyme_michaelis_menten.lms` | Biochemistry / Regression | Michaelis–Menten enzyme saturation curves under competitive and non-competitive inhibition paired with Lineweaver–Burk double-reciprocal OLS regression (`stats`) |
-| `lmctl autorun https://raw.githubusercontent.com/lmctl-ai/lmplot/main/examples/damped_driven_resonance.lms` | Nonlinear Dynamics | Driven damped harmonic oscillator steady-state magnification $M(\omega/\omega_0)$, resonance peak backbone locus, half-power bandwidth and quadrature phase lag $\phi(\omega/\omega_0)$ |
-| `lmctl autorun https://raw.githubusercontent.com/lmctl-ai/lmplot/main/examples/quadrature_convergence.lms` | Numerical analysis | Trapezoid, Simpson and Gauss–Legendre on $\int_0^{\pi/2} e^x\cos x\,dx$; `fit` measures orders 2 and 4 (asserted with `plot.assert_close`) and 8 Gauss points beat 1025 Simpson points |
-| `lmctl autorun https://raw.githubusercontent.com/lmctl-ai/lmplot/main/examples/option_greeks_dashboard.lms` | Quantitative Finance | Black–Scholes call via gnuplot `norm()`: value surface, price vs spot, delta, gamma and vega; reproduces Hull's textbook 4.76 / 0.81 and put–call parity |
+| `lmctl https://raw.githubusercontent.com/lmctl-ai/lmplot/main/examples/kepler_rv_fit.lms` | Astrophysics / Statistics | 44 phase-folded Doppler radial-velocity measurements of a warm-Jupiter host star, `stats` round-trip (`plot.num`), derived planet mass $M_p \sin i$ and $\chi^2_\nu$, 2-panel fit + O-C residuals |
+| `lmctl https://raw.githubusercontent.com/lmctl-ai/lmplot/main/examples/blackbody_planck.lms` | Physics / Spectroscopy | Planck spectral radiance $B_\lambda(\lambda, T)$ across stellar photospheres (3800–6500 K), visible band highlight, Wien displacement locus and bolometric flux $\sigma T^4$ |
+| `lmctl https://raw.githubusercontent.com/lmctl-ai/lmplot/main/examples/potential_vortex_surface.lms` | Condensed Matter / Surfaces | 3D Ginzburg–Landau double-well free-energy landscape $F(q_x, q_y)$ (`pm3d depthorder`), base contour projection and minimum-energy transition pathway |
+| `lmctl https://raw.githubusercontent.com/lmctl-ai/lmplot/main/examples/urban_heat_island.lms` | Meteorology / Heatmaps | 24×24 km nocturnal urban heat island anomaly field $\Delta T(x, y)$ (`with image`) paired with West–East and South–North thermal dome transects and river cooling dip |
+| `lmctl https://raw.githubusercontent.com/lmctl-ai/lmplot/main/examples/phased_array_polar.lms` | Electromagnetics / Polar | 8-element uniform linear antenna array ($d = \lambda/2$) steered to $\theta_0 = 30^\circ$, comparing uniform excitation vs cosine-pedestal side-lobe suppression in polar dB gain |
+| `lmctl https://raw.githubusercontent.com/lmctl-ai/lmplot/main/examples/quant_trading_dashboard.lms` | Quantitative Finance | 60-day equity regime shift: OHLC candlesticks, 5-day moving average, $\pm 2\sigma$ Bollinger Band envelope, daily volume bars and underwater peak-to-trough drawdown |
+| `lmctl https://raw.githubusercontent.com/lmctl-ai/lmplot/main/examples/enzyme_michaelis_menten.lms` | Biochemistry / Regression | Michaelis–Menten enzyme saturation curves under competitive and non-competitive inhibition paired with Lineweaver–Burk double-reciprocal OLS regression (`stats`) |
+| `lmctl https://raw.githubusercontent.com/lmctl-ai/lmplot/main/examples/damped_driven_resonance.lms` | Nonlinear Dynamics | Driven damped harmonic oscillator steady-state magnification $M(\omega/\omega_0)$, resonance peak backbone locus, half-power bandwidth and quadrature phase lag $\phi(\omega/\omega_0)$ |
+| `lmctl https://raw.githubusercontent.com/lmctl-ai/lmplot/main/examples/quadrature_convergence.lms` | Numerical analysis | Trapezoid, Simpson and Gauss–Legendre on $\int_0^{\pi/2} e^x\cos x\,dx$; `fit` measures orders 2 and 4 (asserted with `plot.assert_close`) and 8 Gauss points beat 1025 Simpson points |
+| `lmctl https://raw.githubusercontent.com/lmctl-ai/lmplot/main/examples/option_greeks_dashboard.lms` | Quantitative Finance | Black–Scholes call via gnuplot `norm()`: value surface, price vs spot, delta, gamma and vega; reproduces Hull's textbook 4.76 / 0.81 and put–call parity |
 
 ## Multi-host combo examples (`examples/combo/`)
 
 Several `_dsl_` blocks in one `.lms` program combine `lmplot` with sibling hosts (`lmcad`, `lmdraw`):
 
 ```sh
-lmctl autorun https://raw.githubusercontent.com/lmctl-ai/lmplot/main/examples/combo/nozzle_cad_plot.lms
-lmctl autorun https://raw.githubusercontent.com/lmctl-ai/lmplot/main/examples/combo/sir_epidemic_draw_plot.lms
+lmctl https://raw.githubusercontent.com/lmctl-ai/lmplot/main/examples/combo/nozzle_cad_plot.lms
+lmctl https://raw.githubusercontent.com/lmctl-ai/lmplot/main/examples/combo/sir_epidemic_draw_plot.lms
 ```
 
 | Command | Hosts | Shows |
 | --- | --- | --- |
-| `lmctl autorun https://raw.githubusercontent.com/lmctl-ai/lmplot/main/examples/combo/nozzle_cad_plot.lms` | `lmcad` + `lmplot` | OpenCASCADE revolved de Laval supersonic nozzle with boolean 90° cutaway (`render_ppm`) embedded alongside quasi-1D isentropic Mach, pressure and temperature curves |
-| `lmctl autorun https://raw.githubusercontent.com/lmctl-ai/lmplot/main/examples/combo/sir_epidemic_draw_plot.lms` | `lmdraw` + `lmplot` | Retained 2D vector compartmental schematic ($S \to E \to I \to R$) paired with midpoint-method (RK2) epidemic trajectories and $I$-vs-$S$ herd-immunity phase portrait |
+| `lmctl https://raw.githubusercontent.com/lmctl-ai/lmplot/main/examples/combo/nozzle_cad_plot.lms` | `lmcad` + `lmplot` | OpenCASCADE revolved de Laval supersonic nozzle with boolean 90° cutaway (`render_ppm`) embedded alongside quasi-1D isentropic Mach, pressure and temperature curves |
+| `lmctl https://raw.githubusercontent.com/lmctl-ai/lmplot/main/examples/combo/sir_epidemic_draw_plot.lms` | `lmdraw` + `lmplot` | Retained 2D vector compartmental schematic ($S \to E \to I \to R$) paired with midpoint-method (RK2) epidemic trajectories and $I$-vs-$S$ herd-immunity phase portrait |
 
 ## Classic gnuplot gallery examples
 
 | Command | Demo | Shows |
 | --- | --- | --- |
-| `lmctl autorun https://raw.githubusercontent.com/lmctl-ai/lmplot/main/examples/simple.lms` | simple.dem | functions with points |
-| `lmctl autorun https://raw.githubusercontent.com/lmctl-ai/lmplot/main/examples/fillcrvs.lms` | fillcrvs.dem | every `filledcurve` mode, parametric fills |
-| `lmctl autorun https://raw.githubusercontent.com/lmctl-ai/lmplot/main/examples/fillbetween.lms` | fillbetween.dem | area between two data curves |
-| `lmctl autorun https://raw.githubusercontent.com/lmctl-ai/lmplot/main/examples/transparent.lms` | transparent.dem | alpha fills and pattern fills |
-| `lmctl autorun https://raw.githubusercontent.com/lmctl-ai/lmplot/main/examples/errorbars.lms` | errorbars.dem | x/y error bars, boxxyerror, log axis |
-| `lmctl autorun https://raw.githubusercontent.com/lmctl-ai/lmplot/main/examples/candlesticks.lms` | candlesticks.dem | candlesticks and box-and-whisker |
-| `lmctl autorun https://raw.githubusercontent.com/lmctl-ai/lmplot/main/examples/boxplot.lms` | boxplot.dem | boxplots, factor colouring |
-| `lmctl autorun https://raw.githubusercontent.com/lmctl-ai/lmplot/main/examples/histograms.lms` | histograms.dem | clustered, stacked and grouped histograms |
-| `lmctl autorun https://raw.githubusercontent.com/lmctl-ai/lmplot/main/examples/steps.lms` | steps.dem | steps, fsteps, histeps |
-| `lmctl autorun https://raw.githubusercontent.com/lmctl-ai/lmplot/main/examples/param.lms` | param.dem | parametric curves and a pm3d sphere |
-| `lmctl autorun https://raw.githubusercontent.com/lmctl-ai/lmplot/main/examples/polar.lms` | polar.dem | polar functions and grids |
-| `lmctl autorun https://raw.githubusercontent.com/lmctl-ai/lmplot/main/examples/surface1.lms` | surface1.dem | hidden-line surfaces, labels, arrows |
-| `lmctl autorun https://raw.githubusercontent.com/lmctl-ai/lmplot/main/examples/hidden.lms` | hidden.dem | hidden3d on explicit surfaces |
-| `lmctl autorun https://raw.githubusercontent.com/lmctl-ai/lmplot/main/examples/contours.lms` | contours.dem | contour lines on base and surface |
-| `lmctl autorun https://raw.githubusercontent.com/lmctl-ai/lmplot/main/examples/pm3d.lms` | pm3d.dem | pm3d surfaces, palette, colorbox, depth order |
-| `lmctl autorun https://raw.githubusercontent.com/lmctl-ai/lmplot/main/examples/heatmaps.lms` | heatmaps.dem | images from matrix and XYZ data |
-| `lmctl autorun https://raw.githubusercontent.com/lmctl-ai/lmplot/main/examples/vector.lms` | vector.dem | contours into a table, vector field |
-| `lmctl autorun https://raw.githubusercontent.com/lmctl-ai/lmplot/main/examples/image.lms` | image.dem | binary RGB image, rotated copies |
-| `lmctl autorun https://raw.githubusercontent.com/lmctl-ai/lmplot/main/examples/layout.lms` | layout.dem | multiplot layouts and stacked panels |
-| `lmctl autorun https://raw.githubusercontent.com/lmctl-ai/lmplot/main/examples/spiderplot.lms` | spiderplot.dem | spider (radar) plots |
-| `lmctl autorun https://raw.githubusercontent.com/lmctl-ai/lmplot/main/examples/parallel.lms` | parallel.dem | parallel-axis plots |
-| `lmctl autorun https://raw.githubusercontent.com/lmctl-ai/lmplot/main/examples/dashtypes.lms` | dashtypes.dem | native and custom dash patterns |
-| `lmctl autorun https://raw.githubusercontent.com/lmctl-ai/lmplot/main/examples/lines_arrows.lms` | lines_arrows.dem | line, point and arrow styles |
-| `lmctl autorun https://raw.githubusercontent.com/lmctl-ai/lmplot/main/examples/enhanced_utf8.lms` | enhanced_utf8.dem | enhanced text, Symbol and Unicode |
-| `lmctl autorun https://raw.githubusercontent.com/lmctl-ai/lmplot/main/examples/rotate_labels.lms` | textbox.dem, rotate_labels.dem | boxed and rotated labels |
-| `lmctl autorun https://raw.githubusercontent.com/lmctl-ai/lmplot/main/examples/nonlinear2.lms` | nonlinear2.dem | logscale versus `set nonlinear` |
-| `lmctl autorun https://raw.githubusercontent.com/lmctl-ai/lmplot/main/examples/stats.lms` | (lmplot) | generate data in lmscript, `stats`, compute, label and plot |
-| `lmctl autorun https://raw.githubusercontent.com/lmctl-ai/lmplot/main/examples/turntable.lms` | (lmplot) | a loop rendering a rotating surface as 8 frames |
+| `lmctl https://raw.githubusercontent.com/lmctl-ai/lmplot/main/examples/simple.lms` | simple.dem | functions with points |
+| `lmctl https://raw.githubusercontent.com/lmctl-ai/lmplot/main/examples/fillcrvs.lms` | fillcrvs.dem | every `filledcurve` mode, parametric fills |
+| `lmctl https://raw.githubusercontent.com/lmctl-ai/lmplot/main/examples/fillbetween.lms` | fillbetween.dem | area between two data curves |
+| `lmctl https://raw.githubusercontent.com/lmctl-ai/lmplot/main/examples/transparent.lms` | transparent.dem | alpha fills and pattern fills |
+| `lmctl https://raw.githubusercontent.com/lmctl-ai/lmplot/main/examples/errorbars.lms` | errorbars.dem | x/y error bars, boxxyerror, log axis |
+| `lmctl https://raw.githubusercontent.com/lmctl-ai/lmplot/main/examples/candlesticks.lms` | candlesticks.dem | candlesticks and box-and-whisker |
+| `lmctl https://raw.githubusercontent.com/lmctl-ai/lmplot/main/examples/boxplot.lms` | boxplot.dem | boxplots, factor colouring |
+| `lmctl https://raw.githubusercontent.com/lmctl-ai/lmplot/main/examples/histograms.lms` | histograms.dem | clustered, stacked and grouped histograms |
+| `lmctl https://raw.githubusercontent.com/lmctl-ai/lmplot/main/examples/steps.lms` | steps.dem | steps, fsteps, histeps |
+| `lmctl https://raw.githubusercontent.com/lmctl-ai/lmplot/main/examples/param.lms` | param.dem | parametric curves and a pm3d sphere |
+| `lmctl https://raw.githubusercontent.com/lmctl-ai/lmplot/main/examples/polar.lms` | polar.dem | polar functions and grids |
+| `lmctl https://raw.githubusercontent.com/lmctl-ai/lmplot/main/examples/surface1.lms` | surface1.dem | hidden-line surfaces, labels, arrows |
+| `lmctl https://raw.githubusercontent.com/lmctl-ai/lmplot/main/examples/hidden.lms` | hidden.dem | hidden3d on explicit surfaces |
+| `lmctl https://raw.githubusercontent.com/lmctl-ai/lmplot/main/examples/contours.lms` | contours.dem | contour lines on base and surface |
+| `lmctl https://raw.githubusercontent.com/lmctl-ai/lmplot/main/examples/pm3d.lms` | pm3d.dem | pm3d surfaces, palette, colorbox, depth order |
+| `lmctl https://raw.githubusercontent.com/lmctl-ai/lmplot/main/examples/heatmaps.lms` | heatmaps.dem | images from matrix and XYZ data |
+| `lmctl https://raw.githubusercontent.com/lmctl-ai/lmplot/main/examples/vector.lms` | vector.dem | contours into a table, vector field |
+| `lmctl https://raw.githubusercontent.com/lmctl-ai/lmplot/main/examples/image.lms` | image.dem | binary RGB image, rotated copies |
+| `lmctl https://raw.githubusercontent.com/lmctl-ai/lmplot/main/examples/layout.lms` | layout.dem | multiplot layouts and stacked panels |
+| `lmctl https://raw.githubusercontent.com/lmctl-ai/lmplot/main/examples/spiderplot.lms` | spiderplot.dem | spider (radar) plots |
+| `lmctl https://raw.githubusercontent.com/lmctl-ai/lmplot/main/examples/parallel.lms` | parallel.dem | parallel-axis plots |
+| `lmctl https://raw.githubusercontent.com/lmctl-ai/lmplot/main/examples/dashtypes.lms` | dashtypes.dem | native and custom dash patterns |
+| `lmctl https://raw.githubusercontent.com/lmctl-ai/lmplot/main/examples/lines_arrows.lms` | lines_arrows.dem | line, point and arrow styles |
+| `lmctl https://raw.githubusercontent.com/lmctl-ai/lmplot/main/examples/enhanced_utf8.lms` | enhanced_utf8.dem | enhanced text, Symbol and Unicode |
+| `lmctl https://raw.githubusercontent.com/lmctl-ai/lmplot/main/examples/rotate_labels.lms` | textbox.dem, rotate_labels.dem | boxed and rotated labels |
+| `lmctl https://raw.githubusercontent.com/lmctl-ai/lmplot/main/examples/nonlinear2.lms` | nonlinear2.dem | logscale versus `set nonlinear` |
+| `lmctl https://raw.githubusercontent.com/lmctl-ai/lmplot/main/examples/stats.lms` | (lmplot) | generate data in lmscript, `stats`, compute, label and plot |
+| `lmctl https://raw.githubusercontent.com/lmctl-ai/lmplot/main/examples/turntable.lms` | (lmplot) | a loop rendering a rotating surface as 8 frames |
 
 ## Model evaluation and field overlays
 
@@ -91,13 +91,13 @@ numbers and stops with exit 3 if one is wrong.
 
 | Command | Domain | Story & features |
 | --- | --- | --- |
-| `lmctl autorun https://raw.githubusercontent.com/lmctl-ai/lmplot/main/examples/roc_auc.lms` | Machine learning | ROC curve of a 300-case synthetic classifier: every observed score is a threshold, AUC by the trapezoid rule checked against the Mann–Whitney pair count, Youden-J operating point marked |
-| `lmctl autorun https://raw.githubusercontent.com/lmctl-ai/lmplot/main/examples/pr_average_precision.lms` | Machine learning | Precision–recall curve of a 400-case detector with 15% positives: average precision as the step-wise sum $\sum (R_k - R_{k-1}) P_k$, prevalence baseline and best-F1 point |
-| `lmctl autorun https://raw.githubusercontent.com/lmctl-ai/lmplot/main/examples/confusion_matrix.lms` | Machine learning | 3-class confusion matrix (240 cases): counts and row percentages in each cell, label colour chosen per cell for contrast, accuracy checked against the diagonal |
-| `lmctl autorun https://raw.githubusercontent.com/lmctl-ai/lmplot/main/examples/poisson_contours.lms` | Numerical PDE | Poisson equation $\nabla^2\phi = -f$ solved by SOR on a 41×41 grid; the exact cubic-per-variable solution is reproduced to 1e-9, and eight contour lines of $\phi$ are drawn over the heat map |
-| `lmctl autorun https://raw.githubusercontent.com/lmctl-ai/lmplot/main/examples/cavity_quiver.lms` | Fluid mechanics | Lid-driven cavity: streamfunction heat map with auto-scaled velocity arrows; an analytic creeping-flow-like field, with wall conditions and continuity checked |
-| `lmctl autorun https://raw.githubusercontent.com/lmctl-ai/lmplot/main/examples/symlog_outlier.lms` | Statistics | Monthly commit counts with one 63,000-commit month on a symlog axis (linear to 100, logarithmic beyond), tick labels in the original units |
-| `lmctl autorun https://raw.githubusercontent.com/lmctl-ai/lmplot/main/examples/residual_scatter.lms` | Statistics | Least-squares line through 80 heteroscedastic points; residuals against fitted values with the zero line, ±2 RMSE band, R² and RMSE; zero-sum residuals checked |
+| `lmctl https://raw.githubusercontent.com/lmctl-ai/lmplot/main/examples/roc_auc.lms` | Machine learning | ROC curve of a 300-case synthetic classifier: every observed score is a threshold, AUC by the trapezoid rule checked against the Mann–Whitney pair count, Youden-J operating point marked |
+| `lmctl https://raw.githubusercontent.com/lmctl-ai/lmplot/main/examples/pr_average_precision.lms` | Machine learning | Precision–recall curve of a 400-case detector with 15% positives: average precision as the step-wise sum $\sum (R_k - R_{k-1}) P_k$, prevalence baseline and best-F1 point |
+| `lmctl https://raw.githubusercontent.com/lmctl-ai/lmplot/main/examples/confusion_matrix.lms` | Machine learning | 3-class confusion matrix (240 cases): counts and row percentages in each cell, label colour chosen per cell for contrast, accuracy checked against the diagonal |
+| `lmctl https://raw.githubusercontent.com/lmctl-ai/lmplot/main/examples/poisson_contours.lms` | Numerical PDE | Poisson equation $\nabla^2\phi = -f$ solved by SOR on a 41×41 grid; the exact cubic-per-variable solution is reproduced to 1e-9, and eight contour lines of $\phi$ are drawn over the heat map |
+| `lmctl https://raw.githubusercontent.com/lmctl-ai/lmplot/main/examples/cavity_quiver.lms` | Fluid mechanics | Lid-driven cavity: streamfunction heat map with auto-scaled velocity arrows; an analytic creeping-flow-like field, with wall conditions and continuity checked |
+| `lmctl https://raw.githubusercontent.com/lmctl-ai/lmplot/main/examples/symlog_outlier.lms` | Statistics | Monthly commit counts with one 63,000-commit month on a symlog axis (linear to 100, logarithmic beyond), tick labels in the original units |
+| `lmctl https://raw.githubusercontent.com/lmctl-ai/lmplot/main/examples/residual_scatter.lms` | Statistics | Least-squares line through 80 heteroscedastic points; residuals against fitted values with the zero line, ±2 RMSE band, R² and RMSE; zero-sum residuals checked |
 
 ## Video & animations (`examples/video/`)
 
@@ -107,17 +107,17 @@ loop, then (in plain lmscript after the block) run `lmplot` on the bytecode and
 `ffmpeg` on the frames, writing `images/<name>.mp4` (and `images/quantum_packet.gif`):
 
 ```sh
-lmctl autorun https://raw.githubusercontent.com/lmctl-ai/lmplot/main/examples/video/quantum_packet.lms
-lmctl autorun https://raw.githubusercontent.com/lmctl-ai/lmplot/main/examples/video/wave.lms
+lmctl https://raw.githubusercontent.com/lmctl-ai/lmplot/main/examples/video/quantum_packet.lms
+lmctl https://raw.githubusercontent.com/lmctl-ai/lmplot/main/examples/video/wave.lms
 ```
 
 | Command | Shows |
 | --- | --- |
-| `lmctl autorun https://raw.githubusercontent.com/lmctl-ai/lmplot/main/examples/video/quantum_packet.lms` | dispersive quantum wave packet $\psi(x, t)$ scattering on a potential barrier, 60 frames, MP4 + GIF + PNG |
-| `lmctl autorun https://raw.githubusercontent.com/lmctl-ai/lmplot/main/examples/video/wave.lms` | a wave packet travelling along a string, 96 frames, 800x450 |
-| `lmctl autorun https://raw.githubusercontent.com/lmctl-ai/lmplot/main/examples/video/ripple.lms` | an expanding pm3d ripple with an orbiting camera, 90 frames |
-| `lmctl autorun https://raw.githubusercontent.com/lmctl-ai/lmplot/main/examples/video/lissajous.lms` | a Lissajous curve drawn progressively with a moving head, 120 frames |
-| `lmctl autorun https://raw.githubusercontent.com/lmctl-ai/lmplot/main/examples/video/standing_wave.lms` | standing waves on a membrane: two superposed modes with different frequencies, pm3d heat map of $u(x, y, t)$, 40 frames at 10 fps, MP4 + PNG |
+| `lmctl https://raw.githubusercontent.com/lmctl-ai/lmplot/main/examples/video/quantum_packet.lms` | dispersive quantum wave packet $\psi(x, t)$ scattering on a potential barrier, 60 frames, MP4 + GIF + PNG |
+| `lmctl https://raw.githubusercontent.com/lmctl-ai/lmplot/main/examples/video/wave.lms` | a wave packet travelling along a string, 96 frames, 800x450 |
+| `lmctl https://raw.githubusercontent.com/lmctl-ai/lmplot/main/examples/video/ripple.lms` | an expanding pm3d ripple with an orbiting camera, 90 frames |
+| `lmctl https://raw.githubusercontent.com/lmctl-ai/lmplot/main/examples/video/lissajous.lms` | a Lissajous curve drawn progressively with a moving head, 120 frames |
+| `lmctl https://raw.githubusercontent.com/lmctl-ai/lmplot/main/examples/video/standing_wave.lms` | standing waves on a membrane: two superposed modes with different frequencies, pm3d heat map of $u(x, y, t)$, 40 frames at 10 fps, MP4 + PNG |
 
 `system` runs a program without a shell and returns `{code, stdout, ...}`; the
 programs check it with `assert(r.code == 0)`. Write the ffmpeg command as plain

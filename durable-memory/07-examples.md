@@ -7,7 +7,7 @@ video/animation programs in `examples/video/` (`lmplot` + `ffmpeg`). Every
 it runs `r = system ${dsl_cli(p)} --dsl ${out}; assert(r.code == 0);` and writes
 its output image(s)/video(s) into `images/<name>.png` (plus any numbered frames
 or `.mp4`/`.gif`) in the current working directory, so
-`lmctl autorun https://raw.githubusercontent.com/lmctl-ai/lmplot/main/examples/<name>.lms`
+`lmctl https://raw.githubusercontent.com/lmctl-ai/lmplot/main/examples/<name>.lms`
 works from an empty directory. All are checked by `./test.sh` (valid PNG/GIF
 magic bytes, size budgets, byte-identical reruns, and moving outputs to
 `build/examples/`). `./examples/render-all.sh` regenerates the 32 checked-in
@@ -154,7 +154,7 @@ verifies GIF/MP4 outputs, and moves them into `build/video/`.
 ## Worked examples with asserted answers (2026-10-23 QA pass)
 
 Each prints its numbers and stops with exit 3 (`plot.assert_close`) if a known
-answer is missed, so `test.sh` and `lmctl autorun` double as correctness checks.
+answer is missed, so `test.sh` and `lmctl` double as correctness checks.
 
 | example | known answer checked |
 | --- | --- |

@@ -100,8 +100,8 @@ while read -r lms_path; do
   readme_lms_count=$((readme_lms_count+1))
 done < <(grep -oE 'examples/[A-Za-z0-9_/.-]+\.lms' README.md | sort -u)
 [ "$readme_lms_count" -ge 15 ] || fail "expected >= 15 unique example URLs in README.md, got $readme_lms_count"
-autorun_count="$(grep -o 'lmctl autorun https://raw.githubusercontent.com/lmctl-ai/lmplot/main/examples/' README.md | wc -l | tr -d ' ')"
-[ "$autorun_count" -ge 21 ] || fail "expected >= 21 lmctl autorun commands in README.md, got $autorun_count"
+autorun_count="$(grep -oE 'lmctl( autorun)? https://raw.githubusercontent.com/lmctl-ai/lmplot/main/examples/' README.md | wc -l | tr -d ' ')"
+[ "$autorun_count" -ge 21 ] || fail "expected >= 21 lmctl commands in README.md, got $autorun_count"
 ok "all $readme_lms_count README autorun .lms URLs map to existing examples"
 
 readme_img_count=0
