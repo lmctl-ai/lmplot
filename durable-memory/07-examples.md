@@ -4,7 +4,7 @@
 `examples/combo/` (`lmcad` + `lmplot`, `lmdraw` + `lmplot`), and 5
 video/animation programs in `examples/video/` (`lmplot` + `ffmpeg`). Every
 `.lms` program is self-contained and self-executing: after `savedsl(p, out);`,
-it runs `r = system ${dsl_cli(p)} --dsl ${out}; assert(r.code == 0);` and writes
+it runs `r = system ${dsl_cli(p)} --lmcode ${out}; assert(r.code == 0);` and writes
 its output image(s)/video(s) into `images/<name>.png` (plus any numbered frames
 or `.mp4`/`.gif`) in the current working directory, so
 `lmctl https://raw.githubusercontent.com/lmctl-ai/lmplot/main/examples/<name>.lms`
@@ -145,7 +145,7 @@ Gotchas found writing these:
 
 `quantum_packet.lms`, `wave.lms`, `ripple.lms`, `lissajous.lms`, `standing_wave.lms`: a `_dsl_` loop
 writes `build/video/<name>/frame-<k>.png`, then plain lmscript runs
-`r = system ${dsl_cli(p)} --dsl ${out}; assert(r.code == 0);` and `ffmpeg` to
+`r = system ${dsl_cli(p)} --lmcode ${out}; assert(r.code == 0);` and `ffmpeg` to
 produce `images/<name>.mp4` and `images/<name>.png` (plus
 `images/quantum_packet.gif`, copied to `docs/images/quantum_packet.gif` by
 `examples/render-all.sh`). `test.sh` runs them when `ffmpeg` is installed,

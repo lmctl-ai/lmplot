@@ -34,9 +34,9 @@ Machine checked 2026-10-22 on x86_64 Linux (WSL2), 4 cores, GCC.
 
 ## Run
 
-- `lmplot --version` → `lmplot 0.2.1`; `--notices`; `--dsl-schema [--json]`;
-  `--dsl-signatures`; `--dsl FILE...`; `gnuplot ...`.
-- `--dsl` loads and verifies every bytecode file first, then runs them in
+- `lmplot --version` → `lmplot 0.2.1`; `--notices`; `--lmcode-schema [--json]`;
+  `--lmcode-signatures`; `--lmcode FILE...`; `gnuplot ...`.
+- `--lmcode` loads and verifies every bytecode file first, then runs them in
   order, printing `{"ok": true, "result": null}` after each; the first error
   prints a JSON error line and stops (exit 3).
 
@@ -46,7 +46,7 @@ Machine checked 2026-10-22 on x86_64 Linux (WSL2), 4 cores, GCC.
 
 1. SDK pin; 2. gnuplot pin plus patches; 3. build; 4. `--version` exact;
 5. embedded schema byte-identical to `schema/lmplot.dsl.json`; 6. host
-registry equals the compiler's `--dsl-signatures`; 7. `--notices` text;
+registry equals the compiler's `--lmcode-signatures`; 7. `--notices` text;
 8. system-library policy (Linux ELF/glibc allowlist, macOS `otool -L`, Windows `objdump -p` shows
 no MinGW runtime DLLs); 9. `lmplot gnuplot` dumb plot; 10. `lmplot gnuplot`
 defaults to the dumb terminal (no window system exists); 11. png and svg

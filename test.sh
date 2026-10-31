@@ -50,14 +50,15 @@ command -v ninja >/dev/null 2>&1 && GEN="-G Ninja"
 cmake -S . -B "$BUILD_DIR" $GEN -DCMAKE_BUILD_TYPE=Release >/dev/null
 cmake --build "$BUILD_DIR" >"$WORK/build.log" 2>&1 || { tail -40 "$WORK/build.log" >&2; fail "build"; }
 ok "build"
+python3 tests/check-host-flags.py schema/lmplot.dsl.json "$HOST" || fail "hard host flag cutover"
 
 want_version="lmplot $(sed -n 's/^project(lmplot VERSION \([0-9.]*\).*/\1/p' CMakeLists.txt)"
 [ "$("$HOST" --version)" = "$want_version" ] || fail "--version is not exactly '$want_version'"
 ok "--version prints exactly '$want_version'"
-"$HOST" --dsl-schema --json >"$WORK/schema.json" || fail "embedded schema print"
+"$HOST" --lmcode-schema --json >"$WORK/schema.json" || fail "embedded schema print"
 cmp -s "$WORK/schema.json" schema/lmplot.dsl.json || fail "embedded schema differs from schema/lmplot.dsl.json"
-ok "--dsl-schema --json prints byte-identical embedded schema bytes"
-diff -u <("$LMSCRIPT" --dsl-signatures schema/lmplot.dsl.json) <("$HOST" --dsl-signatures) || fail "host/compiler signatures differ"
+ok "--lmcode-schema --json prints byte-identical embedded schema bytes"
+diff -u <("$LMSCRIPT" --lmcode-signatures schema/lmplot.dsl.json) <("$HOST" --lmcode-signatures) || fail "host/compiler signatures differ"
 ok "host registry matches compiler signatures"
 "$HOST" --notices | grep -q "stb_truetype" && "$HOST" --notices | grep -q "stb_image" || fail "--notices missing third-party text"
 ok "--notices prints the third-party license texts"
@@ -133,7 +134,7 @@ for src in examples/*.lms; do
   "$LMSCRIPT" "$src" "build/$name.dslb" >"$WORK/$name.log" 2>&1 || { cat "$WORK/$name.log" >&2; fail "$name compile/autorun"; }
   n=$((n+1))
 done
-ok "$n examples compile as bytecode v5 and self-execute"
+ok "$n examples compile as bytecode v6 and self-execute"
 for src in examples/*.lms; do
   name="$(basename "$src" .lms)"
   [ -f "images/$name.png" ] || fail "$name did not write images/$name.png"
@@ -152,10 +153,10 @@ ok "every example wrote valid PNG files into images/"
 for f in images/*.png; do echo "$(sha "$f") $f"; done >"$WORK/before.txt"
 for src in examples/*.lms; do
   name="$(basename "$src" .lms)"
-  "$HOST" --dsl "build/$name.dslb" >"$WORK/$name.out" 2>"$WORK/$name.err" || { cat "$WORK/$name.out" "$WORK/$name.err" >&2; fail "$name run"; }
+  "$HOST" --lmcode "build/$name.dslb" >"$WORK/$name.out" 2>"$WORK/$name.err" || { cat "$WORK/$name.out" "$WORK/$name.err" >&2; fail "$name run"; }
   grep -q '"ok": true' "$WORK/$name.out" || { cat "$WORK/$name.out" >&2; fail "$name did not report ok"; }
 done
-ok "$n examples run directly via --dsl"
+ok "$n examples run directly via --lmcode"
 for f in images/*.png; do echo "$(sha "$f") $f"; done >"$WORK/after.txt"
 cmp -s "$WORK/before.txt" "$WORK/after.txt" || { diff "$WORK/before.txt" "$WORK/after.txt" >&2 || true; fail "images differ on rerun"; }
 ok "all $(wc -l <"$WORK/after.txt" | tr -d ' ') example images are byte-identical on rerun"
@@ -233,7 +234,7 @@ end _dsl_
 savedsl(p, "$WORK/bad.dslb");
 LMS
 "$LMSCRIPT" "$WORK/bad.lms" >/dev/null || fail "bad.lms compile"
-set +e; out="$("$HOST" --dsl "$WORK/bad.dslb" 2>/dev/null)"; code=$?; set -e
+set +e; out="$("$HOST" --lmcode "$WORK/bad.dslb" 2>/dev/null)"; code=$?; set -e
 [ "$code" = 3 ] || fail "bad gnuplot command exit code $code, expected 3"
 echo "$out" | grep -q '"phase": "run"' || fail "bad command did not report a run error: $out"
 echo "$out" | grep -q 'unreachable' && fail "statements after the failing command ran"
@@ -250,7 +251,7 @@ end _dsl_
 savedsl(p, "$WORK/values.dslb");
 LMS
 "$LMSCRIPT" "$WORK/values.lms" >/dev/null || fail "values.lms compile"
-out="$("$HOST" --dsl "$WORK/values.dslb")"
+out="$("$HOST" --lmcode "$WORK/values.dslb")"
 echo "$out" | grep -q "slope=2" || fail "stats slope: $out"
 echo "$out" | grep -q "4 points" || fail "stats records: $out"
 ok "Plot.num / Plot.str / Plot.data return gnuplot values"
@@ -268,13 +269,13 @@ end _dsl_
 savedsl(p, "$WORK/edge.dslb");
 LMS
 "$LMSCRIPT" "$WORK/edge.lms" >/dev/null || fail "edge.lms compile"
-out="$("$HOST" --dsl "$WORK/edge.dslb" 2>&1)" || fail "edge.lms run: $out"
+out="$("$HOST" --lmcode "$WORK/edge.dslb" 2>&1)" || fail "edge.lms run: $out"
 echo "$out" | grep -q "lines=4 records=2" || fail "datablock with EOD lines: $out"
 echo "$out" | grep -q "real=3" || fail "complex with zero imaginary part: $out"
 expect_run_error() { # name, snippet, expected message fragment
   printf 'p = _dsl_ cli="lmplot";\n%s\nend _dsl_\nsavedsl(p, "%s");\n' "$2" "$WORK/$1.dslb" >"$WORK/$1.lms"
   "$LMSCRIPT" "$WORK/$1.lms" >/dev/null || fail "$1 compile"
-  set +e; out="$("$HOST" --dsl "$WORK/$1.dslb" 2>"$WORK/$1.rerr")"; code=$?; set -e
+  set +e; out="$("$HOST" --lmcode "$WORK/$1.dslb" 2>"$WORK/$1.rerr")"; code=$?; set -e
   [ "$code" = 3 ] || fail "$1: exit code $code, expected 3 ($out)"
   echo "$out" | grep -q "$3" || fail "$1: message lacks '$3': $out"
   grep -q "$3" "$WORK/$1.rerr" || fail "$1: stderr lacks '$3': $(cat "$WORK/$1.rerr")"
@@ -328,19 +329,19 @@ end _dsl_
 savedsl(p, "$WORK/runaway.dslb");
 LMS
 "$LMSCRIPT" "$WORK/runaway.lms" >/dev/null || fail "runaway.lms compile"
-set +e; out="$(LMPLOT_MAX_MEMORY_MB=64 "$HOST" --dsl "$WORK/runaway.dslb" 2>"$WORK/runaway.err")"; code=$?; set -e
+set +e; out="$(LMPLOT_MAX_MEMORY_MB=64 "$HOST" --lmcode "$WORK/runaway.dslb" 2>"$WORK/runaway.err")"; code=$?; set -e
 [ "$code" = 3 ] || fail "runaway loop under LMPLOT_MAX_MEMORY_MB=64: exit $code, expected 3 ($out)"
 echo "$out" | grep -q "memory budget exceeded" || fail "runaway loop: JSON lacks the budget message: $out"
 grep -q "LMPLOT_MAX_MEMORY_MB" "$WORK/runaway.err" || fail "runaway loop: no budget message on stderr"
 printf 'p = _dsl_ cli="lmplot";\nplot.png("%s", 10000, 5000);\nplot.cmd("plot x");\nend _dsl_\nsavedsl(p, "%s");\n' \
   "$WORK/big.png" "$WORK/bigcanvas.dslb" >"$WORK/bigcanvas.lms"
 "$LMSCRIPT" "$WORK/bigcanvas.lms" >/dev/null || fail "bigcanvas.lms compile"
-set +e; out="$(LMPLOT_MAX_MEMORY_MB=64 "$HOST" --dsl "$WORK/bigcanvas.dslb" 2>/dev/null)"; code=$?; set -e
+set +e; out="$(LMPLOT_MAX_MEMORY_MB=64 "$HOST" --lmcode "$WORK/bigcanvas.dslb" 2>/dev/null)"; code=$?; set -e
 [ "$code" = 3 ] && echo "$out" | grep -q "memory budget exceeded" || fail "10000x5000 png canvas under LMPLOT_MAX_MEMORY_MB=64: exit $code ($out)"
-set +e; LMPLOT_MAX_MEMORY_MB=-5 "$HOST" --dsl "$WORK/runaway.dslb" >/dev/null 2>"$WORK/badenv.err"; code=$?; set -e
+set +e; LMPLOT_MAX_MEMORY_MB=-5 "$HOST" --lmcode "$WORK/runaway.dslb" >/dev/null 2>"$WORK/badenv.err"; code=$?; set -e
 [ "$code" = 2 ] && grep -q "positive whole number" "$WORK/badenv.err" || fail "bad LMPLOT_MAX_MEMORY_MB: exit $code"
 if [ "$UNAME_S" = Linux ]; then
-  set +e; out="$(ulimit -v 6291456; "$HOST" --dsl "$WORK/runaway.dslb" 2>/dev/null)"; code=$?; set -e
+  set +e; out="$(ulimit -v 6291456; "$HOST" --lmcode "$WORK/runaway.dslb" 2>/dev/null)"; code=$?; set -e
   [ "$code" = 3 ] && echo "$out" | grep -q "limit 4096 MiB" || fail "runaway loop with the default budget under ulimit -v 6 GiB: exit $code ($out)"
   ok "memory budget: runaway loop stops at 64 MiB and at the default 4096 MiB (under ulimit -v 6 GiB), png canvas too"
 else
@@ -368,7 +369,7 @@ end _dsl_
 savedsl(p, "$WORK/imgin.dslb");
 LMS
 "$LMSCRIPT" "$WORK/imgin.lms" >/dev/null || fail "imgin.lms compile"
-out="$("$HOST" --dsl "$WORK/imgin.dslb" 2>&1)" || fail "image input: $out"
+out="$("$HOST" --lmcode "$WORK/imgin.dslb" 2>&1)" || fail "image input: $out"
 echo "$out" | grep -q "px=30000 r=255 g=0" || fail "PNG read back as 200x150 mostly red pixels: $out"
 [ "$(png_size "$WORK/imgdst.png")" = 120x90 ] || fail "pixmap output"
 printf 'not an image' >"$WORK/notimg.png"
@@ -391,7 +392,7 @@ savedsl(p, "$WORK/dry.dslb");
 LMS
 "$LMSCRIPT" "$WORK/dry.lms" >/dev/null || fail "dry.lms compile"
 host_abs="$(cd "$(dirname "$HOST")" && pwd)/$(basename "$HOST")"
-out="$(cd "$WORK/dry" && "$host_abs" --dry-run --dsl ../dry.dslb 2>&1)" || fail "dry run: $out"
+out="$(cd "$WORK/dry" && "$host_abs" --dry-run --lmcode ../dry.dslb 2>&1)" || fail "dry run: $out"
 echo "$out" | grep -q "v=2" || fail "dry run values: $out"
 for f in dry.png dry.txt dry.gp dry.dat; do
   echo "$out" | grep -q "\[dry-run\] would write $f" || fail "dry run did not report $f: $out"
@@ -399,23 +400,23 @@ for f in dry.png dry.txt dry.gp dry.dat; do
 done
 printf 'p = _dsl_ cli="lmplot";\nplot.cmd("x = system(\\"echo hi\\")");\nend _dsl_\nsavedsl(p, "%s");\n' "$WORK/dryshell.dslb" >"$WORK/dryshell.lms"
 "$LMSCRIPT" "$WORK/dryshell.lms" >/dev/null || fail "dryshell compile"
-set +e; out="$("$HOST" --dry-run --dsl "$WORK/dryshell.dslb" 2>/dev/null)"; code=$?; set -e
+set +e; out="$("$HOST" --dry-run --lmcode "$WORK/dryshell.dslb" 2>/dev/null)"; code=$?; set -e
 [ "$code" = 3 ] || fail "dry run shell command exit $code, expected 3"
 echo "$out" | grep -q "disabled by --dry-run" || fail "dry run shell message: $out"
 set +e; "$HOST" --dry-run >/dev/null 2>&1; code=$?; set -e
-[ "$code" = 2 ] || fail "--dry-run without --dsl exit $code, expected 2"
+[ "$code" = 2 ] || fail "--dry-run without --lmcode exit $code, expected 2"
 ok "--dry-run writes no files, reports them, and refuses shell commands"
 
-set +e; "$HOST" --dsl "$WORK/does-not-exist.dslb" >/dev/null 2>&1; code=$?; set -e
+set +e; "$HOST" --lmcode "$WORK/does-not-exist.dslb" >/dev/null 2>&1; code=$?; set -e
 [ "$code" = 3 ] || fail "missing bytecode exit code $code, expected 3"
 set +e; "$HOST" >/dev/null 2>&1; code=$?; set -e
 [ "$code" = 2 ] || fail "usage exit code $code, expected 2"
 ok "usage and load errors use exit codes 2 and 3"
 
 # The published compiler injects std; the host embeds only its own schema bytes.
-"$LMSCRIPT" --dsl-signatures schema/lmplot.dsl.json --without-std > "$WORK/std-host-only.sig"
-"$LMSCRIPT" --dsl-signatures cpp/std/lmcode-std.schema.json > "$WORK/std-builtins.sig"
-"$HOST" --dsl-signatures > "$WORK/std-registry.sig"
+"$LMSCRIPT" --lmcode-signatures schema/lmplot.dsl.json --without-std > "$WORK/std-host-only.sig"
+"$LMSCRIPT" --lmcode-signatures cpp/std/lmcode-std.schema.json > "$WORK/std-builtins.sig"
+"$HOST" --lmcode-signatures > "$WORK/std-registry.sig"
 python3 - "$WORK" <<'PYSTD'
 import pathlib,sys,json
 w=pathlib.Path(sys.argv[1])
@@ -426,7 +427,7 @@ out=str(w/'std-probe.dslb').replace('\\','/')
 (w/'std-probe.lms').write_text('p = _lmcode_ schema='+json.dumps(schema)+';\nlet values = str_list().add("abc");\nif (str_len(values.at(0)) != 3) { let bad = int_list().at(0); }\nend _lmcode_\nsavedsl(p, '+json.dumps(out)+');\n')
 PYSTD
 "$LMSCRIPT" "$WORK/std-probe.lms" > "$WORK/std-probe.log" 2>&1 || { cat "$WORK/std-probe.log"; fail "implicit std compile"; }
-"$HOST" --dsl "$WORK/std-probe.dslb" > "$WORK/std-run.log" 2>&1 || { cat "$WORK/std-run.log"; fail "implicit std runtime"; }
+"$HOST" --lmcode "$WORK/std-probe.dslb" > "$WORK/std-run.log" 2>&1 || { cat "$WORK/std-run.log"; fail "implicit std runtime"; }
 ok "host-only signatures and implicit std runtime"
 
 echo "all $pass checks passed"

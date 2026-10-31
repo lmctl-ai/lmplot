@@ -49,7 +49,7 @@ plot.cmd("plot sin(x) title 'sin(φ)', cos(x) title 'cos(φ)', exp(-x**2) title 
 plot.close();
 end _lmcode_
 savedsl(p, out);
-r = system ${dsl_cli(p)} --dsl ${out};
+r = system ${dsl_cli(p)} --lmcode ${out};
 assert(r.code == 0);
 cp = system cp images/enhanced_utf8-1.png images/enhanced_utf8.png;
 assert(cp.code == 0);

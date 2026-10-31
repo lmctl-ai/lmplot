@@ -93,7 +93,7 @@ gnuplot is a program, not a library: global state, `exit()` on fatal errors,
   exit and later statements run.
 
 One gnuplot instance exists per process, shared by all bytecode files in one
-`lmplot --dsl a.dslb b.dslb` invocation (state carries over deliberately).
+`lmplot --lmcode a.dslb b.dslb` invocation (state carries over deliberately).
 
 ## Windows (cross-compiled, tested in CI)
 

@@ -97,7 +97,7 @@ plot.cmd("plot sin(x) lw 2, x - x**3/6 dt 2");
 plot.close();
 end _lmcode_
 savedsl(p, out);
-r = system ${dsl_cli(p)} --dsl ${out};   # run it with the binary it was compiled against
+r = system ${dsl_cli(p)} --lmcode ${out};   # run it with the binary it was compiled against
 assert(r.code == 0);
 println("wrote images/sine.png");
 ```
@@ -129,7 +129,7 @@ and encode them into MP4/GIF animations with `ffmpeg`
 | `assert_close(actual, expected, tol)` | stop with exit 3 unless `|actual - expected| <= tol` (known-answer checks) |
 
 A failing gnuplot command stops the program with exit code 3 and a JSON error
-line. `lmplot --dry-run --dsl prog.dslb` runs a program without writing any file
+line. `lmplot --dry-run --lmcode prog.dslb` runs a program without writing any file
 (it lists what it would write) and refuses shell commands. Details: [durable-memory/03-schema-v0.md](durable-memory/03-schema-v0.md).
 
 ## What is in the box

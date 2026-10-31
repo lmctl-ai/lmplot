@@ -11,7 +11,7 @@ works, including PNG output with TrueType text.
 
 Two ways to drive it:
 
-- `lmplot --dsl program.dslb` runs lmscript `_dsl_` bytecode against the
+- `lmplot --lmcode program.dslb` runs lmscript `_dsl_` bytecode against the
   embedded schema (`schema/lmplot.dsl.json`, embedded in the binary and read by `lmscript` through `cli="lmplot"`; type `Plot`, context `plot`).
   The script keeps control flow, loops, string building and numbers;
   gnuplot keeps drawing. `plot.cmd("...")` runs gnuplot commands,
@@ -34,8 +34,8 @@ Two ways to drive it:
   chunks against `schema/lmplot.dsl.json` into `.dslb`. Tests use the
   compiler selected by `scripts/select-compiler.sh` (probes for `DSLB\x00\x05`).
 - **lmhtml / lmcad** are the sibling hosts whose conventions lmplot copies:
-  one binary, schema embedded at build time, `--dsl` runs bytecode,
-  `--dsl-schema [--json]` and `--dsl-signatures` for parity checks, JSON result
+  one binary, schema embedded at build time, `--lmcode` runs bytecode,
+  `--lmcode-schema [--json]` and `--lmcode-signatures` for parity checks, JSON result
   line on stdout, exit codes 2 (usage) / 3 (host load or run failure).
   `deflate.hpp` comes from lmcad.
 

@@ -26,7 +26,7 @@ plot.cmd("plot '$map2' using 2:1:3 with image");
 plot.close();
 end _lmcode_
 savedsl(p, out);
-r = system ${dsl_cli(p)} --dsl ${out};
+r = system ${dsl_cli(p)} --lmcode ${out};
 assert(r.code == 0);
 cp = system cp images/heatmaps-2.png images/heatmaps.png;
 assert(cp.code == 0);

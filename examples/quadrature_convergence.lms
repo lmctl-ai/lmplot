@@ -104,6 +104,6 @@ plot.cmd("plot $NC using 1:2 with linespoints lw 2.4 pt 7 ps 1.1 lc rgb '#2563eb
 plot.close();
 end _lmcode_
 savedsl(p, out);
-r = system ${dsl_cli(p)} --dsl ${out};
+r = system ${dsl_cli(p)} --lmcode ${out};
 assert(r.code == 0);
 println("wrote images/quadrature_convergence.png");

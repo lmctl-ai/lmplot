@@ -238,7 +238,7 @@ void register_host(dslvm::Registry &r, Host &h) {
 }
 
 const char *usage =
-    "usage: lmplot --version | --notices | --dsl-schema [--json] | --dsl-signatures | [--dry-run] --dsl FILE [FILE ...]\n"
+    "usage: lmplot --version | --notices | --lmcode-schema [--json] | --lmcode-signatures | [--dry-run] --lmcode FILE [FILE ...]\n"
     "       lmplot gnuplot [GNUPLOT-OPTIONS] [FILE ...]   (the embedded gnuplot command line)\n"
     "environment: LMPLOT_MAX_MEMORY_MB  total memory budget in MiB (default 4096, gnuplot included); a\n"
     "             program that needs more stops with a run error (exit 3) instead of allocating\n";
@@ -276,7 +276,7 @@ int main(int argc, char **argv) {
                     static_cast<std::streamsize>(lmplot::embedded_notices_size));
     return std::cout ? 0 : 4;
   }
-  if (argc >= 2 && std::string(argv[1]) == "--dsl-schema") {
+  if (argc >= 2 && std::string(argv[1]) == "--lmcode-schema") {
     if (argc == 2) {
       for (const auto &s : reg.signatures()) std::cout << s << "\n";
       return std::cout ? 0 : 4;
@@ -289,7 +289,7 @@ int main(int argc, char **argv) {
     std::cerr << usage;
     return 2;
   }
-  if (argc == 2 && std::string(argv[1]) == "--dsl-signatures") {
+  if (argc == 2 && std::string(argv[1]) == "--lmcode-signatures") {
     for (const auto &s : reg.signatures()) std::cout << s << "\n";
     return 0;
   }
@@ -299,11 +299,11 @@ int main(int argc, char **argv) {
   if (argc >= 2 && std::string(argv[1]) == "--dry-run") {
     lmplot_dry_run = 1;
     first = 3;
-    if (argc < 4 || std::string(argv[2]) != "--dsl") {
+    if (argc < 4 || std::string(argv[2]) != "--lmcode") {
       std::cerr << usage;
       return 2;
     }
-  } else if (argc < 3 || std::string(argv[1]) != "--dsl") {
+  } else if (argc < 3 || std::string(argv[1]) != "--lmcode") {
     std::cerr << usage;
     return 2;
   }

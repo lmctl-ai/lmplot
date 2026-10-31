@@ -27,7 +27,7 @@ plot.cmd("plot f binary array=(128,128) flipy center=(64,201) format='%uchar' wi
 plot.close();
 end _lmcode_
 savedsl(p, out);
-r = system ${dsl_cli(p)} --dsl ${out};
+r = system ${dsl_cli(p)} --lmcode ${out};
 assert(r.code == 0);
 cp = system cp images/image-1.png images/image.png;
 assert(cp.code == 0);

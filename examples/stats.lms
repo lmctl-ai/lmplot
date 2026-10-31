@@ -72,6 +72,6 @@ plot.cmd("plot $D using 1:2 with points pt 7 ps 1 lc 'dark-violet' title 'data',
 plot.close();
 end _lmcode_
 savedsl(p, out);
-r = system ${dsl_cli(p)} --dsl ${out};
+r = system ${dsl_cli(p)} --lmcode ${out};
 assert(r.code == 0);
 println("wrote images/stats.png");

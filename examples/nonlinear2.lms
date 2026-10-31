@@ -50,7 +50,7 @@ plot.cmd("plot abs(A(jw)) lt 1, 180/pi*arg(A(jw)) axes x1y2 lt 3");
 plot.close();
 end _lmcode_
 savedsl(p, out);
-r = system ${dsl_cli(p)} --dsl ${out};
+r = system ${dsl_cli(p)} --lmcode ${out};
 assert(r.code == 0);
 cp = system cp images/nonlinear2-1.png images/nonlinear2.png;
 assert(cp.code == 0);

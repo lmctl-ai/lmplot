@@ -112,7 +112,7 @@ scene.text(42.0, 524.0, 11.5, "• Peak active I(t) cut from 19.1% to 6.2% (-68%
 scene.render_png("build/rendered/seir_schematic.png", 360, 560, 1);
 end _lmcode_
 savedsl(draw, "build/seir_draw.dslb");
-r = system ${dsl_cli(draw)} --dsl build/seir_draw.dslb;
+r = system ${dsl_cli(draw)} --lmcode build/seir_draw.dslb;
 assert(r.code == 0);
 
 p = _lmcode_ cli="lmplot" install="github:lmctl-ai/lmplot@latest";
@@ -234,7 +234,7 @@ plot.cmd("unset multiplot");
 plot.close();
 end _lmcode_
 savedsl(p, out);
-r = system ${dsl_cli(p)} --dsl ${out};
+r = system ${dsl_cli(p)} --lmcode ${out};
 assert(r.code == 0);
 
 r = system ffmpeg -y -loglevel error -i build/rendered/seir_schematic.png -i build/examples/seir_panels.png -filter_complex hstack=inputs=2 images/sir_epidemic_draw_plot.png;

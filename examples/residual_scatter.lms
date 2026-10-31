@@ -70,6 +70,6 @@ plot.cmd("plot " + ${str(-2.0 * rmse)} + " with lines dt 3 lw 1.4 lc rgb '#94a3b
 plot.close();
 end _lmcode_
 savedsl(p, out);
-r = system ${dsl_cli(p)} --dsl ${out};
+r = system ${dsl_cli(p)} --lmcode ${out};
 assert(r.code == 0);
 println("wrote images/residual_scatter.png");

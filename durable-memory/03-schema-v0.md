@@ -25,7 +25,7 @@ Rules and gotchas:
 - Any gnuplot error stops the program: `RUN_HOST` error `gnuplot: <GPVAL_ERRMSG>`,
   JSON `{"ok": false, "phase": "run", ...}` on stdout, exit code 3. gnuplot's
   own diagnostic with the caret is on stderr.
-- `lmplot --dry-run --dsl F` runs the whole program (values, `stats`, `fit`) but
+- `lmplot --dry-run --lmcode F` runs the whole program (values, `stats`, `fit`) but
   writes no file: each would-be output is reported as `[dry-run] would write F`
   on stderr and sent to the null device; pipes and `system()` are errors.
 - Images are inputs too: `plot 'r.png' binary filetype=png with rgbimage` (or
@@ -66,7 +66,7 @@ helper (just `plot.cmd("replot")`).
 ## How programs bind to the schema
 
 Programs use `_dsl_ cli="lmplot" install="github:lmctl-ai/lmplot@latest";`, not a
-schema file: `lmscript` runs `lmplot --dsl-schema --json` (searching `PATH`
+schema file: `lmscript` runs `lmplot --lmcode-schema --json` (searching `PATH`
 first, then its tool cache, filled on first use from the release asset
 `lmplot-<os>-<arch>[.exe]` with its SHA-256 checked), so the bytecode is bound
 to the binary that runs it and a downloaded release is all a user needs.

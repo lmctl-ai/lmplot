@@ -6,7 +6,7 @@ Why: on 2026-10-23 a runaway `lmnum` (a DSL loop creating objects) reached 16 GB
 canvases, and DSL strings in the VM all grow without bound.
 
 - **Total memory budget**, default 4096 MiB, set with `LMPLOT_MAX_MEMORY_MB` (positive whole MiB;
-  anything else exits 2 with the usage text). Applies to `--dsl` runs and to `lmplot gnuplot`.
+  anything else exits 2 with the usage text). Applies to `--lmcode` runs and to `lmplot gnuplot`.
 - `cpp/memory_budget.{hpp,cpp}` (identical copy in every lm* host) replaces global
   `operator new`/`delete` and counts allocator block sizes: the DSL VM, the host, and the C++
   png rasterizer (`cpp/raster`).

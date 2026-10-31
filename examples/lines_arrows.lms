@@ -75,7 +75,7 @@ plot.cmd("plot 'examples/data/arrowstyle.dat' using 1:2:(0):3 notitle with vecto
 plot.close();
 end _lmcode_
 savedsl(p, out);
-r = system ${dsl_cli(p)} --dsl ${out};
+r = system ${dsl_cli(p)} --lmcode ${out};
 assert(r.code == 0);
 cp = system cp images/lines_arrows-1.png images/lines_arrows.png;
 assert(cp.code == 0);

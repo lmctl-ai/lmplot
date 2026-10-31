@@ -34,7 +34,7 @@ plot.cmd("splot sin(sqrt(x**2+y**2))/sqrt(x**2+y**2)");
 plot.close();
 end _lmcode_
 savedsl(p, out);
-r = system ${dsl_cli(p)} --dsl ${out};
+r = system ${dsl_cli(p)} --lmcode ${out};
 assert(r.code == 0);
 cp = system cp images/pm3d-2.png images/pm3d.png;
 assert(cp.code == 0);

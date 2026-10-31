@@ -32,7 +32,7 @@ plot.cmd("splot x**2+y**2, x**2-y**2, x*y");
 plot.close();
 end _lmcode_
 savedsl(p, out);
-r = system ${dsl_cli(p)} --dsl ${out};
+r = system ${dsl_cli(p)} --lmcode ${out};
 assert(r.code == 0);
 cp = system cp images/surface1-2.png images/surface1.png;
 assert(cp.code == 0);

@@ -29,7 +29,7 @@ plot.script("plot [t=-pi:pi] sin(t),cos(t) with filledcurve xy=0,0 lt 15, sin(t)
 plot.close();
 end _lmcode_
 savedsl(p, out);
-r = system ${dsl_cli(p)} --dsl ${out};
+r = system ${dsl_cli(p)} --lmcode ${out};
 assert(r.code == 0);
 cp = system cp images/fillcrvs-1.png images/fillcrvs.png;
 assert(cp.code == 0);

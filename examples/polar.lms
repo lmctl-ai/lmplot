@@ -24,7 +24,7 @@ plot.cmd("plot 3.+sin(t)*cos(5*t) with filledcurve above r=2.5 notitle, 3.+sin(t
 plot.close();
 end _lmcode_
 savedsl(p, out);
-r = system ${dsl_cli(p)} --dsl ${out};
+r = system ${dsl_cli(p)} --lmcode ${out};
 assert(r.code == 0);
 cp = system cp images/polar-2.png images/polar.png;
 assert(cp.code == 0);

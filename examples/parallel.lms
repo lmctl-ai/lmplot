@@ -67,7 +67,7 @@ plot.cmd("plot sample [x=1:20] '+' using (abs(sin(7.3*$1*$1))):0 lc palette titl
 plot.close();
 end _lmcode_
 savedsl(p, out);
-r = system ${dsl_cli(p)} --dsl ${out};
+r = system ${dsl_cli(p)} --lmcode ${out};
 assert(r.code == 0);
 cp = system cp images/parallel-3.png images/parallel.png;
 assert(cp.code == 0);

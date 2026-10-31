@@ -4,7 +4,7 @@ Scientific, engineering, financial and biological showcase programs plus
 lmscript ports of demos from the [gnuplot demo
 gallery](https://www.gnuplot.info/screenshots/index.html#demos). Every `.lms`
 file is self-contained, compiles to bytecode, executes `lmplot` immediately via
-`r = system ${dsl_cli(p)} --dsl ${out}; assert(r.code == 0);`, and writes its
+`r = system ${dsl_cli(p)} --lmcode ${out}; assert(r.code == 0);`, and writes its
 output image(s) into `images/<name>.png` in the current working directory. Run
 any example directly from any directory:
 
@@ -138,7 +138,7 @@ plot.cmd("plot sin(x)");
 plot.close();
 end _lmcode_
 savedsl(p, out);
-r = system ${dsl_cli(p)} --dsl ${out};
+r = system ${dsl_cli(p)} --lmcode ${out};
 assert(r.code == 0);
 println("wrote images/mine.png");
 ```

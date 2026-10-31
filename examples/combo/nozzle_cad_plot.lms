@@ -70,7 +70,7 @@ scene.camera(4.0, 0.0, 0.0, 1002.3, 0.0, 0.0, 0.0);
 scene.render_ppm("build/examples/nozzle_cad.ppm", 738, 431);
 end _lmcode_
 savedsl(cad, "build/nozzle_cad.dslb");
-r = system ${dsl_cli(cad)} --dsl build/nozzle_cad.dslb;
+r = system ${dsl_cli(cad)} --lmcode build/nozzle_cad.dslb;
 assert(r.code == 0);
 
 p = _lmcode_ cli="lmplot" install="github:lmctl-ai/lmplot@latest";
@@ -166,6 +166,6 @@ plot.cmd("unset multiplot");
 plot.close();
 end _lmcode_
 savedsl(p, out);
-r = system ${dsl_cli(p)} --dsl ${out};
+r = system ${dsl_cli(p)} --lmcode ${out};
 assert(r.code == 0);
 println("wrote images/nozzle_cad_plot.png");

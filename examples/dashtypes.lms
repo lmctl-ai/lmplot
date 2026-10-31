@@ -46,7 +46,7 @@ plot.cmd("plot 0 with lines lt nodraw");
 plot.close();
 end _lmcode_
 savedsl(p, out);
-r = system ${dsl_cli(p)} --dsl ${out};
+r = system ${dsl_cli(p)} --lmcode ${out};
 assert(r.code == 0);
 cp = system cp images/dashtypes-1.png images/dashtypes.png;
 assert(cp.code == 0);

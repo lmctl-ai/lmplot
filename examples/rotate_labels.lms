@@ -68,7 +68,7 @@ plot.cmd("plot $Data using 1:1:2:3:0 with labels rotate variable tc variable fon
 plot.close();
 end _lmcode_
 savedsl(p, out);
-r = system ${dsl_cli(p)} --dsl ${out};
+r = system ${dsl_cli(p)} --lmcode ${out};
 assert(r.code == 0);
 cp = system cp images/rotate_labels-2.png images/rotate_labels.png;
 assert(cp.code == 0);

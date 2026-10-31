@@ -41,7 +41,7 @@ plot.cmd("plot keyentry with spiderplot lc 3 lw 3 title 'Array #1', for [i=1:|Ar
 plot.close();
 end _lmcode_
 savedsl(p, out);
-r = system ${dsl_cli(p)} --dsl ${out};
+r = system ${dsl_cli(p)} --lmcode ${out};
 assert(r.code == 0);
 cp = system cp images/spiderplot-3.png images/spiderplot.png;
 assert(cp.code == 0);
