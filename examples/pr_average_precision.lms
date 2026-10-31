@@ -78,7 +78,7 @@ plot.cmd("set key top right opaque box lc rgb '#cbd5e1' samplen 2.2");
 plot.cmd("plot $PR using 1:2 with filledcurves x1 fc rgb '#dcfce7' fs transparent solid 0.7 notitle, $PR using 1:2 with lines lw 2.8 lc rgb '#15803d' title 'classifier', " + ${str(prevalence)} + " with lines dt 2 lw 1.8 lc rgb '#64748b' title sprintf('random ranking = prevalence %.2f', " + ${str(prevalence)} + "), $F1 using 1:2 with points pt 7 ps 1.4 lc rgb '#b45309' title sprintf('best F1 = %.3f', " + ${str(f1_best)} + ")");
 plot.close();
 end _lmcode_
-
-r = run_lmcode(p);
-assert(r.ok, "lmcode host failed");
+savedsl(p, out);
+r = system ${dsl_cli(p)} --lmcode ${out};
+assert(r.code == 0);
 println("wrote images/pr_average_precision.png");

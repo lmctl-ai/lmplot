@@ -33,9 +33,9 @@ plot.script("set title 'gray map'\nset view map\nset pm3d\nset palette gray\nuns
 plot.cmd("splot sin(sqrt(x**2+y**2))/sqrt(x**2+y**2)");
 plot.close();
 end _lmcode_
-
-r = run_lmcode(p);
-assert(r.ok, "lmcode host failed");
+savedsl(p, out);
+r = system ${dsl_cli(p)} --lmcode ${out};
+assert(r.code == 0);
 cp = system cp images/pm3d-2.png images/pm3d.png;
 assert(cp.code == 0);
 println("wrote images/pm3d.png (and images/pm3d-1.png .. images/pm3d-3.png)");

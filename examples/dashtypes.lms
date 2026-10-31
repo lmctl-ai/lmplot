@@ -45,9 +45,9 @@ plot.cmd("set for [i=1:15] arrow i lw 1+(i-1)%5");
 plot.cmd("plot 0 with lines lt nodraw");
 plot.close();
 end _lmcode_
-
-r = run_lmcode(p);
-assert(r.ok, "lmcode host failed");
+savedsl(p, out);
+r = system ${dsl_cli(p)} --lmcode ${out};
+assert(r.code == 0);
 cp = system cp images/dashtypes-1.png images/dashtypes.png;
 assert(cp.code == 0);
 println("wrote images/dashtypes.png (and images/dashtypes-1.png .. images/dashtypes-2.png)");

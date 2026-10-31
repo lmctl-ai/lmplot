@@ -78,7 +78,7 @@ plot.cmd("plot gam(x, 0.1) ls 1 title 'gamma, T = 0.1', gam(x, 1.0) ls 3 title '
 plot.cmd("unset multiplot");
 plot.close();
 end _lmcode_
-
-r = run_lmcode(p);
-assert(r.ok, "lmcode host failed");
+savedsl(p, out);
+r = system ${dsl_cli(p)} --lmcode ${out};
+assert(r.code == 0);
 println("wrote images/option_greeks_dashboard.png");
