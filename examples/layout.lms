@@ -81,9 +81,9 @@ plot.cmd("plot 'examples/data/immigration.dat' using 21:xtic(1) lt 4");
 plot.cmd("unset multiplot");
 plot.close();
 end _lmcode_
-savedsl(p, out);
-r = system ${dsl_cli(p)} --lmcode ${out};
-assert(r.code == 0);
+
+r = run_lmcode(p);
+assert(r.ok, "lmcode host failed");
 cp = system cp images/layout-1.png images/layout.png;
 assert(cp.code == 0);
 println("wrote images/layout.png (and images/layout-1.png .. images/layout-3.png)");

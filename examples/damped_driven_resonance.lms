@@ -88,7 +88,7 @@ plot.cmd("plot phi(x, 10.0) with lines lw 2.5 lc rgb '#dc2626' title 'Q = 10.0',
 plot.cmd("unset multiplot");
 plot.close();
 end _lmcode_
-savedsl(p, out);
-r = system ${dsl_cli(p)} --lmcode ${out};
-assert(r.code == 0);
+
+r = run_lmcode(p);
+assert(r.ok, "lmcode host failed");
 println("wrote images/damped_driven_resonance.png");

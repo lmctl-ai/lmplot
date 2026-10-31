@@ -104,7 +104,7 @@ plot.cmd("plot $WE using 1:2 with filledcurves y1=0 lc rgb '#ef4444' notitle, $W
 plot.cmd("unset multiplot");
 plot.close();
 end _lmcode_
-savedsl(p, out);
-r = system ${dsl_cli(p)} --lmcode ${out};
-assert(r.code == 0);
+
+r = run_lmcode(p);
+assert(r.ok, "lmcode host failed");
 println("wrote images/urban_heat_island.png");

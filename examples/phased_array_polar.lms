@@ -75,7 +75,7 @@ plot.cmd("ang(i) = (90.0 - deg(i))*pi/180; clip(v) = (v < -40 ? -40 : v)");
 plot.cmd("plot GT using (ang($1)):(clip($2)) with filledcurve r=-40 lc rgb '#3b82f6', GT using (ang($1)):(clip($2)) with lines lw 2.6 lc rgb '#1d4ed8', GU using (ang($1)):(clip($2)) with lines lw 1.8 dt 2 lc rgb '#dc2626'");
 plot.close();
 end _lmcode_
-savedsl(p, out);
-r = system ${dsl_cli(p)} --lmcode ${out};
-assert(r.code == 0);
+
+r = run_lmcode(p);
+assert(r.ok, "lmcode host failed");
 println("wrote images/phased_array_polar.png");

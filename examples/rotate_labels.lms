@@ -67,9 +67,9 @@ plot.cmd("set border 3");
 plot.cmd("plot $Data using 1:1:2:3:0 with labels rotate variable tc variable font ',20'");
 plot.close();
 end _lmcode_
-savedsl(p, out);
-r = system ${dsl_cli(p)} --lmcode ${out};
-assert(r.code == 0);
+
+r = run_lmcode(p);
+assert(r.ok, "lmcode host failed");
 cp = system cp images/rotate_labels-2.png images/rotate_labels.png;
 assert(cp.code == 0);
 println("wrote images/rotate_labels.png (and images/rotate_labels-1.png .. images/rotate_labels-2.png)");

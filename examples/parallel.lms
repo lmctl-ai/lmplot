@@ -66,9 +66,9 @@ plot.cmd("set title 'Parallel Axis Plot' font ',15'");
 plot.cmd("plot sample [x=1:20] '+' using (abs(sin(7.3*$1*$1))):0 lc palette title 'random', '' u ($1) title 'x', '' u (-$1) title '-x', '' u (a*$1) title 'a*x', '' u (a*$1+b) title 'a*x+b', '' u (exp($1)) title 'e^x', '' u (1/$1) title '1/x'");
 plot.close();
 end _lmcode_
-savedsl(p, out);
-r = system ${dsl_cli(p)} --lmcode ${out};
-assert(r.code == 0);
+
+r = run_lmcode(p);
+assert(r.ok, "lmcode host failed");
 cp = system cp images/parallel-3.png images/parallel.png;
 assert(cp.code == 0);
 println("wrote images/parallel.png (and images/parallel-1.png .. images/parallel-3.png)");

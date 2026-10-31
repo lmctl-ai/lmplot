@@ -22,9 +22,9 @@ plot.script("unset grid\nset ztics autofreq\nset border 31\nset view 75,230\nset
 plot.cmd("splot sin(x) * cos(y)");
 plot.close();
 end _lmcode_
-savedsl(p, out);
-r = system ${dsl_cli(p)} --lmcode ${out};
-assert(r.code == 0);
+
+r = run_lmcode(p);
+assert(r.ok, "lmcode host failed");
 cp = system cp images/hidden-2.png images/hidden.png;
 assert(cp.code == 0);
 println("wrote images/hidden.png (and images/hidden-1.png .. images/hidden-3.png)");

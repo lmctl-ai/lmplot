@@ -27,9 +27,9 @@ plot.cmd("set title 'Fill area between two curves (above/below)'");
 plot.cmd("plot 'examples/data/silver.dat' u 1:2:($3+$1/50.) w filledcurves above title 'Above', '' u 1:2:($3+$1/50.) w filledcurves below title 'Below', '' u 1:2 lt -1 lw 2 title 'curve 1', '' u 1:($3+$1/50.) lt 3 lw 2 title 'curve 2'");
 plot.close();
 end _lmcode_
-savedsl(p, out);
-r = system ${dsl_cli(p)} --lmcode ${out};
-assert(r.code == 0);
+
+r = run_lmcode(p);
+assert(r.ok, "lmcode host failed");
 cp = system cp images/fillbetween-3.png images/fillbetween.png;
 assert(cp.code == 0);
 println("wrote images/fillbetween.png (and images/fillbetween-1.png .. images/fillbetween-3.png)");

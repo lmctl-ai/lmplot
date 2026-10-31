@@ -40,9 +40,9 @@ plot.cmd("set key reverse");
 plot.cmd("plot keyentry with spiderplot lc 3 lw 3 title 'Array #1', for [i=1:|Array1|] Array1 using (Array1[i]) lc 3 lw 3 title sprintf('Scale %d',i), newspiderplot, keyentry with spiderplot lc 4 lw 2 title 'Array #2', for [j=1:|Array2|] Array2 using (Array2[j]) lc 4 lw 2 notitle");
 plot.close();
 end _lmcode_
-savedsl(p, out);
-r = system ${dsl_cli(p)} --lmcode ${out};
-assert(r.code == 0);
+
+r = run_lmcode(p);
+assert(r.ok, "lmcode host failed");
 cp = system cp images/spiderplot-3.png images/spiderplot.png;
 assert(cp.code == 0);
 println("wrote images/spiderplot.png (and images/spiderplot-1.png .. images/spiderplot-3.png)");
