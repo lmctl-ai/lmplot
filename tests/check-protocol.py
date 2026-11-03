@@ -54,6 +54,9 @@ with tempfile.TemporaryDirectory(prefix='lmplot protocol 水 ') as directory:
   for corrupt in [lambda x:{k:v for k,v in x.items() if k!='dry'},lambda x:dict(x,dry='yes'),lambda x:dict(x,version=2),lambda x:dict(x,extra=True)]:
    assert frame(run(files,change=corrupt),2)['phase']=='cli'
    assert not (work/'must-not-exist.png').exists()
+ native=run([write],dry=True,argv=['gnuplot','-e',"set print 'must-not-exist.txt'; print 1; set print"])
+ assert frame(native,2)['phase']=='cli'
+ assert not (work/'must-not-exist.txt').exists()
  print('PASS strict manifest/dry validation before effects, single/builder identity')
  assert frame(run([write],dry=True),0)=={'ok':True,'result':0,'dry':True}
  assert not (work/'must-not-exist.png').exists()

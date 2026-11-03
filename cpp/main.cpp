@@ -255,6 +255,10 @@ int host_main(int argc, char **argv) {
       return dslvm::failure_frame("cli", dslvm::Error("CLI_USAGE", usage));
   }
   if (argc >= 2 && std::string(argv[1]) == "gnuplot") {
+    // Invocation metadata is only meaningful on the lmcode execution route.
+    // Never let a custom native command bypass its dry/registration contract.
+    if (std::getenv("LMCODE_INVOCATION_FILE"))
+      return dslvm::failure_frame("cli", dslvm::Error("CLI_USAGE", "native gnuplot does not accept invocation metadata"));
     if (!std::getenv("GNUTERM"))
 #ifdef _WIN32
       _putenv_s("GNUTERM", "dumb");

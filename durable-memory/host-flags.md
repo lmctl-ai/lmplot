@@ -2,7 +2,9 @@
 
 The public host accepts `--lmcode-schema [--json]` (identical JSON bytes with or
 without the option), `--lmcode-signatures`, and repeated `--lmcode FILE` pairs.
-Native `gnuplot` passthrough, `--version` and `--notices` remain. Retired host
+Native `gnuplot` passthrough, `--version` and `--notices` remain. Native
+execution refuses any invocation metadata before dispatch, so a custom command
+cannot bypass the protocol dry/registration contract. Retired host
 selectors and schema spellings have no aliases; `--first`, `--last`, and
 `--dry-run` also fail with CLI exit 2 in the native route before dispatch.
 
