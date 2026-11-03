@@ -14,6 +14,7 @@
 #include <cstdint>
 #include <cstring>
 #include <map>
+#include <limits>
 #include <memory>
 #include <vector>
 
@@ -415,7 +416,7 @@ void flatten_glyph(Shape &s, const std::vector<stbtt_vertex> &v, double scale, d
 extern "C" {
 
 lmr *lmr_create(int w, int h, unsigned bg) { LMR_TRY
-  if (w < 1 || h < 1 || (long long)w * h > 100000000LL) return nullptr;
+  if (w < 1 || h < 1 || static_cast<size_t>(w) > std::numeric_limits<size_t>::max() / static_cast<size_t>(h) / 4) return nullptr;
   std::unique_ptr<lmr> r(new lmr);  // freed if the pixel buffer does not fit the budget
   r->w = w; r->h = h;
   r->px.resize((size_t)w * h * 4);

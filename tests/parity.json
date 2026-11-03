@@ -1,0 +1,31 @@
+{
+  "source": "70a609f143777e8e5f2e49c19b56a18204e9cc27",
+  "values": {
+    "num": {
+      "stdout": "12",
+      "stderr": ""
+    },
+    "str": {
+      "stdout": "hello",
+      "stderr": ""
+    },
+    "data": {
+      "stdout": "2",
+      "stderr": ""
+    },
+    "script": {
+      "stdout": "42",
+      "stderr": ""
+    },
+    "png": {
+      "stdout": "",
+      "stderr": "",
+      "png": "9143bb97f63bae44c56caf4d43d687a2f83abc294df221cfe67d90a8a5379451"
+    },
+    "svg": {
+      "stdout": "",
+      "stderr": "",
+      "svg": "e707aadc5ae481196f00d6fd7c3c117ef48645323d8044c93ea95f52d7792b7f"
+    }
+  }
+}

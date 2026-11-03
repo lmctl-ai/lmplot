@@ -1,5 +1,5 @@
 // lmplot: gnuplot embedded in a single static executable, scriptable from
-// lmscript `_dsl_` bytecode. See durable-memory/ for the design.
+// lmscript lmcode bytecode. See durable-memory/ for the design.
 #include "dslvm.hpp"
 #include "gp_memory.h"
 #include "memory_budget.hpp"
@@ -17,6 +17,9 @@
 #include <string>
 #include <vector>
 #ifdef _WIN32
+#define NOMINMAX
+#include <windows.h>
+#include <shellapi.h>
 #include <fcntl.h>
 #include <io.h>
 #include <process.h>
@@ -238,35 +241,32 @@ void register_host(dslvm::Registry &r, Host &h) {
 }
 
 const char *usage =
-    "usage: lmplot --version | --notices | --lmcode-schema [--json] | --lmcode-signatures | [--dry-run] --lmcode FILE [FILE ...]\n"
-    "       lmplot gnuplot [GNUPLOT-OPTIONS] [FILE ...]   (the embedded gnuplot command line)\n"
-    "environment: LMPLOT_MAX_MEMORY_MB  total memory budget in MiB (default 4096, gnuplot included); a\n"
-    "             program that needs more stops with a run error (exit 3) instead of allocating\n";
+    "usage: lmplot --version | --notices | --lmcode-schema [--json] | --lmcode-signatures | --lmcode FILE [--lmcode FILE ...]\n"
+    "       lmplot gnuplot [GNUPLOT-OPTIONS] [FILE ...]\n"
+    "environment: LMPLOT_MAX_MEMORY_MB total memory budget in MiB (default 4096)\n";
 
-}  // namespace
-
-int main(int argc, char **argv) {
-#ifdef _WIN32
-  _setmode(_fileno(stdout), _O_BINARY);
-  _setmode(_fileno(stderr), _O_BINARY);
-#endif
+int host_main(int argc, char **argv) {
+  // Retired host roles/options must never reach the native gnuplot route either.
+  for (int i = 1; i < argc; ++i) {
+    const std::string arg(argv[i]);
+    if (arg == "--first" || arg == "--last" || arg == "--dry-run" ||
+        arg == "--dsl" || arg == "--dsl-schema" || arg == "--dsl-signatures" ||
+        arg == "--cli-schema")
+      return dslvm::failure_frame("cli", dslvm::Error("CLI_USAGE", usage));
+  }
   if (argc >= 2 && std::string(argv[1]) == "gnuplot") {
-    // No window system exists, so without a choice plots would go nowhere; text is the useful default.
     if (!std::getenv("GNUTERM"))
 #ifdef _WIN32
       _putenv_s("GNUTERM", "dumb");
 #else
       setenv("GNUTERM", "dumb", 0);
 #endif
-    if (!membudget::configure("lmplot", "LMPLOT_MAX_MEMORY_MB")) { std::cerr << usage; return 2; }
-    std::vector<char *> args;
-    args.push_back(argv[0]);
+    if (!membudget::configure("lmplot", "LMPLOT_MAX_MEMORY_MB"))
+      return dslvm::failure_frame("cli", dslvm::Error("CLI_USAGE", "invalid memory budget"));
+    std::vector<char *> args{argv[0]};
     for (int i = 2; i < argc; i++) args.push_back(argv[i]);
     return gnuplot_cli_main(static_cast<int>(args.size()), args.data());
   }
-  Host host;
-  dslvm::Registry reg;
-  register_host(reg, host);
   if (argc == 2 && std::string(argv[1]) == "--version") {
     std::cout << "lmplot " LMPLOT_VERSION "\n";
     return std::cout ? 0 : 4;
@@ -276,87 +276,108 @@ int main(int argc, char **argv) {
                     static_cast<std::streamsize>(lmplot::embedded_notices_size));
     return std::cout ? 0 : 4;
   }
-  if (argc >= 2 && std::string(argv[1]) == "--lmcode-schema") {
-    if (argc == 2) {
-      for (const auto &s : reg.signatures()) std::cout << s << "\n";
-      return std::cout ? 0 : 4;
-    }
-    if (argc == 3 && std::string(argv[2]) == "--json") {
-      std::cout.write(reinterpret_cast<const char *>(lmplot::embedded_schema),
-                      static_cast<std::streamsize>(lmplot::embedded_schema_size));
-      return std::cout ? 0 : 4;
-    }
-    std::cerr << usage;
-    return 2;
+  const std::string schema(reinterpret_cast<const char *>(lmplot::embedded_schema), lmplot::embedded_schema_size);
+  if ((argc == 2 || (argc == 3 && std::string(argv[2]) == "--json")) &&
+      std::string(argv[1]) == "--lmcode-schema") {
+    std::cout << schema;
+    return std::cout ? 0 : 4;
   }
   if (argc == 2 && std::string(argv[1]) == "--lmcode-signatures") {
-    for (const auto &s : reg.signatures()) std::cout << s << "\n";
-    return 0;
+    Host host;
+    dslvm::Registry reg;
+    register_host(reg, host);
+    for (const auto &sig : reg.signatures()) std::cout << sig << "\n";
+    return std::cout ? 0 : 4;
   }
-  // --dry-run: run the whole program, but every file gnuplot would write is reported on stderr
-  // ("[dry-run] would write F") and sent to the null device; pipes and shell commands are errors.
-  int first = 2;
-  if (argc >= 2 && std::string(argv[1]) == "--dry-run") {
-    lmplot_dry_run = 1;
-    first = 3;
-    if (argc < 4 || std::string(argv[2]) != "--lmcode") {
-      std::cerr << usage;
-      return 2;
-    }
-  } else if (argc < 3 || std::string(argv[1]) != "--lmcode") {
-    std::cerr << usage;
-    return 2;
+  std::vector<std::string> files;
+  if (argc < 3 || argc % 2 == 0)
+    return dslvm::failure_frame("cli", dslvm::Error("CLI_USAGE", usage));
+  for (int i = 1; i < argc; i += 2) {
+    if (std::string(argv[i]) != "--lmcode" || std::string(argv[i+1]).empty())
+      return dslvm::failure_frame("cli", dslvm::Error("CLI_USAGE", usage));
+    files.emplace_back(argv[i+1]);
   }
-  for (int i = first; i < argc; i++) {
-    if (std::string(argv[i]).empty() || std::string(argv[i]).rfind("--", 0) == 0) {
-      std::cerr << usage;
-      return 2;
-    }
-  }
-  if (!membudget::configure("lmplot", "LMPLOT_MAX_MEMORY_MB")) { std::cerr << usage; return 2; }
-  const std::string schema(reinterpret_cast<const char *>(lmplot::embedded_schema), lmplot::embedded_schema_size);
+  // Validate the manifest before allocating a host or touching a plot/input file.
+  auto results = dslvm::InvocationResults::from_command(files);
+  if (!membudget::configure("lmplot", "LMPLOT_MAX_MEMORY_MB"))
+    return dslvm::failure_frame("cli", dslvm::Error("CLI_USAGE", "invalid memory budget"));
+  Host host;
+  dslvm::Registry reg;
+  register_host(reg, host);
   dslvm::Context context;
+  context.set_dry(results.dry());
   context.set("plot", &host);
-  // Load and verify every file first so a corrupt later file cannot leave
-  // earlier output half-written.
-  std::vector<dslvm::Program> programs;
-  auto fail_with = [](const char *phase, const dslvm::Error &error) {
-    std::cerr << "lmplot: " << error.what() << "\n";
-    return dslvm::report_error(phase, error);
-  };
-  for (int i = first; i < argc; i++) {
+  const auto contract = dslvm::ResultContract::from_schema(schema);
+  const auto registrations = results.registrations();
+  for (size_t part = 0; part < registrations.size(); ++part) {
+    const auto &registration = registrations[part];
+    std::string phase = "app";
     try {
-      programs.push_back(dslvm::Program::load(dslvm::read_file(argv[i]), schema, reg));
-    } catch (const dslvm::Error &error) {
-      return fail_with("load", error);
-    } catch (const std::exception &error) {
-      return fail_with("load", dslvm::Error(error.what()));
-    }
-  }
-  int status = 0;
-  for (size_t i = 0; i < programs.size(); i++) {
-    try {
-      programs[i].run(context, reg);
-      if (i + 1 == programs.size() && host.ready) {
+      std::ifstream input(std::filesystem::u8path(registration.file), std::ios::binary);
+      if (!input) throw dslvm::Error("APP_FAIL", "cannot read bytecode file");
+      std::string bytes((std::istreambuf_iterator<char>(input)), {});
+      if (input.bad()) throw dslvm::Error("APP_FAIL", "cannot read bytecode file");
+      phase = "load";
+      auto program = dslvm::Program::load(bytes, schema, reg);
+      phase = "run";
+      results.select(registration.index, reg, contract);
+      program.run(context, reg);
+      if (part + 1 == registrations.size() && host.ready) {
         int fin = lmplot_finish_output();
         if (fin == 1) throw dslvm::Error("gnuplot: multiplot not closed (missing unset multiplot)");
         if (fin == 2) throw dslvm::Error("gnuplot: output file closed with no plots drawn");
         if (fin == 3) throw dslvm::Error("gnuplot: error writing the output file (disk full or I/O error)");
       }
+      results.complete(registration.index);
     } catch (const dslvm::Error &error) {
       if (host.ready) lmplot_abort_output();
-      status = fail_with("run", error);
+      if (error.code == "APP_FAIL") phase = "app";
+      std::cerr << "lmplot: " << error.what() << "\n";
+      results.fail(registration.index, phase, error);
       break;
-    } catch (const std::exception &error) {  // the memory budget in the VM
+    } catch (const std::exception &error) {
       if (host.ready) lmplot_abort_output();
-      status = fail_with("run", dslvm::Error(error.what()));
+      std::cerr << "lmplot: " << error.what() << "\n";
+      results.fail(registration.index, phase, dslvm::Error(error.what()));
       break;
     }
-    dslvm::report_ok();
   }
   if (host.ready) {
     std::fflush(stdout);
     lmplot_gp_shutdown();
   }
-  return status;
+  return results.write_frame(std::cout);
+}
+} // namespace
+
+int main(int argc, char **argv) {
+#ifdef _WIN32
+  _setmode(_fileno(stdout), _O_BINARY);
+  _setmode(_fileno(stderr), _O_BINARY);
+#endif
+  try {
+#ifdef _WIN32
+    int wide_count = 0;
+    wchar_t **wide = CommandLineToArgvW(GetCommandLineW(), &wide_count);
+    if (!wide) throw dslvm::Error("CLI_USAGE", "cannot decode command arguments");
+    std::vector<std::string> utf8;
+    for (int i = 0; i < wide_count; ++i) {
+      int size = WideCharToMultiByte(CP_UTF8, WC_ERR_INVALID_CHARS, wide[i], -1, nullptr, 0, nullptr, nullptr);
+      if (!size) { LocalFree(wide); throw dslvm::Error("CLI_USAGE", "invalid argument encoding"); }
+      std::string value(static_cast<size_t>(size), '\0');
+      WideCharToMultiByte(CP_UTF8, WC_ERR_INVALID_CHARS, wide[i], -1, value.data(), size, nullptr, nullptr);
+      value.pop_back(); utf8.push_back(std::move(value));
+    }
+    LocalFree(wide);
+    std::vector<char *> pointers;
+    for (auto &arg : utf8) pointers.push_back(arg.data());
+    return host_main(wide_count, pointers.data());
+#else
+    return host_main(argc, argv);
+#endif
+  }
+  catch (const dslvm::Error &error) { return dslvm::failure_frame("cli", error); }
+  catch (const std::exception &error) {
+    return dslvm::failure_frame("app", dslvm::Error("APP_FAIL", error.what()));
+  }
 }
