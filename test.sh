@@ -44,11 +44,12 @@ ok "third_party/gnuplot is gnuplot.lock plus patches/"
 GEN=""
 command -v ninja >/dev/null 2>&1 && GEN="-G Ninja"
 # shellcheck disable=SC2086
-cmake -S . -B "$BUILD_DIR" $GEN -DCMAKE_BUILD_TYPE=Release >/dev/null
+python3 scripts/prepare-parity.py "$BUILD_DIR/parity-source"
+cmake -S . -B "$BUILD_DIR" $GEN -DCMAKE_BUILD_TYPE=Release -DLMPLOT_PARITY_SOURCE="$ROOT/$BUILD_DIR/parity-source" >/dev/null
 cmake --build "$BUILD_DIR" --parallel 3 >"$WORK/build.log" 2>&1 || { tail -40 "$WORK/build.log" >&2; fail "build"; }
 ok "build"
 python3 tests/check-host-flags.py schema/lmplot.dsl.json "$HOST" || fail "hard host flag cutover"
-python3 tests/check-parity.py "$HOST" || fail "pre-adoption operation parity"
+python3 tests/check-parity.py "$HOST" --oracle "$BUILD_DIR/lmplot-before${HOST#"$BUILD_DIR/lmplot"}" || fail "pre-adoption operation parity"
 
 want_version="lmplot $(sed -n 's/^project(lmplot VERSION \([0-9.]*\).*/\1/p' CMakeLists.txt)"
 [ "$("$HOST" --version)" = "$want_version" ] || fail "--version is not exactly '$want_version'"
