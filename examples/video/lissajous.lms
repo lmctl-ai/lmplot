@@ -2,8 +2,7 @@
 # frame data computed in lmscript. Output: images/lissajous.mp4 (ffmpeg).
 mkdir("images");
 mkdir("build/video/lissajous");
-out = ARGV.len() > 0 ? ARGV[0] : "build/video/lissajous.dslb";
-p = _lmcode_ cli="lmplot" install="github:lmctl-ai/lmplot@latest";
+p = _lmcode_ cli="lmplot" install="github:lmctl-ai/lmplot@v0.3.0";
 plot.cmd("set parametric");
 plot.cmd("set size square");
 plot.cmd("set xrange [-1.2:1.2]");
@@ -24,9 +23,8 @@ for (k in range(1, frames + 1)) {
   plot.close();
 }
 end _lmcode_
-savedsl(p, out);
-r = system ${dsl_cli(p)} --lmcode ${out};
-assert(r.code == 0);
+r = run_lmcode(p);
+assert(r.ok, json_stringify(r));
 r = system ffmpeg -y -loglevel error -framerate 30 -i build/video/lissajous/frame-%d.png -c:v libx264 -pix_fmt yuv420p images/lissajous.mp4;
 assert(r.code == 0);
 cp = system cp build/video/lissajous/frame-119.png images/lissajous.png;

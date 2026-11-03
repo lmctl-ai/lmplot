@@ -2,10 +2,9 @@
 # The same Bode-style magnitude/phase plot twice: once with the classic
 # 'set logscale', once with the equivalent 'set nonlinear ... via ... inverse ...'.
 # Image 1: logscale.  Image 2: nonlinear axes (identical output expected).
-out = ARGV.len() > 0 ? ARGV[0] : "build/nonlinear2.dslb";
 mkdir("images");
 mkdir("build");
-p = _lmcode_ cli="lmplot" install="github:lmctl-ai/lmplot@latest";
+p = _lmcode_ cli="lmplot" install="github:lmctl-ai/lmplot@v0.3.0";
 
 # common setup: complex transfer function A(jw), a second y axis for the phase
 plot.cmd("set dummy jw, y");
@@ -49,9 +48,8 @@ plot.cmd("set ytics nolog");
 plot.cmd("plot abs(A(jw)) lt 1, 180/pi*arg(A(jw)) axes x1y2 lt 3");
 plot.close();
 end _lmcode_
-savedsl(p, out);
-r = system ${dsl_cli(p)} --lmcode ${out};
-assert(r.code == 0);
+r = run_lmcode(p);
+assert(r.ok, json_stringify(r));
 cp = system cp images/nonlinear2-1.png images/nonlinear2.png;
 assert(cp.code == 0);
 println("wrote images/nonlinear2.png (and images/nonlinear2-1.png .. images/nonlinear2-2.png)");

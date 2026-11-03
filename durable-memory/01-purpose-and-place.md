@@ -11,7 +11,7 @@ works, including PNG output with TrueType text.
 
 Two ways to drive it:
 
-- `lmplot --lmcode program.dslb` runs lmscript `_dsl_` bytecode against the
+- `lmplot --lmcode program.dslb` runs lmscript `_lmcode_` bytecode against the
   embedded schema (`schema/lmplot.dsl.json`, embedded in the binary and read by `lmscript` through `cli="lmplot"`; type `Plot`, context `plot`).
   The script keeps control flow, loops, string building and numbers;
   gnuplot keeps drawing. `plot.cmd("...")` runs gnuplot commands,
@@ -29,8 +29,8 @@ Two ways to drive it:
   `02-gnuplot-embedding.md`).
 - **lmcode-cpp** (`include/dslvm.hpp`, header-only, bytecode v5) is vendored
   as `cpp/dslvm.hpp`, pinned by `sdk.lock` exactly like lmhtml and lmcad. It
-  executes `_dsl_` bytecode; it knows nothing about plotting.
-- **lmscript**, published through npm as `@lmctl-ai/lmctl`, compiles `_dsl_`
+  executes `_lmcode_` bytecode; it knows nothing about plotting.
+- **lmscript**, published through npm as `@lmctl-ai/lmctl`, compiles `_lmcode_`
   chunks against `schema/lmplot.dsl.json` into `.dslb`. Tests use the
   compiler selected by `scripts/select-compiler.sh` (probes for `DSLB\x00\x05`).
 - **lmhtml / lmcad** are the sibling hosts whose conventions lmplot copies:
@@ -46,7 +46,7 @@ Two ways to drive it:
   feed numbers to gnuplot as text.
 - **gnuplot owns plotting**: parsing, fitting, statistics, layout, 2D/3D
   drawing, every terminal that needs no external library.
-- **lmplot owns the host glue and the PNG terminal**: embedding, the DSL API,
+- **lmplot owns the host glue and the PNG terminal**: embedding, the lmcode API,
   and a native rasterizer (`cpp/raster`, `cpp/term/lmpng.trm`).
 - **Not interactive.** No X11/Qt/wxt windows, no mouse, no `pause mouse`. The
   terminals are file or text producers: `png`, `pngcairo` (alias), `svg`,

@@ -7,7 +7,7 @@ runs immediately.
 | method | returns | what it does |
 | --- | --- | --- |
 | `cmd(string)` | void | run one gnuplot command line (`;` separated commands work) |
-| `script(string)` | void | run multi-line text (lines separated by `\n` escapes in the DSL string); written to a temp file and run with `load`, so datablocks and `if`/`do for` clauses behave exactly as in a `.gp` file |
+| `script(string)` | void | run multi-line text (lines separated by `\n` escapes in the lmcode string); written to a temp file and run with `load`, so datablocks and `if`/`do for` clauses behave exactly as in a `.gp` file |
 | `load(string)` | void | `load "file"` |
 | `data(string, string)` | void | define datablock `$name` (name without `$`) from text |
 | `png(string, int, int)` | void | `set terminal png size W,H; set output "file"` |
@@ -25,9 +25,10 @@ Rules and gotchas:
 - Any gnuplot error stops the program: `RUN_HOST` error `gnuplot: <GPVAL_ERRMSG>`,
   JSON `{"ok": false, "phase": "run", ...}` on stdout, exit code 3. gnuplot's
   own diagnostic with the caret is on stderr.
-- `lmplot --dry-run --lmcode F` runs the whole program (values, `stats`, `fit`) but
-  writes no file: each would-be output is reported as `[dry-run] would write F`
-  on stderr and sent to the null device; pipes and `system()` are errors.
+- Dry execution comes from the invocation manifest and skips domain callbacks,
+  returning typed dummies with no file/render/shell side effects. The former
+  command-line dry interpreter is retired; see host-flags.md.
+
 - Images are inputs too: `plot 'r.png' binary filetype=png with rgbimage` (or
   `rgbalpha`) and `set pixmap N 'r.png' at screen X,Y width screen W` read PNG,
   JPEG, GIF (first frame), BMP, TGA and PNM. A sibling host's render can be
@@ -36,7 +37,7 @@ Rules and gotchas:
 - Every plot writes one complete PNG into the *current output*. For several
   images use one `plot.png(...)`/`plot.close()` pair per image; plotting twice
   into one output concatenates PNG files.
-- `_dsl_` strings are single-line; build multi-line gnuplot text with `\n`
+- `_lmcode_` strings are single-line; build multi-line gnuplot text with `\n`
   escapes or several `plot.cmd` calls. Inside a gnuplot command use `'...'`
   or `\"...\"`; gnuplot does not understand `\'` inside single quotes.
 - gnuplot state (variables, functions, datablocks, terminal settings) persists
@@ -55,7 +56,7 @@ Rules and gotchas:
   sandbox them (gnuplot has `system` and `set output "|cmd"` as well).
 
 Why no richer objects (Plot handles, Series, Style): gnuplot's command language
-already is the object model, and the DSL has no lists or maps to carry such
+already is the object model, and the lmcode has no lists or maps to carry such
 objects (see lmhtml `06-open-items.md`). `data()` + `cmd()` + `num()` cover
 generate-plot-read-back loops without a second description of gnuplot.
 
@@ -65,12 +66,12 @@ helper (just `plot.cmd("replot")`).
 
 ## How programs bind to the schema
 
-Programs use `_dsl_ cli="lmplot" install="github:lmctl-ai/lmplot@latest";`, not a
+Programs use `_lmcode_ cli="lmplot" install="github:lmctl-ai/lmplot@v0.3.0";`, not a
 schema file: `lmscript` runs `lmplot --lmcode-schema --json` (searching `PATH`
 first, then its tool cache, filled on first use from the release asset
 `lmplot-<os>-<arch>[.exe]` with its SHA-256 checked), so the bytecode is bound
 to the binary that runs it and a downloaded release is all a user needs.
-`dsl_cli(p)` gives the argv prefix for running it. `test.sh` puts the build
+`run_lmcode(p)` owns private invocation files, execution and result framing. `test.sh` puts the build
 directory first on `PATH` so examples bind to the binary under test.
 `schema/lmplot.dsl.json` remains the source the binary embeds (and
 `select-compiler.sh` still probes with `schema=`).

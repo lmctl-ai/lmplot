@@ -15,7 +15,7 @@ gallery assets in `docs/images/` and `examples/renders/`.
 
 ## Showcase examples (`examples/*.lms`)
 
-Eight story-driven showcase programs compute domain results in the DSL, round-trip
+Eight story-driven showcase programs compute domain results in the lmcode, round-trip
 summary statistics via gnuplot's `stats` and `plot.num`/`plot.str`, and render
 900-px wide publication figures (`<= 300 KB` each) into `images/<name>.png` (copied
 to `docs/images/` by `examples/render-all.sh`):
@@ -50,7 +50,7 @@ to `docs/images/` by `examples/render-all.sh`):
 
 ## Multi-host combo examples (`examples/combo/`)
 
-Several `_dsl_` blocks in a single `.lms` script bind to sibling hosts (`lmcad`,
+Several `_lmcode_` blocks in a single `.lms` script bind to sibling hosts (`lmcad`,
 `lmdraw`) alongside `lmplot`:
 
 - `combo/nozzle_cad_plot.lms` (`lmcad` + `lmplot`) — `lmcad` revolves a contoured
@@ -73,7 +73,7 @@ Several `_dsl_` blocks in a single `.lms` script bind to sibling hosts (`lmcad`,
 `third_party/gnuplot/demo/*.dem`), plus `stats.lms` and `turntable.lms`. The
 complete table is in `examples/README.md`.
 
-## What the `_dsl_` language does and does not allow (found writing these)
+## What the `_lmcode_` language does and does not allow (found writing these)
 
 - Strictly typed, schema-driven: floats are written `1.0` (no `1.`), no
   f-strings inside the block, no list literals, no `let` of untyped values;
@@ -88,7 +88,7 @@ complete table is in `examples/README.md`.
   whitespace/overprint operator; use `and`, `—`, or `noenhanced` when `&` is not
   intended as spacing.
 - Random-looking data: gnuplot's `rand(0)` is unseeded across runs, so
-  examples use a deterministic LCG written in the DSL, keeping all images
+  examples use a deterministic LCG written in the lmcode, keeping all images
   byte-identical on rerun.
 
 ## Model evaluation and field overlays (`examples/`)
@@ -130,9 +130,9 @@ every figure uses `plot.data`, `plot.cmd`, `plot.num`, `plot.assert_close`.
 Gotchas found writing these:
 - lmscript top level has arrays (`push`, `sort`, index assignment), `num()`,
   `sqrt`, `pow`, `abs`, `round`, `%`; it has no `sin`, `cos`, `exp`, `log`, `float`,
-  and no `1e-12` literal (write `0.000000000001`). The `_dsl_` block has the math
+  and no `1e-12` literal (write `0.000000000001`). The `_lmcode_` block has the math
   but no arrays.
-- `${expr}` inside `_dsl_` inserts a compile-time value (multi-line strings are fine).
+- `${expr}` inside `_lmcode_` inserts a compile-time value (multi-line strings are fine).
   A loop variable declared inside the block cannot be interpolated; use `str(t)`
   there instead.
 - gnuplot datablock fields with spaces must be double-quoted: `'83% of row'` is split
@@ -143,7 +143,7 @@ Gotchas found writing these:
 
 ## Video & animated GIF examples (`examples/video/`)
 
-`quantum_packet.lms`, `wave.lms`, `ripple.lms`, `lissajous.lms`, `standing_wave.lms`: a `_dsl_` loop
+`quantum_packet.lms`, `wave.lms`, `ripple.lms`, `lissajous.lms`, `standing_wave.lms`: a `_lmcode_` loop
 writes `build/video/<name>/frame-<k>.png`, then plain lmscript runs
 `r = system ${dsl_cli(p)} --lmcode ${out}; assert(r.code == 0);` and `ffmpeg` to
 produce `images/<name>.mp4` and `images/<name>.png` (plus

@@ -26,7 +26,7 @@ every sibling host) and not GPL:
 - `Version 6.1 patchlevel 0 (lmplot X.Y.Z)` (patch `0004`) is the special
   version identification; `DIST_CONTACT` in `cpp/gpconfig/config.h` gives
   lmplot's contact and `show version` keeps gnuplot's.
-- lmplot's own code (the host, the DSL schema, the rasterizer in `cpp/raster`,
+- lmplot's own code (the host, the lmcode schema, the rasterizer in `cpp/raster`,
   the embedding hook) is MIT. The one file that follows gnuplot's own driver
   code, the PNG terminal driver `lmpng.trm` (its enhanced-text handling mirrors
   `gd.trm`/`svg.trm`), is treated as a modification of gnuplot: it is committed

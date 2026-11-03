@@ -3,10 +3,9 @@
 # (plot.num), are combined with ordinary typed arithmetic/strings, printed with
 # plot.echo and fed back to gnuplot for the final figure.
 # Writes images/stats.png.
-out = ARGV.len() > 0 ? ARGV[0] : "build/stats.dslb";
 mkdir("images");
 mkdir("build");
-p = _lmcode_ cli="lmplot" install="github:lmctl-ai/lmplot@latest";
+p = _lmcode_ cli="lmplot" install="github:lmctl-ai/lmplot@v0.3.0";
 
 # 1. Noisy line y = 2.5 + 0.8 x, from a deterministic LCG (no rand(), so reruns are byte-identical).
 let seed = 12345;
@@ -71,7 +70,6 @@ plot.cmd("set label 2 'y = 20 at x = " + plot.str("sprintf('%.1f', " + str(x_at_
 plot.cmd("plot $D using 1:2 with points pt 7 ps 1 lc 'dark-violet' title 'data', fit_a + fit_b*x with lines lw 2 lc 'orange-red' title 'fit', mu with lines dt 3 lc 'grey30' title 'mean y'");
 plot.close();
 end _lmcode_
-savedsl(p, out);
-r = system ${dsl_cli(p)} --lmcode ${out};
-assert(r.code == 0);
+r = run_lmcode(p);
+assert(r.ok, json_stringify(r));
 println("wrote images/stats.png");

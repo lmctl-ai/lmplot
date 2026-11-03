@@ -4,10 +4,9 @@
 # Futures and Other Derivatives: S = 42, K = 40, r = 10%, sigma = 20%, T = 0.5 y gives
 # call 4.76 and put 0.81) and checks put-call parity C - P = S - K exp(-rT).
 # Writes images/option_greeks_dashboard.png (900x700).
-out = ARGV.len() > 0 ? ARGV[0] : "build/option_greeks_dashboard.dslb";
 mkdir("images");
 mkdir("build");
-p = _lmcode_ cli="lmplot" install="github:lmctl-ai/lmplot@latest";
+p = _lmcode_ cli="lmplot" install="github:lmctl-ai/lmplot@v0.3.0";
 
 plot.cmd("K = 40.0; r = 0.10; s = 0.20");
 plot.cmd("d1(S,T) = (log(S/K) + (r + 0.5*s*s)*T) / (s*sqrt(T)); d2(S,T) = d1(S,T) - s*sqrt(T)");
@@ -78,7 +77,6 @@ plot.cmd("plot gam(x, 0.1) ls 1 title 'gamma, T = 0.1', gam(x, 1.0) ls 3 title '
 plot.cmd("unset multiplot");
 plot.close();
 end _lmcode_
-savedsl(p, out);
-r = system ${dsl_cli(p)} --lmcode ${out};
-assert(r.code == 0);
+r = run_lmcode(p);
+assert(r.ok, json_stringify(r));
 println("wrote images/option_greeks_dashboard.png");

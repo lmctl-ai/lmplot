@@ -1,10 +1,9 @@
 # Dash types: gnuplot "dashtypes.dem" (terminal-native and custom dash patterns).
 # Image 1: the ten native dashtypes plus custom string/array patterns.
 # Image 2: the same lines at increasing line widths.
-out = ARGV.len() > 0 ? ARGV[0] : "build/dashtypes.dslb";
 mkdir("images");
 mkdir("build");
-p = _lmcode_ cli="lmplot" install="github:lmctl-ai/lmplot@latest";
+p = _lmcode_ cli="lmplot" install="github:lmctl-ai/lmplot@v0.3.0";
 # One labelled sample line: arrow number n at height y with dash spec dt
 # (the label is placed to its left, 'noenhanced' keeps '_' literal).
 fn sample(n: int, y: float, name: string, dt: string, lt: int) -> void {
@@ -45,9 +44,8 @@ plot.cmd("set for [i=1:15] arrow i lw 1+(i-1)%5");
 plot.cmd("plot 0 with lines lt nodraw");
 plot.close();
 end _lmcode_
-savedsl(p, out);
-r = system ${dsl_cli(p)} --lmcode ${out};
-assert(r.code == 0);
+r = run_lmcode(p);
+assert(r.ok, json_stringify(r));
 cp = system cp images/dashtypes-1.png images/dashtypes.png;
 assert(cp.code == 0);
 println("wrote images/dashtypes.png (and images/dashtypes-1.png .. images/dashtypes-2.png)");

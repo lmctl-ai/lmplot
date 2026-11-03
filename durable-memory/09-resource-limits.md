@@ -1,14 +1,14 @@
 # Resource limits
 
-Why: on 2026-10-23 a runaway `lmnum` (a DSL loop creating objects) reached 16 GB RSS and filled the
+Why: on 2026-10-23 a runaway `lmnum` (a lmcode loop creating objects) reached 16 GB RSS and filled the
 24 GB WSL machine. lmplot has the same exposure through gnuplot: datablocks (`Plot.data`,
 `set print $d append`), `array A[N]`, `set samples`, `do for` loops inside one `Plot.cmd`, png
-canvases, and DSL strings in the VM all grow without bound.
+canvases, and lmcode strings in the VM all grow without bound.
 
 - **Total memory budget**, default 4096 MiB, set with `LMPLOT_MAX_MEMORY_MB` (positive whole MiB;
   anything else exits 2 with the usage text). Applies to `--lmcode` runs and to `lmplot gnuplot`.
 - `cpp/memory_budget.{hpp,cpp}` (identical copy in every lm* host) replaces global
-  `operator new`/`delete` and counts allocator block sizes: the DSL VM, the host, and the C++
+  `operator new`/`delete` and counts allocator block sizes: the lmcode VM, the host, and the C++
   png rasterizer (`cpp/raster`).
 - **gnuplot is C** (malloc, errors by `int_error` = longjmp), so nothing may throw inside it.
   `cpp/gp_memory.h` is force-included (`-include`, C sources of `gnuplot_core` only, no gnuplot
@@ -32,7 +32,7 @@ canvases, and DSL strings in the VM all grow without bound.
 - Not covered: frees of blocks that libc allocated internally (only skew the count down);
   overshoot from bare mallocs inside one command is bounded by the next `gp_alloc`.
 - No `setrlimit` (not portable to macOS static builds).
-- Measured (x86_64 Linux, WSL): the test runaway (`plot.cmd("array A<i>[1000000]")` in a DSL loop,
+- Measured (x86_64 Linux, WSL): the test runaway (`plot.cmd("array A<i>[1000000]")` in a lmcode loop,
   ~23 MiB per iteration) stops at 64 MiB in 0.04 s, and at the default 4096 MiB after 3 s with
   4.18 GB peak RSS (4078 MiB, tracked bytes match RSS within 1%). A 10000x5000 png canvas at
   64 MiB fails before drawing; `set samples 1e8` asks for 6104 MiB at once and is refused.

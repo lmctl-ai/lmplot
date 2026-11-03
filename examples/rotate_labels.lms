@@ -1,14 +1,13 @@
 # Text boxes and rotated/coloured labels: gnuplot "textbox.dem" + "rotate_labels.dem".
 # Image 1: 'with labels boxed' (two textbox styles) over line plots.
 # Image 2: 'with labels rotate variable tc variable' with a datablock built in the DSL.
-out = ARGV.len() > 0 ? ARGV[0] : "build/rotate_labels.dslb";
 mkdir("images");
 mkdir("build");
 if (!file_exists("examples/data/table.dat")) {
   mkdir("examples/data");
   write_file("examples/data/table.dat", http_get("https://raw.githubusercontent.com/lmctl-ai/lmplot/main/examples/data/table.dat"));
 }
-p = _lmcode_ cli="lmplot" install="github:lmctl-ai/lmplot@latest";
+p = _lmcode_ cli="lmplot" install="github:lmctl-ai/lmplot@v0.3.0";
 
 # --- 1: textboxes (two side by side panels via multiplot) ---
 plot.png("images/rotate_labels-1.png", 1000, 500);
@@ -67,9 +66,8 @@ plot.cmd("set border 3");
 plot.cmd("plot $Data using 1:1:2:3:0 with labels rotate variable tc variable font ',20'");
 plot.close();
 end _lmcode_
-savedsl(p, out);
-r = system ${dsl_cli(p)} --lmcode ${out};
-assert(r.code == 0);
+r = run_lmcode(p);
+assert(r.ok, json_stringify(r));
 cp = system cp images/rotate_labels-2.png images/rotate_labels.png;
 assert(cp.code == 0);
 println("wrote images/rotate_labels.png (and images/rotate_labels-1.png .. images/rotate_labels-2.png)");

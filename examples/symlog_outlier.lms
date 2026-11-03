@@ -7,10 +7,9 @@
 # gnuplot draws the bars at S(y) and labels the ticks with the original counts. The
 # transform is evaluated in gnuplot; the program checks S(63000) = 1 + log10(630).
 # Writes images/symlog_outlier.png (900x520).
-out = ARGV.len() > 0 ? ARGV[0] : "build/symlog_outlier.dslb";
 mkdir("images");
 mkdir("build");
-p = _lmcode_ cli="lmplot" install="github:lmctl-ai/lmplot@latest";
+p = _lmcode_ cli="lmplot" install="github:lmctl-ai/lmplot@v0.3.0";
 
 # Commit counts from an integer generator (Park-Miller, reduced to 20..900 per month).
 let seed = 4242;
@@ -44,7 +43,6 @@ plot.cmd("unset key");
 plot.cmd("plot $COMMITS using 1:(sym($2)) with boxes lc rgb '#2563eb' notitle, $COMMITS using 1:(sym($2)):(sprintf('%d', $2)) with labels offset 0,0.6 font ',7' notitle");
 plot.close();
 end _lmcode_
-savedsl(p, out);
-r = system ${dsl_cli(p)} --lmcode ${out};
-assert(r.code == 0);
+r = run_lmcode(p);
+assert(r.ok, json_stringify(r));
 println("wrote images/symlog_outlier.png");

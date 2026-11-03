@@ -1,6 +1,8 @@
 name: ci
 
 on:
+  push:
+    branches: [main]
   workflow_dispatch:
     inputs:
       only:
@@ -16,8 +18,8 @@ permissions:
   contents: read
 
 concurrency:
-  group: ci-${{ github.ref }}
-  cancel-in-progress: ${{ !startsWith(github.ref, 'refs/tags/') }}
+  group: ci-${{ github.sha }}-${{ github.run_id }}
+  cancel-in-progress: false
 
 jobs:
   build:
@@ -64,15 +66,12 @@ jobs:
         shell: bash
         run: |
           if ! command -v g++ >/dev/null 2>&1 || ! command -v ninja >/dev/null 2>&1; then
-            for i in 1 2 3; do
-              choco install -y mingw ninja && break
-              echo "choco attempt $i failed; retrying"; sleep 20
-            done
+            choco install -y mingw ninja
           fi
           command -v g++ >/dev/null 2>&1 || { echo "no mingw g++ on PATH"; exit 1; }
           g++ --version | head -1
 
-      - name: lmscript compiler (npm @lmctl-ai/lmctl, DSL v5)
+      - name: Private pinned lmscript compiler
         if: env.ONLY_OK == 'true'
         uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
@@ -82,9 +81,12 @@ jobs:
         if: env.ONLY_OK == 'true'
         shell: bash
         run: |
-          npm i -g @lmctl-ai/lmctl@0.2.420
+          npm install --prefix "$RUNNER_TEMP/lmplot-compiler" @lmctl-ai/lmctl@0.2.456
+          export LMSCRIPT_BIN="$RUNNER_TEMP/lmplot-compiler/node_modules/.bin/lmscript"
+          if command -v cygpath >/dev/null 2>&1; then export LMSCRIPT_BIN="$(cygpath -m "$LMSCRIPT_BIN")"; fi
+          echo "LMSCRIPT_BIN=$LMSCRIPT_BIN" >> "$GITHUB_ENV"
           scripts/select-compiler.sh | tee compiler.txt
-          grep -q lmscript compiler.txt || { echo "no v5 compiler available"; exit 1; }
+          grep -q lmscript compiler.txt || { echo "no current compiler available"; exit 1; }
 
       - name: python3 shim (windows)
         if: runner.os == 'Windows' && env.ONLY_OK == 'true'
@@ -118,7 +120,7 @@ jobs:
           if-no-files-found: error
 
   release:
-    if: startsWith(github.ref, 'refs/tags/v')
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     needs: build
     runs-on: ubuntu-22.04
     permissions:
@@ -134,11 +136,14 @@ jobs:
           path: dist
           merge-multiple: true
 
-      - name: tag matches lmplot --version (lmscript @latest compares them)
+      - name: Read the tested release version
+        id: version
         run: |
           chmod +x dist/lmplot-linux-x64
-          got="$(dist/lmplot-linux-x64 --version)"
-          test "$got" = "lmplot ${GITHUB_REF_NAME#v}" || { echo "::error::tag $GITHUB_REF_NAME but binary says '$got' (bump project VERSION in CMakeLists.txt)"; exit 1; }
+          version="$(dist/lmplot-linux-x64 --version)"
+          version="${version#lmplot }"
+          [[ "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]
+          echo "tag=v$version" >> "$GITHUB_OUTPUT"
 
       - name: generate binary checksums
         run: |
@@ -148,9 +153,10 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          # idempotent: re-running a tag's workflow overwrites the assets
-          if gh release view "$GITHUB_REF_NAME" -R "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
-            gh release upload "$GITHUB_REF_NAME" -R "$GITHUB_REPOSITORY" --clobber dist/*
+          tag="${{ steps.version.outputs.tag }}"
+          # Released versions are immutable; documentation-only pushes never overwrite assets.
+          if gh release view "$tag" -R "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            echo "Release $tag already exists; retaining its qualified source and bytes"
           else
-            gh release create "$GITHUB_REF_NAME" -R "$GITHUB_REPOSITORY" --title "$GITHUB_REF_NAME" --generate-notes dist/*
+            gh release create "$tag" -R "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" --title "$tag" --generate-notes dist/*
           fi

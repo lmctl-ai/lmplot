@@ -1,8 +1,7 @@
 # Simple functions: gnuplot's "simple.dem" first plots, driven from lmscript.
-out = ARGV.len() > 0 ? ARGV[0] : "build/simple.dslb";
 mkdir("images");
 mkdir("build");
-p = _lmcode_ cli="lmplot" install="github:lmctl-ai/lmplot@latest";
+p = _lmcode_ cli="lmplot" install="github:lmctl-ai/lmplot@v0.3.0";
 plot.png("images/simple.png", 800, 600);
 plot.cmd("set title 'Simple Plots' font ',16'");
 plot.cmd("set key left box");
@@ -11,7 +10,6 @@ plot.cmd("set style data points");
 plot.cmd("plot [-10:10] sin(x), atan(x), cos(atan(x))");
 plot.close();
 end _lmcode_
-savedsl(p, out);
-r = system ${dsl_cli(p)} --lmcode ${out};
-assert(r.code == 0);
+r = run_lmcode(p);
+assert(r.ok, json_stringify(r));
 println("wrote images/simple.png");

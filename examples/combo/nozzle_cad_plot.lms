@@ -7,7 +7,6 @@
 #    T/T0 under the section, on the same millimetre axis. The analytic wall r(x) is drawn
 #    over the render, so geometry and flow can be checked against each other.
 # Writes images/nozzle_cad_plot.png (900x880).
-out = ARGV.len() > 0 ? ARGV[0] : "build/nozzle_flow.dslb";
 mkdir("images");
 mkdir("build/examples");
 
@@ -69,11 +68,10 @@ cutter.visible(false);
 scene.camera(4.0, 0.0, 0.0, 1002.3, 0.0, 0.0, 0.0);
 scene.render_ppm("build/examples/nozzle_cad.ppm", 738, 431);
 end _lmcode_
-savedsl(cad, "build/nozzle_cad.dslb");
-r = system ${dsl_cli(cad)} --lmcode build/nozzle_cad.dslb;
-assert(r.code == 0);
+r = run_lmcode(cad);
+assert(r.ok, json_stringify(r));
 
-p = _lmcode_ cli="lmplot" install="github:lmctl-ai/lmplot@latest";
+p = _lmcode_ cli="lmplot" install="github:lmctl-ai/lmplot@v0.3.0";
 
 fn wall(x: float) -> float {
   let r = 0.0;
@@ -165,7 +163,6 @@ plot.cmd("plot $NOZZLE using 1:4 axes x1y1 with lines lw 2.8 lc rgb '#dc2626' ti
 plot.cmd("unset multiplot");
 plot.close();
 end _lmcode_
-savedsl(p, out);
-r = system ${dsl_cli(p)} --lmcode ${out};
-assert(r.code == 0);
+r = run_lmcode(p);
+assert(r.ok, json_stringify(r));
 println("wrote images/nozzle_cad_plot.png");

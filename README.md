@@ -9,7 +9,7 @@
 | Exoplanet Doppler RV & O-C residuals | Landau 3D free-energy surface | Equity OHLC, Bollinger & drawdown |
 | --- | --- | --- |
 | <img src="docs/images/kepler_rv_fit.png" width="290" alt="Exoplanet Doppler RV & O-C residuals"> | <img src="docs/images/potential_vortex_surface.png" width="290" alt="Landau 3D free-energy surface"> | <img src="docs/images/quant_trading_dashboard.png" width="290" alt="Equity OHLC, Bollinger & drawdown"> |
-| Keplerian fit, mass & χ² in DSL<br>`lmctl https://raw.githubusercontent.com/lmctl-ai/lmplot/main/examples/kepler_rv_fit.lms` | Bistable `pm3d` surface & transition path<br>`lmctl https://raw.githubusercontent.com/lmctl-ai/lmplot/main/examples/potential_vortex_surface.lms` | Candlesticks, ±2σ band, volume & drawdown<br>`lmctl https://raw.githubusercontent.com/lmctl-ai/lmplot/main/examples/quant_trading_dashboard.lms` |
+| Keplerian fit, mass & χ² in lmcode<br>`lmctl https://raw.githubusercontent.com/lmctl-ai/lmplot/main/examples/kepler_rv_fit.lms` | Bistable `pm3d` surface & transition path<br>`lmctl https://raw.githubusercontent.com/lmctl-ai/lmplot/main/examples/potential_vortex_surface.lms` | Candlesticks, ±2σ band, volume & drawdown<br>`lmctl https://raw.githubusercontent.com/lmctl-ai/lmplot/main/examples/quant_trading_dashboard.lms` |
 
 | Rocket nozzle: geometry meets flow (`lmcad` + `lmplot`) | SEIR schematic + ODE phase plane (`lmdraw` + `lmplot`) | Quantum wave-packet scattering (`ffmpeg` GIF) |
 | --- | --- | --- |
@@ -79,26 +79,24 @@ lmplot gnuplot -e 'set terminal png size 800,500; set output "sin.png"; plot sin
 lmplot gnuplot my_script.gp
 ```
 
-**From lmscript.** A program is a `_dsl_` block compiled by `lmscript`
-(`npm i -g @lmctl-ai/lmctl`). The block names the host, not a schema file:
+**From lmscript.** A program is a `_lmcode_` block compiled by `lmscript`
+(use a private lmscript installation). The block names the host, not a schema file:
 `lmscript` finds `lmplot` on `PATH`, or downloads the release binary for your
 platform on first use (`install=`), and compiles against the schema built into
 it:
 
 ```
 # sine.lms
-out = ARGV.len() > 0 ? ARGV[0] : "build/sine.dslb";
 mkdir("images");
 mkdir("build");
-p = _lmcode_ cli="lmplot" install="github:lmctl-ai/lmplot@latest";
+p = _lmcode_ cli="lmplot" install="github:lmctl-ai/lmplot@v0.3.0";
 plot.png("images/sine.png", 800, 500);
 plot.cmd("set title 'sin(x) and a fit'");
 plot.cmd("plot sin(x) lw 2, x - x**3/6 dt 2");
 plot.close();
 end _lmcode_
-savedsl(p, out);
-r = system ${dsl_cli(p)} --lmcode ${out};   # run it with the binary it was compiled against
-assert(r.code == 0);
+r = run_lmcode(p);
+assert(r.ok, json_stringify(r));
 println("wrote images/sine.png");
 ```
 
@@ -112,7 +110,7 @@ Values come back with `plot.num("STATS_slope")`, so a program can generate
 data, run `stats` or `fit`, compute from the results and plot again
 (`lmctl https://raw.githubusercontent.com/lmctl-ai/lmplot/main/examples/kepler_rv_fit.lms`
 and `lmctl https://raw.githubusercontent.com/lmctl-ai/lmplot/main/examples/stats.lms`),
-combine multiple `_dsl_` hosts such as `lmcad` and `lmdraw` in one script
+combine multiple `_lmcode_` hosts such as `lmcad` and `lmdraw` in one script
 (`lmctl https://raw.githubusercontent.com/lmctl-ai/lmplot/main/examples/combo/nozzle_cad_plot.lms`),
 or render a series of frames in a loop
 (`lmctl https://raw.githubusercontent.com/lmctl-ai/lmplot/main/examples/turntable.lms`)
@@ -129,8 +127,11 @@ and encode them into MP4/GIF animations with `ffmpeg`
 | `assert_close(actual, expected, tol)` | stop with exit 3 unless `|actual - expected| <= tol` (known-answer checks) |
 
 A failing gnuplot command stops the program with exit code 3 and a JSON error
-line. `lmplot --dry-run --lmcode prog.dslb` runs a program without writing any file
-(it lists what it would write) and refuses shell commands. Details: [durable-memory/03-schema-v0.md](durable-memory/03-schema-v0.md).
+frame. Dry mode is carried by the strict invocation manifest; domain callbacks
+are skipped and return typed dummies without rendering, file I/O or shell commands.
+Use repeated `--lmcode FILE` selectors for builder parts; retired `--first`,
+`--last`, `--dry-run` and legacy schema flags are refused, including native routes.
+Details: [host protocol](durable-memory/host-flags.md).
 
 ## What is in the box
 

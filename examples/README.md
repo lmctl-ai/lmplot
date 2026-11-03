@@ -37,7 +37,7 @@ second run produces identical bytes, and moves the rendered outputs into
 
 ## Multi-host combo examples (`examples/combo/`)
 
-Several `_dsl_` blocks in one `.lms` program combine `lmplot` with sibling hosts (`lmcad`, `lmdraw`):
+Several `_lmcode_` blocks in one `.lms` program combine `lmplot` with sibling hosts (`lmcad`, `lmdraw`):
 
 ```sh
 lmctl https://raw.githubusercontent.com/lmctl-ai/lmplot/main/examples/combo/nozzle_cad_plot.lms
@@ -102,7 +102,7 @@ numbers and stops with exit 3 if one is wrong.
 ## Video & animations (`examples/video/`)
 
 Because a program can write any number of images, a movie or animated GIF is a
-loop plus `ffmpeg`. The programs in `video/` render PNG frames from a `_dsl_`
+loop plus `ffmpeg`. The programs in `video/` render PNG frames from a `_lmcode_`
 loop, then (in plain lmscript after the block) run `lmplot` on the bytecode and
 `ffmpeg` on the frames, writing `images/<name>.mp4` (and `images/quantum_packet.gif`):
 
@@ -132,7 +132,7 @@ from the gnuplot demo directory (gnuplot license, see `../THIRD_PARTY_NOTICES`).
 out = ARGV.len() > 0 ? ARGV[0] : "build/mine.dslb";   # compile-time argv: output path
 mkdir("images");                                      # ordinary lmscript, outside the block
 mkdir("build");
-p = _lmcode_ cli="lmplot" install="github:lmctl-ai/lmplot@latest";  # host binary supplies the schema
+p = _lmcode_ cli="lmplot" install="github:lmctl-ai/lmplot@v0.3.0";  # host binary supplies the schema
 plot.png("images/mine.png", 800, 600);                # inside the block: the Plot API
 plot.cmd("plot sin(x)");
 plot.close();

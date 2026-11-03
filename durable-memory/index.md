@@ -1,7 +1,7 @@
 # lmplot durable memory
 
 Design and investigation notes for the lmplot host (gnuplot embedded in one
-executable, using dynamic glibc >= 2.35 on Linux and scripted by lmscript `_dsl_` bytecode). Read in numeric
+executable, using dynamic glibc >= 2.35 on Linux and scripted by lmscript `_lmcode_` bytecode). Read in numeric
 order.
 
 - `01-purpose-and-place.md` — what lmplot is; relation to gnuplot,

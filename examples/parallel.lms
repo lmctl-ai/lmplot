@@ -2,7 +2,6 @@
 # Image 1: five axes from silver.dat with per-axis ranges and colour by row group.
 # Image 2: PDB atom data with units (UTF-8 angstrom sign) on the axis tics.
 # Image 3: sampled functions, coloured by a palette.
-out = ARGV.len() > 0 ? ARGV[0] : "build/parallel.dslb";
 mkdir("images");
 mkdir("build");
 if (!file_exists("examples/data/silver.dat")) {
@@ -13,7 +12,7 @@ if (!file_exists("examples/data/GM1_sugar.pdb")) {
   mkdir("examples/data");
   write_file("examples/data/GM1_sugar.pdb", http_get("https://raw.githubusercontent.com/lmctl-ai/lmplot/main/examples/data/GM1_sugar.pdb"));
 }
-p = _lmcode_ cli="lmplot" install="github:lmctl-ai/lmplot@latest";
+p = _lmcode_ cli="lmplot" install="github:lmctl-ai/lmplot@v0.3.0";
 # --- 1: parallel axes with manipulated ranges ---
 plot.png("images/parallel-1.png", 800, 600);
 plot.cmd("set title 'Parallel Axis Plot' font ',15'");
@@ -66,9 +65,8 @@ plot.cmd("set title 'Parallel Axis Plot' font ',15'");
 plot.cmd("plot sample [x=1:20] '+' using (abs(sin(7.3*$1*$1))):0 lc palette title 'random', '' u ($1) title 'x', '' u (-$1) title '-x', '' u (a*$1) title 'a*x', '' u (a*$1+b) title 'a*x+b', '' u (exp($1)) title 'e^x', '' u (1/$1) title '1/x'");
 plot.close();
 end _lmcode_
-savedsl(p, out);
-r = system ${dsl_cli(p)} --lmcode ${out};
-assert(r.code == 0);
+r = run_lmcode(p);
+assert(r.ok, json_stringify(r));
 cp = system cp images/parallel-3.png images/parallel.png;
 assert(cp.code == 0);
 println("wrote images/parallel.png (and images/parallel-1.png .. images/parallel-3.png)");

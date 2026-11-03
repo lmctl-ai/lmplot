@@ -2,10 +2,9 @@
 # and phase lag phi(r) across quality factors Q = 1.5, 3, 6, 12, plus backbone
 # resonance locus and half-power (-3 dB) bandwidth computed in lmscript.
 # Writes images/damped_driven_resonance.png (900x560).
-out = ARGV.len() > 0 ? ARGV[0] : "build/damped_driven_resonance.dslb";
 mkdir("images");
 mkdir("build");
-p = _lmcode_ cli="lmplot" install="github:lmctl-ai/lmplot@latest";
+p = _lmcode_ cli="lmplot" install="github:lmctl-ai/lmplot@v0.3.0";
 
 fn sqrt_pos(v: float) -> float {
   let g = 1.0;
@@ -88,7 +87,6 @@ plot.cmd("plot phi(x, 10.0) with lines lw 2.5 lc rgb '#dc2626' title 'Q = 10.0',
 plot.cmd("unset multiplot");
 plot.close();
 end _lmcode_
-savedsl(p, out);
-r = system ${dsl_cli(p)} --lmcode ${out};
-assert(r.code == 0);
+r = run_lmcode(p);
+assert(r.ok, json_stringify(r));
 println("wrote images/damped_driven_resonance.png");

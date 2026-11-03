@@ -12,7 +12,7 @@
 
 ## Host and schema
 
-- `Plot` is a thin command channel. If lists/maps arrive in the DSL, a typed
+- `Plot` is a thin command channel. If lists/maps arrive in the lmcode, a typed
   layer (series, styles, datablock read-back as numbers) becomes worthwhile.
 - No way to catch a gnuplot error inside the program (every error stops it).
 - `plot.num` of a complex or array value returns an error; no array access.

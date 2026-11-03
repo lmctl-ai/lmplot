@@ -2,10 +2,9 @@
 # orbited by a warm Jupiter (K = 42.5 m/s, P = 18.4 d), analysed with gnuplot
 # `stats`, orbital mass derived in lmscript, and plotted with O-C residuals.
 # Writes images/kepler_rv_fit.png (900x560).
-out = ARGV.len() > 0 ? ARGV[0] : "build/kepler_rv_fit.dslb";
 mkdir("images");
 mkdir("build");
-p = _lmcode_ cli="lmplot" install="github:lmctl-ai/lmplot@latest";
+p = _lmcode_ cli="lmplot" install="github:lmctl-ai/lmplot@v0.3.0";
 
 fn sin_approx(x: float) -> float {
   let pi = 3.141592653589793;
@@ -109,7 +108,6 @@ plot.cmd("plot '+' using 1:(-" + str(rms_res) + "):(" + str(rms_res) + ") with f
 plot.cmd("unset multiplot");
 plot.close();
 end _lmcode_
-savedsl(p, out);
-r = system ${dsl_cli(p)} --lmcode ${out};
-assert(r.code == 0);
+r = run_lmcode(p);
+assert(r.ok, json_stringify(r));
 println("wrote images/kepler_rv_fit.png");

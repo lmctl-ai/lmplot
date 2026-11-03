@@ -3,10 +3,9 @@
 # loop, the file names and the view angle are ordinary typed lmscript code, and
 # each frame is one plot.png / plot.close pair.
 # Writes images/turntable-0.png ... turntable-7.png.
-out = ARGV.len() > 0 ? ARGV[0] : "build/turntable.dslb";
 mkdir("images");
 mkdir("build");
-p = _lmcode_ cli="lmplot" install="github:lmctl-ai/lmplot@latest";
+p = _lmcode_ cli="lmplot" install="github:lmctl-ai/lmplot@v0.3.0";
 
 # scene set up once: identical axes, ranges and colours in every frame
 plot.cmd("set samples 40, 40");
@@ -36,9 +35,8 @@ for (k in range(0, frames)) {
   plot.echo("frame " + str(k) + " -> " + file);
 }
 end _lmcode_
-savedsl(p, out);
-r = system ${dsl_cli(p)} --lmcode ${out};
-assert(r.code == 0);
+r = run_lmcode(p);
+assert(r.ok, json_stringify(r));
 cp = system cp images/turntable-3.png images/turntable.png;
 assert(cp.code == 0);
 println("wrote images/turntable.png (and images/turntable-0.png .. images/turntable-7.png)");

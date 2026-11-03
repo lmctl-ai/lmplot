@@ -1,10 +1,9 @@
 # Transparent filled areas: gnuplot "transparent.dem" (Ethan A Merritt).
 # Image 1: opaque solid filled curves, image 2: the same with 50% transparency,
 # image 3: transparent pattern-filled curves.
-out = ARGV.len() > 0 ? ARGV[0] : "build/transparent.dslb";
 mkdir("images");
 mkdir("build");
-p = _lmcode_ cli="lmplot" install="github:lmctl-ai/lmplot@latest";
+p = _lmcode_ cli="lmplot" install="github:lmctl-ai/lmplot@v0.3.0";
 plot.cmd("set encoding utf8");
 plot.cmd("set style fill solid 1.0 noborder");
 plot.cmd("set style function filledcurves y1=0");
@@ -41,9 +40,8 @@ plot.cmd("set title 'Transparent pattern-filled curves'");
 plot.cmd(gauss);
 plot.close();
 end _lmcode_
-savedsl(p, out);
-r = system ${dsl_cli(p)} --lmcode ${out};
-assert(r.code == 0);
+r = run_lmcode(p);
+assert(r.ok, json_stringify(r));
 cp = system cp images/transparent-3.png images/transparent.png;
 assert(cp.code == 0);
 println("wrote images/transparent.png (and images/transparent-1.png .. images/transparent-3.png)");

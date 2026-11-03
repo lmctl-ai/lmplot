@@ -1,12 +1,11 @@
 # Demo candlesticks.dem: candlestick and box-and-whisker plots.
-out = ARGV.len() > 0 ? ARGV[0] : "build/candlesticks.dslb";
 mkdir("images");
 mkdir("build");
 if (!file_exists("examples/data/candlesticks.dat")) {
   mkdir("examples/data");
   write_file("examples/data/candlesticks.dat", http_get("https://raw.githubusercontent.com/lmctl-ai/lmplot/main/examples/data/candlesticks.dat"));
 }
-p = _lmcode_ cli="lmplot" install="github:lmctl-ai/lmplot@latest";
+p = _lmcode_ cli="lmplot" install="github:lmctl-ai/lmplot@v0.3.0";
 plot.script("set xrange [0:11]\nset yrange [0:10]\nset boxwidth 0.2");
 # Image 1: open/close states, hollow when open < close.
 plot.png("images/candlesticks-1.png", 800, 600);
@@ -21,9 +20,8 @@ plot.cmd("set title 'box-and-whisker with median bar and whiskerbars'");
 plot.cmd("plot 'examples/data/candlesticks.dat' using 1:3:2:6:5 with candlesticks lt 3 lw 2 title 'Quartiles' whiskerbars, '' using 1:4:4:4:4 with candlesticks lt -1 lw 2 notitle");
 plot.close();
 end _lmcode_
-savedsl(p, out);
-r = system ${dsl_cli(p)} --lmcode ${out};
-assert(r.code == 0);
+r = run_lmcode(p);
+assert(r.ok, json_stringify(r));
 cp = system cp images/candlesticks-1.png images/candlesticks.png;
 assert(cp.code == 0);
 println("wrote images/candlesticks.png (and images/candlesticks-1.png .. images/candlesticks-2.png)");

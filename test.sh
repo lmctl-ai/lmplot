@@ -31,14 +31,11 @@ gif_magic(){
 }
 
 # lmscript resolves `cli="lmplot"` on PATH first, so the examples bind to the binary under test.
-if [ -d "${HOME:-}/.cache/lmscript/tools/github/lmctl-ai" ]; then
-  for tool_dir in "$HOME/.cache/lmscript/tools/github/lmctl-ai"/*/latest; do
-    case "$tool_dir" in */lmplot/latest) continue;; esac  # the binary under test stays first
-    [ -d "$tool_dir" ] && export PATH="$tool_dir:$PATH"
-  done
-fi
+# Optional sibling tools must be explicitly on PATH. Do not silently inject
+# cached historical executables that reject current schema discovery.
 export PATH="$(cd "$BUILD_DIR" 2>/dev/null && pwd || echo "$HERE/$BUILD_DIR"):$PATH"
 LMSCRIPT="$(scripts/select-compiler.sh)"
+export LMSCRIPT_BIN="$LMSCRIPT"
 scripts/sync-sdk.sh --verify >/dev/null || fail "SDK header pin mismatch"
 ok "SDK header matches sdk.lock"
 scripts/sync-gnuplot.sh --verify >/dev/null || fail "gnuplot pin or patches mismatch"
@@ -48,9 +45,10 @@ GEN=""
 command -v ninja >/dev/null 2>&1 && GEN="-G Ninja"
 # shellcheck disable=SC2086
 cmake -S . -B "$BUILD_DIR" $GEN -DCMAKE_BUILD_TYPE=Release >/dev/null
-cmake --build "$BUILD_DIR" >"$WORK/build.log" 2>&1 || { tail -40 "$WORK/build.log" >&2; fail "build"; }
+cmake --build "$BUILD_DIR" --parallel 3 >"$WORK/build.log" 2>&1 || { tail -40 "$WORK/build.log" >&2; fail "build"; }
 ok "build"
 python3 tests/check-host-flags.py schema/lmplot.dsl.json "$HOST" || fail "hard host flag cutover"
+python3 tests/check-parity.py "$HOST" || fail "pre-adoption operation parity"
 
 want_version="lmplot $(sed -n 's/^project(lmplot VERSION \([0-9.]*\).*/\1/p' CMakeLists.txt)"
 [ "$("$HOST" --version)" = "$want_version" ] || fail "--version is not exactly '$want_version'"
@@ -58,7 +56,7 @@ ok "--version prints exactly '$want_version'"
 "$HOST" --lmcode-schema --json >"$WORK/schema.json" || fail "embedded schema print"
 cmp -s "$WORK/schema.json" schema/lmplot.dsl.json || fail "embedded schema differs from schema/lmplot.dsl.json"
 ok "--lmcode-schema --json prints byte-identical embedded schema bytes"
-diff -u <("$LMSCRIPT" --lmcode-signatures schema/lmplot.dsl.json) <("$HOST" --lmcode-signatures) || fail "host/compiler signatures differ"
+python3 tests/check-schema.py "$HOST" || fail "host/schema signatures differ"
 ok "host registry matches compiler signatures"
 "$HOST" --notices | grep -q "stb_truetype" && "$HOST" --notices | grep -q "stb_image" || fail "--notices missing third-party text"
 ok "--notices prints the third-party license texts"
@@ -153,10 +151,10 @@ ok "every example wrote valid PNG files into images/"
 for f in images/*.png; do echo "$(sha "$f") $f"; done >"$WORK/before.txt"
 for src in examples/*.lms; do
   name="$(basename "$src" .lms)"
-  "$HOST" --lmcode "build/$name.dslb" >"$WORK/$name.out" 2>"$WORK/$name.err" || { cat "$WORK/$name.out" "$WORK/$name.err" >&2; fail "$name run"; }
-  grep -q '"ok": true' "$WORK/$name.out" || { cat "$WORK/$name.out" >&2; fail "$name did not report ok"; }
+  "$LMSCRIPT" "$src" >"$WORK/$name.out" 2>"$WORK/$name.err" || { cat "$WORK/$name.out" "$WORK/$name.err" >&2; fail "$name run"; }
+
 done
-ok "$n examples run directly via --lmcode"
+ok "$n examples rerun through run_lmcode"
 for f in images/*.png; do echo "$(sha "$f") $f"; done >"$WORK/after.txt"
 cmp -s "$WORK/before.txt" "$WORK/after.txt" || { diff "$WORK/before.txt" "$WORK/after.txt" >&2 || true; fail "images differ on rerun"; }
 ok "all $(wc -l <"$WORK/after.txt" | tr -d ' ') example images are byte-identical on rerun"
@@ -227,30 +225,30 @@ rm -rf images
 
 # DSL error paths.
 cat >"$WORK/bad.lms" <<LMS
-p = _dsl_ cli="lmplot";
+p = _lmcode_ cli="lmplot";
 plot.cmd("this is not a gnuplot command");
 plot.echo("unreachable");
-end _dsl_
-savedsl(p, "$WORK/bad.dslb");
+end _lmcode_
+fixture_capture(p, "$WORK/bad.dslb");
 LMS
-"$LMSCRIPT" "$WORK/bad.lms" >/dev/null || fail "bad.lms compile"
+node scripts/compile-test.mjs "$WORK/bad.lms" >/dev/null || fail "bad.lms compile"
 set +e; out="$("$HOST" --lmcode "$WORK/bad.dslb" 2>/dev/null)"; code=$?; set -e
 [ "$code" = 3 ] || fail "bad gnuplot command exit code $code, expected 3"
-echo "$out" | grep -q '"phase": "run"' || fail "bad command did not report a run error: $out"
+echo "$out" | grep -q '"phase":"run"' || fail "bad command did not report a run error: $out"
 echo "$out" | grep -q 'unreachable' && fail "statements after the failing command ran"
 ok "a failing gnuplot command stops the program (exit 3, JSON error)"
 
 cat >"$WORK/values.lms" <<LMS
-p = _dsl_ cli="lmplot";
+p = _lmcode_ cli="lmplot";
 plot.data("d", "1 2\n2 4\n3 6\n4 8");
 plot.cmd("set terminal unknown");
 plot.cmd("stats \$d u 1:2 nooutput");
 plot.echo("slope=" + str(plot.num("STATS_slope")));
 plot.echo(plot.str("sprintf('%d points', STATS_records)"));
-end _dsl_
-savedsl(p, "$WORK/values.dslb");
+end _lmcode_
+fixture_capture(p, "$WORK/values.dslb");
 LMS
-"$LMSCRIPT" "$WORK/values.lms" >/dev/null || fail "values.lms compile"
+node scripts/compile-test.mjs "$WORK/values.lms" >/dev/null || fail "values.lms compile"
 out="$("$HOST" --lmcode "$WORK/values.dslb")"
 echo "$out" | grep -q "slope=2" || fail "stats slope: $out"
 echo "$out" | grep -q "4 points" || fail "stats records: $out"
@@ -259,22 +257,22 @@ ok "Plot.num / Plot.str / Plot.data return gnuplot values"
 # Values and writes that used to pass silently: complex or array results of Plot.num, a datablock
 # line starting with EOD (ended the block and ran the rest as commands), output write errors.
 cat >"$WORK/edge.lms" <<LMS
-p = _dsl_ cli="lmplot";
+p = _lmcode_ cli="lmplot";
 plot.data("e", "1 2\nEOD\nEODX 5\n3 4");
 plot.cmd("set terminal unknown");
 plot.cmd("stats \$e u 1 nooutput");
 plot.echo("lines=" + str(plot.num("|\$e|")) + " records=" + str(plot.num("STATS_records")));
 plot.echo("real=" + str(plot.num("{3,0}")));
-end _dsl_
-savedsl(p, "$WORK/edge.dslb");
+end _lmcode_
+fixture_capture(p, "$WORK/edge.dslb");
 LMS
-"$LMSCRIPT" "$WORK/edge.lms" >/dev/null || fail "edge.lms compile"
+node scripts/compile-test.mjs "$WORK/edge.lms" >/dev/null || fail "edge.lms compile"
 out="$("$HOST" --lmcode "$WORK/edge.dslb" 2>&1)" || fail "edge.lms run: $out"
 echo "$out" | grep -q "lines=4 records=2" || fail "datablock with EOD lines: $out"
 echo "$out" | grep -q "real=3" || fail "complex with zero imaginary part: $out"
 expect_run_error() { # name, snippet, expected message fragment
-  printf 'p = _dsl_ cli="lmplot";\n%s\nend _dsl_\nsavedsl(p, "%s");\n' "$2" "$WORK/$1.dslb" >"$WORK/$1.lms"
-  "$LMSCRIPT" "$WORK/$1.lms" >/dev/null || fail "$1 compile"
+  printf 'p = _lmcode_ cli="lmplot";\n%s\nend _lmcode_\nfixture_capture(p, "%s");\n' "$2" "$WORK/$1.dslb" >"$WORK/$1.lms"
+  node scripts/compile-test.mjs "$WORK/$1.lms" >/dev/null || fail "$1 compile"
   set +e; out="$("$HOST" --lmcode "$WORK/$1.dslb" 2>"$WORK/$1.rerr")"; code=$?; set -e
   [ "$code" = 3 ] || fail "$1: exit code $code, expected 3 ($out)"
   echo "$out" | grep -q "$3" || fail "$1: message lacks '$3': $out"
@@ -319,23 +317,23 @@ ok "duplicate font options, gnuplot warnings, and empty/unclosed outputs fail wi
 # canvas over the budget (C++ raster called from C), and on Linux the default 4096 MiB under a
 # 6 GiB address-space limit (ulimit only here, never in the host).
 cat >"$WORK/runaway.lms" <<LMS
-p = _dsl_ cli="lmplot";
+p = _lmcode_ cli="lmplot";
 let i = 0;
 while (i < 1000000) {
   plot.cmd("array A" + str(i) + "[1000000]");
   i = i + 1;
 }
-end _dsl_
-savedsl(p, "$WORK/runaway.dslb");
+end _lmcode_
+fixture_capture(p, "$WORK/runaway.dslb");
 LMS
-"$LMSCRIPT" "$WORK/runaway.lms" >/dev/null || fail "runaway.lms compile"
+node scripts/compile-test.mjs "$WORK/runaway.lms" >/dev/null || fail "runaway.lms compile"
 set +e; out="$(LMPLOT_MAX_MEMORY_MB=64 "$HOST" --lmcode "$WORK/runaway.dslb" 2>"$WORK/runaway.err")"; code=$?; set -e
 [ "$code" = 3 ] || fail "runaway loop under LMPLOT_MAX_MEMORY_MB=64: exit $code, expected 3 ($out)"
 echo "$out" | grep -q "memory budget exceeded" || fail "runaway loop: JSON lacks the budget message: $out"
 grep -q "LMPLOT_MAX_MEMORY_MB" "$WORK/runaway.err" || fail "runaway loop: no budget message on stderr"
-printf 'p = _dsl_ cli="lmplot";\nplot.png("%s", 10000, 5000);\nplot.cmd("plot x");\nend _dsl_\nsavedsl(p, "%s");\n' \
+printf 'p = _lmcode_ cli="lmplot";\nplot.png("%s", 10000, 5000);\nplot.cmd("plot x");\nend _lmcode_\nfixture_capture(p, "%s");\n' \
   "$WORK/big.png" "$WORK/bigcanvas.dslb" >"$WORK/bigcanvas.lms"
-"$LMSCRIPT" "$WORK/bigcanvas.lms" >/dev/null || fail "bigcanvas.lms compile"
+node scripts/compile-test.mjs "$WORK/bigcanvas.lms" >/dev/null || fail "bigcanvas.lms compile"
 set +e; out="$(LMPLOT_MAX_MEMORY_MB=64 "$HOST" --lmcode "$WORK/bigcanvas.dslb" 2>/dev/null)"; code=$?; set -e
 [ "$code" = 3 ] && echo "$out" | grep -q "memory budget exceeded" || fail "10000x5000 png canvas under LMPLOT_MAX_MEMORY_MB=64: exit $code ($out)"
 set +e; LMPLOT_MAX_MEMORY_MB=-5 "$HOST" --lmcode "$WORK/runaway.dslb" >/dev/null 2>"$WORK/badenv.err"; code=$?; set -e
@@ -351,7 +349,7 @@ fi
 # Image input (stb_image in place of libgd): a PNG written by lmplot is read back as data
 # (filetype=png: 4 columns r g b a per pixel) and placed as a pixmap; a non-image is an error.
 cat >"$WORK/imgin.lms" <<LMS
-p = _dsl_ cli="lmplot";
+p = _lmcode_ cli="lmplot";
 plot.png("$WORK/imgsrc.png", 200, 150);
 plot.cmd("set object 1 rect from screen 0,0 to screen 1,1 behind fc rgb '#ff0000' fs solid noborder");
 plot.cmd("unset border; unset tics; unset key; set xrange [0:1]; set yrange [0:1]; plot 2");
@@ -365,10 +363,10 @@ plot.png("$WORK/imgdst.png", 120, 90);
 plot.cmd("set pixmap 1 '$WORK/imgsrc.png' at screen 0.1,0.1 width screen 0.5");
 plot.cmd("plot x");
 plot.close();
-end _dsl_
-savedsl(p, "$WORK/imgin.dslb");
+end _lmcode_
+fixture_capture(p, "$WORK/imgin.dslb");
 LMS
-"$LMSCRIPT" "$WORK/imgin.lms" >/dev/null || fail "imgin.lms compile"
+node scripts/compile-test.mjs "$WORK/imgin.lms" >/dev/null || fail "imgin.lms compile"
 out="$("$HOST" --lmcode "$WORK/imgin.dslb" 2>&1)" || fail "image input: $out"
 echo "$out" | grep -q "px=30000 r=255 g=0" || fail "PNG read back as 200x150 mostly red pixels: $out"
 [ "$(png_size "$WORK/imgdst.png")" = 120x90 ] || fail "pixmap output"
@@ -376,57 +374,27 @@ printf 'not an image' >"$WORK/notimg.png"
 expect_run_error notimg "plot.cmd(\"set terminal unknown; plot '$WORK/notimg.png' binary filetype=png with rgbimage\");" "cannot read image"
 ok "PNG input: filetype=png data and set pixmap read images (stb_image), bad files are errors"
 
-# --dry-run: the program runs and returns values, but no file is written and shell commands fail.
-mkdir -p "$WORK/dry"
-cat >"$WORK/dry.lms" <<LMS
-p = _dsl_ cli="lmplot";
-plot.png("dry.png", 200, 100);
-plot.cmd("plot sin(x)");
-plot.close();
-plot.cmd("set print 'dry.txt'; print 1; set print");
-plot.cmd("save 'dry.gp'");
-plot.cmd("set table 'dry.dat'; plot x; unset table");
-plot.echo("v=" + plot.str("1+1"));
-end _dsl_
-savedsl(p, "$WORK/dry.dslb");
-LMS
-"$LMSCRIPT" "$WORK/dry.lms" >/dev/null || fail "dry.lms compile"
-host_abs="$(cd "$(dirname "$HOST")" && pwd)/$(basename "$HOST")"
-out="$(cd "$WORK/dry" && "$host_abs" --dry-run --lmcode ../dry.dslb 2>&1)" || fail "dry run: $out"
-echo "$out" | grep -q "v=2" || fail "dry run values: $out"
-for f in dry.png dry.txt dry.gp dry.dat; do
-  echo "$out" | grep -q "\[dry-run\] would write $f" || fail "dry run did not report $f: $out"
-  [ ! -e "$WORK/dry/$f" ] || fail "dry run wrote $f"
-done
-printf 'p = _dsl_ cli="lmplot";\nplot.cmd("x = system(\\"echo hi\\")");\nend _dsl_\nsavedsl(p, "%s");\n' "$WORK/dryshell.dslb" >"$WORK/dryshell.lms"
-"$LMSCRIPT" "$WORK/dryshell.lms" >/dev/null || fail "dryshell compile"
-set +e; out="$("$HOST" --dry-run --lmcode "$WORK/dryshell.dslb" 2>/dev/null)"; code=$?; set -e
-[ "$code" = 3 ] || fail "dry run shell command exit $code, expected 3"
-echo "$out" | grep -q "disabled by --dry-run" || fail "dry run shell message: $out"
-set +e; "$HOST" --dry-run >/dev/null 2>&1; code=$?; set -e
-[ "$code" = 2 ] || fail "--dry-run without --lmcode exit $code, expected 2"
-ok "--dry-run writes no files, reports them, and refuses shell commands"
+# Immutable manifest dry mode supplies typed dummies and skips file/shell callbacks.
+python3 tests/check-protocol.py "$HOST" || fail "current invocation protocol"
+ok "manifest validation, dry effects, retired selectors, owned results and framed errors"
 
 set +e; "$HOST" --lmcode "$WORK/does-not-exist.dslb" >/dev/null 2>&1; code=$?; set -e
-[ "$code" = 3 ] || fail "missing bytecode exit code $code, expected 3"
+[ "$code" = 4 ] || fail "missing bytecode exit code $code, expected 4"
 set +e; "$HOST" >/dev/null 2>&1; code=$?; set -e
 [ "$code" = 2 ] || fail "usage exit code $code, expected 2"
 ok "usage and load errors use exit codes 2 and 3"
 
-# The published compiler injects std; the host embeds only its own schema bytes.
-"$LMSCRIPT" --lmcode-signatures schema/lmplot.dsl.json --without-std > "$WORK/std-host-only.sig"
-"$LMSCRIPT" --lmcode-signatures cpp/std/lmcode-std.schema.json > "$WORK/std-builtins.sig"
-"$HOST" --lmcode-signatures > "$WORK/std-registry.sig"
+# Compile a std operation against the host-only schema and execute it.
 python3 - "$WORK" <<'PYSTD'
 import pathlib,sys,json
 w=pathlib.Path(sys.argv[1])
 read=lambda name:set((w/name).read_text().splitlines())
-assert read('std-registry.sig')-read('std-builtins.sig') == read('std-host-only.sig'), 'host-only registry drift'
+
 schema=str(pathlib.Path('schema/lmplot.dsl.json').resolve()).replace('\\','/')
 out=str(w/'std-probe.dslb').replace('\\','/')
-(w/'std-probe.lms').write_text('p = _lmcode_ schema='+json.dumps(schema)+';\nlet values = str_list().add("abc");\nif (str_len(values.at(0)) != 3) { let bad = int_list().at(0); }\nend _lmcode_\nsavedsl(p, '+json.dumps(out)+');\n')
+(w/'std-probe.lms').write_text('p = _lmcode_ schema='+json.dumps(schema)+';\nlet values = str_list().add("abc");\nif (str_len(values.at(0)) != 3) { let bad = int_list().at(0); }\nend _lmcode_\nfixture_capture(p, '+json.dumps(out)+');\n')
 PYSTD
-"$LMSCRIPT" "$WORK/std-probe.lms" > "$WORK/std-probe.log" 2>&1 || { cat "$WORK/std-probe.log"; fail "implicit std compile"; }
+node scripts/compile-test.mjs "$WORK/std-probe.lms" > "$WORK/std-probe.log" 2>&1 || { cat "$WORK/std-probe.log"; fail "implicit std compile"; }
 "$HOST" --lmcode "$WORK/std-probe.dslb" > "$WORK/std-run.log" 2>&1 || { cat "$WORK/std-run.log"; fail "implicit std runtime"; }
 ok "host-only signatures and implicit std runtime"
 

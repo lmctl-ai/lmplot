@@ -1,8 +1,7 @@
 # Demo param.dem: parametric plots and a parametric pm3d sphere.
-out = ARGV.len() > 0 ? ARGV[0] : "build/param.dslb";
 mkdir("images");
 mkdir("build");
-p = _lmcode_ cli="lmplot" install="github:lmctl-ai/lmplot@latest";
+p = _lmcode_ cli="lmplot" install="github:lmctl-ai/lmplot@v0.3.0";
 plot.script("set parametric\nset dummy t\nset samples 160\nset key box\nset key below");
 # Image 1: conic sections.
 plot.png("images/param-1.png", 800, 600);
@@ -24,9 +23,8 @@ plot.script("set parametric\nset isosamples 121, 61\nset samples 121, 61\nset ur
 plot.cmd("splot '++' using (xx($1,$2)):(yy($1,$2)):(zz($1,$2)):(color($1,$2)) with pm3d notitle");
 plot.close();
 end _lmcode_
-savedsl(p, out);
-r = system ${dsl_cli(p)} --lmcode ${out};
-assert(r.code == 0);
+r = run_lmcode(p);
+assert(r.ok, json_stringify(r));
 cp = system cp images/param-3.png images/param.png;
 assert(cp.code == 0);
 println("wrote images/param.png (and images/param-1.png .. images/param-3.png)");

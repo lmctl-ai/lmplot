@@ -1,10 +1,9 @@
 # Ginzburg-Landau double-well free-energy surface F(qx, qy) with symmetry-breaking
 # tilt, saddle-point transition path, and projected contours.
 # Writes images/potential_vortex_surface.png (900x600).
-out = ARGV.len() > 0 ? ARGV[0] : "build/potential_vortex_surface.dslb";
 mkdir("images");
 mkdir("build");
-p = _lmcode_ cli="lmplot" install="github:lmctl-ai/lmplot@latest";
+p = _lmcode_ cli="lmplot" install="github:lmctl-ai/lmplot@v0.3.0";
 
 # Landau free energy: F(x, y) = 0.25*(x^2 - 1.44)^2 + 0.55*y^2 - 0.12*x + 0.08*x*y^2 + 0.85
 # Sample the minimum-energy transition path along y = 0 for x in [-1.35, 1.35]
@@ -70,7 +69,6 @@ plot.cmd("splot $PATH using 1:2:($3+0.03) with lines lw 4.4 lc rgb '#ffffff' not
 plot.cmd("unset multiplot");
 plot.close();
 end _lmcode_
-savedsl(p, out);
-r = system ${dsl_cli(p)} --lmcode ${out};
-assert(r.code == 0);
+r = run_lmcode(p);
+assert(r.ok, json_stringify(r));
 println("wrote images/potential_vortex_surface.png");
