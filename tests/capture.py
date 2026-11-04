@@ -18,8 +18,9 @@ def capture(host, work, name, body):
                       'r = run_lmcode(program, {command: ' + json.dumps(command, ensure_ascii=False) + '});\nrequire(r.ok, json_stringify(r));\n',
                       encoding='utf-8')
     env = {k: v for k, v in os.environ.items() if k != 'LMCODE_INVOCATION_FILE'}
-    # npm's .bin entry is a sh script on Windows, which Python cannot start directly.
-    runner = ['bash', lmscript] if os.name == 'nt' else [lmscript]
+    # npm's .bin entry is a sh script on Windows, which Python cannot start directly, and a bare `bash` there can be the
+    # WSL launcher. Use the .cmd shim npm writes beside it.
+    runner = ['cmd.exe', '/c', lmscript + '.cmd'] if os.name == 'nt' and Path(lmscript + '.cmd').exists() else [lmscript]
     result = subprocess.run([*runner, '--dry-run', str(source)], env=env, capture_output=True, cwd=work)
     assert result.returncode == 0, (name, result.stdout, result.stderr)
     assert output.read_bytes()[:6] == b'DSLB\x00\x06', name
