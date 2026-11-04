@@ -1,7 +1,7 @@
 # hidden.dem: hidden-line removal on explicit surfaces.
 mkdir("images");
 mkdir("build");
-p = _lmcode_ cli="lmplot" install="github:lmctl-ai/lmplot@v0.3.0";
+p = _lmcode_ cli="lmplot" install="github:lmctl-ai/lmplot@v0.3.1";
 plot.script("set samples 20\nset isosamples 20\nset hidden3d");
 # Image 1: a bell-shaped surface.
 plot.png("images/hidden-1.png", 800, 600);

@@ -9,7 +9,7 @@
 mkdir("images");
 mkdir("build/video/standing_wave");
 
-p = _lmcode_ cli="lmplot" install="github:lmctl-ai/lmplot@v0.3.0";
+p = _lmcode_ cli="lmplot" install="github:lmctl-ai/lmplot@v0.3.1";
 let frames = 40;
 # One period of the slower mode is 2 pi / w1; the animation covers 1.5 of those periods.
 let period = 6.283185307179586 / (3.141592653589793 * 2.236067977499790);

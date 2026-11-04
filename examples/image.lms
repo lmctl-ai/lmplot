@@ -6,7 +6,7 @@ if (!file_exists("examples/data/blutux.rgb")) {
   dl = system curl -fsSL -o examples/data/blutux.rgb https://raw.githubusercontent.com/lmctl-ai/lmplot/main/examples/data/blutux.rgb;
   assert(dl.code == 0);
 }
-p = _lmcode_ cli="lmplot" install="github:lmctl-ai/lmplot@v0.3.0";
+p = _lmcode_ cli="lmplot" install="github:lmctl-ai/lmplot@v0.3.1";
 # Data: examples/data/blutux.rgb, 128x128 RGB bytes (path relative to the repo root).
 # Image 1: the penguin with a label.
 plot.png("images/image-1.png", 800, 600);

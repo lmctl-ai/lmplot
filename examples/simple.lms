@@ -1,7 +1,7 @@
 # Simple functions: gnuplot's "simple.dem" first plots, driven from lmscript.
 mkdir("images");
 mkdir("build");
-p = _lmcode_ cli="lmplot" install="github:lmctl-ai/lmplot@v0.3.0";
+p = _lmcode_ cli="lmplot" install="github:lmctl-ai/lmplot@v0.3.1";
 plot.png("images/simple.png", 800, 600);
 plot.cmd("set title 'Simple Plots' font ',16'");
 plot.cmd("set key left box");

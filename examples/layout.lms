@@ -11,7 +11,7 @@ if (!file_exists("examples/data/silver.dat")) {
   mkdir("examples/data");
   write_file("examples/data/silver.dat", http_get("https://raw.githubusercontent.com/lmctl-ai/lmplot/main/examples/data/silver.dat"));
 }
-p = _lmcode_ cli="lmplot" install="github:lmctl-ai/lmplot@v0.3.0";
+p = _lmcode_ cli="lmplot" install="github:lmctl-ai/lmplot@v0.3.1";
 # The histogram/line data files live in examples/data (paths relative to repo root).
 let hist = "plot 'examples/data/immigration.dat' using 2 with histograms, '' using 7 with histograms, '' using 8 with histograms, '' using 11 with histograms";
 

@@ -11,7 +11,7 @@ works, including PNG output with TrueType text.
 
 Two ways to drive it:
 
-- `lmplot --lmcode program.dslb` runs lmscript `_lmcode_` bytecode against the
+- `run_lmcode(p)` in lmscript starts `lmplot --lmcode FILE` on a private `_lmcode_` program file against the
   embedded schema (`schema/lmplot.dsl.json`, embedded in the binary and read by `lmscript` through `cli="lmplot"`; type `Plot`, context `plot`).
   The script keeps control flow, loops, string building and numbers;
   gnuplot keeps drawing. `plot.cmd("...")` runs gnuplot commands,
@@ -27,16 +27,18 @@ Two ways to drive it:
   `patches/*.patch` are applied. Nothing of gnuplot is committed here; the
   license requires modifications to travel as patches (see
   `02-gnuplot-embedding.md`).
-- **lmcode-cpp** (`include/dslvm.hpp`, header-only, bytecode v5) is vendored
+- **lmcode-cpp** (`include/dslvm.hpp`, header-only, bytecode v6) is vendored
   as `cpp/dslvm.hpp`, pinned by `sdk.lock` exactly like lmhtml and lmcad. It
   executes `_lmcode_` bytecode; it knows nothing about plotting.
 - **lmscript**, published through npm as `@lmctl-ai/lmctl`, compiles `_lmcode_`
-  chunks against `schema/lmplot.dsl.json` into `.dslb`. Tests use the
-  compiler selected by `scripts/select-compiler.sh` (probes for `DSLB\x00\x05`).
+  chunks against `schema/lmplot.dsl.json` into private program files that
+  `run_lmcode` hands to the host. Tests use the compiler selected by
+  `scripts/select-compiler.sh` (a `--check` probe).
 - **lmhtml / lmcad** are the sibling hosts whose conventions lmplot copies:
   one binary, schema embedded at build time, `--lmcode` runs bytecode,
-  `--lmcode-schema [--json]` and `--lmcode-signatures` for parity checks, JSON result
-  line on stdout, exit codes 2 (usage) / 3 (host load or run failure).
+  `--lmcode-schema [--json]` and `--lmcode-signatures` for parity checks, one terminal
+  result frame on stdout, exit codes 2 (usage) / 3 (host load or run failure) /
+  4 (application).
   `deflate.hpp` comes from lmcad.
 
 ## Scope boundary

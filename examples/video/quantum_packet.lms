@@ -5,7 +5,7 @@
 # and encodes images/quantum_packet.mp4 and images/quantum_packet.gif.
 mkdir("images");
 mkdir("build/video/quantum_packet");
-p = _lmcode_ cli="lmplot" install="github:lmctl-ai/lmplot@v0.3.0";
+p = _lmcode_ cli="lmplot" install="github:lmctl-ai/lmplot@v0.3.1";
 
 plot.cmd("set encoding utf8");
 plot.cmd("set xrange [-10:10]");

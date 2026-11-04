@@ -12,7 +12,7 @@ if (!file_exists("examples/data/GM1_sugar.pdb")) {
   mkdir("examples/data");
   write_file("examples/data/GM1_sugar.pdb", http_get("https://raw.githubusercontent.com/lmctl-ai/lmplot/main/examples/data/GM1_sugar.pdb"));
 }
-p = _lmcode_ cli="lmplot" install="github:lmctl-ai/lmplot@v0.3.0";
+p = _lmcode_ cli="lmplot" install="github:lmctl-ai/lmplot@v0.3.1";
 # --- 1: parallel axes with manipulated ranges ---
 plot.png("images/parallel-1.png", 800, 600);
 plot.cmd("set title 'Parallel Axis Plot' font ',15'");

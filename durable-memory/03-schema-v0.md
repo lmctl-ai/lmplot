@@ -66,7 +66,7 @@ helper (just `plot.cmd("replot")`).
 
 ## How programs bind to the schema
 
-Programs use `_lmcode_ cli="lmplot" install="github:lmctl-ai/lmplot@v0.3.0";`, not a
+Programs use `_lmcode_ cli="lmplot" install="github:lmctl-ai/lmplot@v0.3.1";`, not a
 schema file: `lmscript` runs `lmplot --lmcode-schema --json` (searching `PATH`
 first, then its tool cache, filled on first use from the release asset
 `lmplot-<os>-<arch>[.exe]` with its SHA-256 checked), so the bytecode is bound

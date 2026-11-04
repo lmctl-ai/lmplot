@@ -76,7 +76,7 @@ for (j in range(0, 9)) {
   }
 }
 
-p = _lmcode_ cli="lmplot" install="github:lmctl-ai/lmplot@v0.3.0";
+p = _lmcode_ cli="lmplot" install="github:lmctl-ai/lmplot@v0.3.1";
 plot.data("PSI", ${psi_rows});
 plot.data("ARROW", ${arrows});
 plot.echo(${"psi_max = " + str(psi_max) + ", fastest speed = " + str(speed_max) + ", max |div| = " + str(div_max)});

@@ -3,8 +3,8 @@
 Scientific, engineering, financial and biological showcase programs plus
 lmscript ports of demos from the [gnuplot demo
 gallery](https://www.gnuplot.info/screenshots/index.html#demos). Every `.lms`
-file is self-contained, compiles to bytecode, executes `lmplot` immediately via
-`r = system ${dsl_cli(p)} --lmcode ${out}; assert(r.code == 0);`, and writes its
+file is self-contained, runs its block with `lmplot` through
+`r = run_lmcode(p); assert(r.ok, json_stringify(r));`, and writes its
 output image(s) into `images/<name>.png` in the current working directory. Run
 any example directly from any directory:
 
@@ -84,8 +84,8 @@ lmctl https://raw.githubusercontent.com/lmctl-ai/lmplot/main/examples/combo/sir_
 
 ## Model evaluation and field overlays
 
-Metrics and fields are computed by the lmscript program before its bytecode is
-written (sorting, arrays and the solver run there) and handed to gnuplot as datablocks with `${...}`
+Metrics and fields are computed by the lmscript program before its block runs
+(sorting, arrays and the solver run there) and handed to gnuplot as datablocks with `${...}`
 interpolation, so no host feature is needed. Every program checks its own
 numbers and stops with exit 3 if one is wrong.
 
@@ -103,7 +103,7 @@ numbers and stops with exit 3 if one is wrong.
 
 Because a program can write any number of images, a movie or animated GIF is a
 loop plus `ffmpeg`. The programs in `video/` render PNG frames from a `_lmcode_`
-loop, then (in plain lmscript after the block) run `lmplot` on the bytecode and
+loop, then (in plain lmscript after the block) run that block with `run_lmcode` and
 `ffmpeg` on the frames, writing `images/<name>.mp4` (and `images/quantum_packet.gif`):
 
 ```sh
@@ -129,17 +129,15 @@ from the gnuplot demo directory (gnuplot license, see `../THIRD_PARTY_NOTICES`).
 ## Writing your own
 
 ```
-out = ARGV.len() > 0 ? ARGV[0] : "build/mine.dslb";   # compile-time argv: output path
 mkdir("images");                                      # ordinary lmscript, outside the block
 mkdir("build");
-p = _lmcode_ cli="lmplot" install="github:lmctl-ai/lmplot@v0.3.0";  # host binary supplies the schema
+p = _lmcode_ cli="lmplot" install="github:lmctl-ai/lmplot@v0.3.1";  # host binary supplies the schema
 plot.png("images/mine.png", 800, 600);                # inside the block: the Plot API
 plot.cmd("plot sin(x)");
 plot.close();
 end _lmcode_
-savedsl(p, out);
-r = system ${dsl_cli(p)} --lmcode ${out};
-assert(r.code == 0);
+r = run_lmcode(p);                                    # failures come back as data
+assert(r.ok, json_stringify(r));
 println("wrote images/mine.png");
 ```
 

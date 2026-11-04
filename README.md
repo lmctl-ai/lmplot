@@ -89,7 +89,7 @@ it:
 # sine.lms
 mkdir("images");
 mkdir("build");
-p = _lmcode_ cli="lmplot" install="github:lmctl-ai/lmplot@v0.3.0";
+p = _lmcode_ cli="lmplot" install="github:lmctl-ai/lmplot@v0.3.1";
 plot.png("images/sine.png", 800, 500);
 plot.cmd("set title 'sin(x) and a fit'");
 plot.cmd("plot sin(x) lw 2, x - x**3/6 dt 2");

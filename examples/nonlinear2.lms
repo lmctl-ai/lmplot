@@ -4,7 +4,7 @@
 # Image 1: logscale.  Image 2: nonlinear axes (identical output expected).
 mkdir("images");
 mkdir("build");
-p = _lmcode_ cli="lmplot" install="github:lmctl-ai/lmplot@v0.3.0";
+p = _lmcode_ cli="lmplot" install="github:lmctl-ai/lmplot@v0.3.1";
 
 # common setup: complex transfer function A(jw), a second y axis for the phase
 plot.cmd("set dummy jw, y");

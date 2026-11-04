@@ -63,7 +63,7 @@ for (c in range(0, k_classes)) {
   pct_rows = pct_rows + "\n";
 }
 
-p = _lmcode_ cli="lmplot" install="github:lmctl-ai/lmplot@v0.3.0";
+p = _lmcode_ cli="lmplot" install="github:lmctl-ai/lmplot@v0.3.1";
 plot.data("HEAT", ${heat});
 plot.data("CNT", ${cnt_rows});
 plot.data("PCT", ${pct_rows});

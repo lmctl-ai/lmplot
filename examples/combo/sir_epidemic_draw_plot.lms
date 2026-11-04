@@ -113,7 +113,7 @@ end _lmcode_
 r = run_lmcode(draw);
 assert(r.ok, json_stringify(r));
 
-p = _lmcode_ cli="lmplot" install="github:lmctl-ai/lmplot@v0.3.0";
+p = _lmcode_ cli="lmplot" install="github:lmctl-ai/lmplot@v0.3.1";
 
 # Integrate SEIR ODEs over 160 days (dt = 0.5 day, 320 steps) with the midpoint method:
 # Baseline: beta0 = 3.2 * gamma, sigma = 1/4.5 = 0.2222, gamma = 1/7.0 = 0.142857

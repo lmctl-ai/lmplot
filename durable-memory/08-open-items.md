@@ -16,7 +16,7 @@
   layer (series, styles, datablock read-back as numbers) becomes worthwhile.
 - No way to catch a gnuplot error inside the program (every error stops it).
 - `plot.num` of a complex or array value returns an error; no array access.
-- Multiple bytecode files in one invocation share gnuplot state; there is no
+- Multiple program files in one invocation share gnuplot state; there is no
   explicit `reset` between them (use `plot.cmd("reset session")`).
 
 ## Platform

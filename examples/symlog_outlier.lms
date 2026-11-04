@@ -9,7 +9,7 @@
 # Writes images/symlog_outlier.png (900x520).
 mkdir("images");
 mkdir("build");
-p = _lmcode_ cli="lmplot" install="github:lmctl-ai/lmplot@v0.3.0";
+p = _lmcode_ cli="lmplot" install="github:lmctl-ai/lmplot@v0.3.1";
 
 # Commit counts from an integer generator (Park-Miller, reduced to 20..900 per month).
 let seed = 4242;

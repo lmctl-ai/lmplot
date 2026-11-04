@@ -3,7 +3,7 @@
 # images/ripple.mp4 (needs ffmpeg on PATH).
 mkdir("images");
 mkdir("build/video/ripple");
-p = _lmcode_ cli="lmplot" install="github:lmctl-ai/lmplot@v0.3.0";
+p = _lmcode_ cli="lmplot" install="github:lmctl-ai/lmplot@v0.3.1";
 plot.cmd("set samples 60, 60");
 plot.cmd("set isosamples 60, 60");
 plot.cmd("set xrange [-10:10]");

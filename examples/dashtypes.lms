@@ -3,7 +3,7 @@
 # Image 2: the same lines at increasing line widths.
 mkdir("images");
 mkdir("build");
-p = _lmcode_ cli="lmplot" install="github:lmctl-ai/lmplot@v0.3.0";
+p = _lmcode_ cli="lmplot" install="github:lmctl-ai/lmplot@v0.3.1";
 # One labelled sample line: arrow number n at height y with dash spec dt
 # (the label is placed to its left, 'noenhanced' keeps '_' literal).
 fn sample(n: int, y: float, name: string, dt: string, lt: int) -> void {

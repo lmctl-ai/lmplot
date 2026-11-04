@@ -61,7 +61,7 @@ for (k in range(0, n)) {
 assert(ap <= 1.0);
 assert(ap > prevalence);
 
-p = _lmcode_ cli="lmplot" install="github:lmctl-ai/lmplot@v0.3.0";
+p = _lmcode_ cli="lmplot" install="github:lmctl-ai/lmplot@v0.3.1";
 plot.data("PR", ${pr});
 plot.data("F1", ${str(f1_r) + " " + str(f1_p) + "\n"});
 plot.echo(${"AP = " + str(ap) + ", prevalence = " + str(prevalence) + ", best F1 = " + str(f1_best) + " at score " + str(f1_t)});

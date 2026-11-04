@@ -13,7 +13,7 @@ assert command, 'schema path and host command required'
 old = '--' + 'dsl'
 with tempfile.TemporaryDirectory(prefix='host flag control ') as directory:
     scratch = Path(directory)
-    missing = scratch / 'must-not-open.dslb'
+    missing = scratch / 'must-not-open.bin'
     env = dict(os.environ, HOME=str(scratch), LMCTL_HOME=str(scratch / '.lmctl'))
     def run(args):
         return subprocess.run([*command, *map(str, args)], capture_output=True, env=env)
@@ -35,6 +35,6 @@ with tempfile.TemporaryDirectory(prefix='host flag control ') as directory:
     assert result.returncode == 0 and result.stdout and not result.stderr, result
     # The selector must recognize execution, yielding a loader error rather than usage.
     result = run(['--lmcode', missing])
-    assert result.returncode == 4, ('new execution option did not reach the loader', result)
+    assert result.returncode == 3, ('new execution option did not reach the loader', result)
     assert not missing.exists()
 print('PASS hard flag cutover: exact schema/signatures, new loader route, retired options refused before file effects')

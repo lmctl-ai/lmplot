@@ -5,7 +5,7 @@ if (!file_exists("examples/data/candlesticks.dat")) {
   mkdir("examples/data");
   write_file("examples/data/candlesticks.dat", http_get("https://raw.githubusercontent.com/lmctl-ai/lmplot/main/examples/data/candlesticks.dat"));
 }
-p = _lmcode_ cli="lmplot" install="github:lmctl-ai/lmplot@v0.3.0";
+p = _lmcode_ cli="lmplot" install="github:lmctl-ai/lmplot@v0.3.1";
 plot.script("set xrange [0:11]\nset yrange [0:10]\nset boxwidth 0.2");
 # Image 1: open/close states, hollow when open < close.
 plot.png("images/candlesticks-1.png", 800, 600);

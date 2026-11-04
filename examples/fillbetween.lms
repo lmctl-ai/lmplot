@@ -5,7 +5,7 @@ if (!file_exists("examples/data/silver.dat")) {
   mkdir("examples/data");
   write_file("examples/data/silver.dat", http_get("https://raw.githubusercontent.com/lmctl-ai/lmplot/main/examples/data/silver.dat"));
 }
-p = _lmcode_ cli="lmplot" install="github:lmctl-ai/lmplot@v0.3.0";
+p = _lmcode_ cli="lmplot" install="github:lmctl-ai/lmplot@v0.3.1";
 # Image 1: plain filledcurves between columns 2 and 3, outlined with lines.
 plot.png("images/fillbetween-1.png", 800, 600);
 plot.script("set style data lines\nset xrange [10:*]\nset yrange [0:175]");

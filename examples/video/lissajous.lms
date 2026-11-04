@@ -2,7 +2,7 @@
 # frame data computed in lmscript. Output: images/lissajous.mp4 (ffmpeg).
 mkdir("images");
 mkdir("build/video/lissajous");
-p = _lmcode_ cli="lmplot" install="github:lmctl-ai/lmplot@v0.3.0";
+p = _lmcode_ cli="lmplot" install="github:lmctl-ai/lmplot@v0.3.1";
 plot.cmd("set parametric");
 plot.cmd("set size square");
 plot.cmd("set xrange [-1.2:1.2]");

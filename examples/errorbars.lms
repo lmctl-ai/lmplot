@@ -5,7 +5,7 @@ if (!file_exists("examples/data/battery.dat")) {
   mkdir("examples/data");
   write_file("examples/data/battery.dat", http_get("https://raw.githubusercontent.com/lmctl-ai/lmplot/main/examples/data/battery.dat"));
 }
-p = _lmcode_ cli="lmplot" install="github:lmctl-ai/lmplot@v0.3.0";
+p = _lmcode_ cli="lmplot" install="github:lmctl-ai/lmplot@v0.3.1";
 plot.script("set xlabel 'Resistance [Ohm]'\nset ylabel 'Power [W]'\nn(x)=1.53**2*x/(5.67+x)**2");
 # Image 1: both x and y errors.
 plot.png("images/errorbars-1.png", 800, 600);

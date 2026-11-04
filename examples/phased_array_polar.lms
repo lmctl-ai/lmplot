@@ -6,7 +6,7 @@
 # Writes images/phased_array_polar.png (900x600).
 mkdir("images");
 mkdir("build");
-p = _lmcode_ cli="lmplot" install="github:lmctl-ai/lmplot@v0.3.0";
+p = _lmcode_ cli="lmplot" install="github:lmctl-ai/lmplot@v0.3.1";
 
 # Array factor, evaluated by gnuplot (complex arithmetic and sum[] are built in).
 # t = angle from broadside (radians). psi = k d (sin t - sin t0) with k d = pi.

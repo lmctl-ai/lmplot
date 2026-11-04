@@ -1,7 +1,7 @@
 # Demo fillcrvs.dem: "plot with filledcurves" in several variants.
 mkdir("images");
 mkdir("build");
-p = _lmcode_ cli="lmplot" install="github:lmctl-ai/lmplot@v0.3.0";
+p = _lmcode_ cli="lmplot" install="github:lmctl-ai/lmplot@v0.3.1";
 # Image 1: the many filledcurve closing modes (x2, default, y1=, xy=, x1, y2).
 plot.png("images/fillcrvs-1.png", 800, 600);
 plot.cmd("set key outside");

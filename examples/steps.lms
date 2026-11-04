@@ -9,7 +9,7 @@ if (!file_exists("examples/data/hemisphr.dat")) {
   mkdir("examples/data");
   write_file("examples/data/hemisphr.dat", http_get("https://raw.githubusercontent.com/lmctl-ai/lmplot/main/examples/data/hemisphr.dat"));
 }
-p = _lmcode_ cli="lmplot" install="github:lmctl-ai/lmplot@v0.3.0";
+p = _lmcode_ cli="lmplot" install="github:lmctl-ai/lmplot@v0.3.1";
 # Image 1: the three step styles over the raw points.
 plot.png("images/steps-1.png", 800, 600);
 plot.cmd("set title 'Compare steps, fsteps and histeps'");

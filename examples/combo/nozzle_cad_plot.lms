@@ -71,7 +71,7 @@ end _lmcode_
 r = run_lmcode(cad);
 assert(r.ok, json_stringify(r));
 
-p = _lmcode_ cli="lmplot" install="github:lmctl-ai/lmplot@v0.3.0";
+p = _lmcode_ cli="lmplot" install="github:lmctl-ai/lmplot@v0.3.1";
 
 fn wall(x: float) -> float {
   let r = 0.0;

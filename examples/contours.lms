@@ -1,7 +1,7 @@
 # contours.dem: contour lines on the base grid and on the surface.
 mkdir("images");
 mkdir("build");
-p = _lmcode_ cli="lmplot" install="github:lmctl-ai/lmplot@v0.3.0";
+p = _lmcode_ cli="lmplot" install="github:lmctl-ai/lmplot@v0.3.1";
 plot.script("set samples 20\nset isosamples 21\nset xlabel 'X axis'\nset ylabel 'Y axis'");
 plot.script("set zlabel 'Z ' offset 1, 0\nset view 60, 30, 0.85, 1.1");
 plot.script("set key at screen 1.0, 0.9\nset style textbox opaque noborder margins 0.5, 0.5");

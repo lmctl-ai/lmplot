@@ -22,5 +22,6 @@ order.
 - `09-resource-limits.md` — the total memory budget (`LMPLOT_MAX_MEMORY_MB`), how gnuplot's malloc is counted.
 
 - `10-linux-glibc.md` — dynamic system glibc baseline, dependency policy and rollout evidence.
+- `11-invocation-envelope.md` — run_lmcode, the one-frame envelope, exit codes, dry mode and how tests capture program files.
 
 Compiler >=0.2.420 resolves std from the pinned SDK bundle by default; host schema bytes remain host-only, with full and `--without-std` parity plus a standard-only runtime probe in `test.sh`.

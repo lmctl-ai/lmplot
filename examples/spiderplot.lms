@@ -3,7 +3,7 @@
 # image 3: two data arrays on one set of axes with a spider grid (newspiderplot).
 mkdir("images");
 mkdir("build");
-p = _lmcode_ cli="lmplot" install="github:lmctl-ai/lmplot@v0.3.0";
+p = _lmcode_ cli="lmplot" install="github:lmctl-ai/lmplot@v0.3.1";
 # One data row with a header line: the column heads become the axis names.
 plot.data("DATA", "A\tB\tC\tD\tE\tF\n15\t75\t20\t43\t90\t50\n");
 plot.cmd("set spiderplot");

@@ -3,7 +3,7 @@
 # image 3: transparent pattern-filled curves.
 mkdir("images");
 mkdir("build");
-p = _lmcode_ cli="lmplot" install="github:lmctl-ai/lmplot@v0.3.0";
+p = _lmcode_ cli="lmplot" install="github:lmctl-ai/lmplot@v0.3.1";
 plot.cmd("set encoding utf8");
 plot.cmd("set style fill solid 1.0 noborder");
 plot.cmd("set style function filledcurves y1=0");

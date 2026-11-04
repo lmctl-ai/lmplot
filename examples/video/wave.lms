@@ -3,7 +3,7 @@
 # with lmplot, then run ffmpeg. Needs ffmpeg on PATH. Output: images/wave.mp4
 mkdir("images");
 mkdir("build/video/wave");
-p = _lmcode_ cli="lmplot" install="github:lmctl-ai/lmplot@v0.3.0";
+p = _lmcode_ cli="lmplot" install="github:lmctl-ai/lmplot@v0.3.1";
 plot.cmd("set xrange [-10:10]");
 plot.cmd("set yrange [-1.2:1.2]");
 plot.cmd("set grid");

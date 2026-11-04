@@ -1,7 +1,7 @@
 # pm3d.dem: coloured surfaces (pm3d) with a palette and colorbox.
 mkdir("images");
 mkdir("build");
-p = _lmcode_ cli="lmplot" install="github:lmctl-ai/lmplot@v0.3.0";
+p = _lmcode_ cli="lmplot" install="github:lmctl-ai/lmplot@v0.3.1";
 plot.script("set xlabel 'x'\nset ylabel 'y'\nset key top\nset border 4095");
 plot.script("set xrange [-15:15]\nset yrange [-15:15]\nset zrange [-0.25:1]");
 plot.script("set samples 25\nset isosamples 20");

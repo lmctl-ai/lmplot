@@ -4,7 +4,7 @@
 # Image 2: Greek letters via the {/Symbol ...} font switch and via UTF-8, in titles, labels and tics.
 mkdir("images");
 mkdir("build");
-p = _lmcode_ cli="lmplot" install="github:lmctl-ai/lmplot@v0.3.0";
+p = _lmcode_ cli="lmplot" install="github:lmctl-ai/lmplot@v0.3.1";
 
 # --- 1: the enhanced text test page ---
 plot.png("images/enhanced_utf8-1.png", 900, 650);

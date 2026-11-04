@@ -1,6 +1,9 @@
 """Same compiler inputs on original and new host: numeric/data/script and render facts."""
 import hashlib,json,os,re,subprocess,sys,tempfile
 from pathlib import Path
+sys.dont_write_bytecode=True
+sys.path.insert(0,str(Path(__file__).resolve().parent))
+from capture import capture
 ROOT=Path(__file__).resolve().parents[1]
 HOST=Path(sys.argv[1]).resolve()
 CASES={
@@ -15,9 +18,7 @@ def collect(host):
  with tempfile.TemporaryDirectory(prefix='plot parity ') as directory:
   work=Path(directory).resolve();results={}
   for name,body in CASES.items():
-   source,output=work/(name+'.lms'),work/(name+'.dslb')
-   source.write_text('program = _lmcode_ schema='+json.dumps(str(ROOT/'schema/lmplot.dsl.json'))+';\n'+body+'\nend _lmcode_\n')
-   subprocess.run(['node',str(ROOT/'scripts/compile-test.mjs'),str(source),str(output)],check=True)
+   output=capture(HOST,work,name,body)
    r=subprocess.run([str(host),'--lmcode',str(output)],cwd=work,capture_output=True,text=True)
    assert r.returncode==0,(name,r.stdout,r.stderr)
    trace=r.stdout.split('LMCODE_RETURN_BEGIN\n')[0]

@@ -1,7 +1,7 @@
 # surface1.dem: 3D surfaces from a matrix (hidden3d) and from functions, with labels and arrows.
 mkdir("images");
 mkdir("build");
-p = _lmcode_ cli="lmplot" install="github:lmctl-ai/lmplot@v0.3.0";
+p = _lmcode_ cli="lmplot" install="github:lmctl-ai/lmplot@v0.3.1";
 # Image 1: a 5x5 matrix of Z values drawn as a hidden-line wireframe.
 plot.png("images/surface1-1.png", 800, 600);
 plot.cmd("set title '3D surface from a grid (matrix) of Z values'");

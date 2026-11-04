@@ -4,7 +4,7 @@
 # Writes images/damped_driven_resonance.png (900x560).
 mkdir("images");
 mkdir("build");
-p = _lmcode_ cli="lmplot" install="github:lmctl-ai/lmplot@v0.3.0";
+p = _lmcode_ cli="lmplot" install="github:lmctl-ai/lmplot@v0.3.1";
 
 fn sqrt_pos(v: float) -> float {
   let g = 1.0;

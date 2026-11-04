@@ -6,6 +6,9 @@ from pathlib import Path
 import subprocess
 import sys
 import tempfile
+sys.dont_write_bytecode=True
+sys.path.insert(0,str(Path(__file__).resolve().parent))
+from capture import capture
 ROOT=Path(__file__).resolve().parents[1]
 HOST=Path(sys.argv[1]).resolve()
 env=dict(os.environ)
@@ -22,12 +25,7 @@ def frame(result,code):
 with tempfile.TemporaryDirectory(prefix='lmplot protocol 水 ') as directory:
  work=Path(directory).resolve()
  def compile(name,body):
-  source=work/(name+'.lms');output=work/(name+'.dslb')
-  source.write_text('program = _lmcode_ schema='+json.dumps(str(ROOT/'schema/lmplot.dsl.json'))+';\n'+body+'\nend _lmcode_\n')
-  result=subprocess.run(['node',str(ROOT/'scripts/compile-test.mjs'),str(source),str(output)],env=env,capture_output=True)
-  assert result.returncode==0,(result.stdout,result.stderr)
-  assert output.read_bytes()[:6]==b'DSLB\x00\x06'
-  return output
+  return capture(HOST,work,name,body)
  def run(files,dry=False,change=None,argv=None):
   value={'version':1,'mode':'builder' if len(files)>1 else 'single','dry':dry,'parts':[{'index':i,'file':str(f)} for i,f in enumerate(files)]}
   if change:value=change(value)
@@ -70,9 +68,23 @@ with tempfile.TemporaryDirectory(prefix='lmplot protocol 水 ') as directory:
  actual=frame(run([first,failure,write]),3)
  assert actual['part']==1 and actual['phase']=='run',actual
  assert not (work/'must-not-exist.png').exists()
- missing=work/'missing.dslb';assert frame(run([missing]),4)['phase']=='app'
- junk=work/'bad.dslb';junk.write_bytes(b'invalid');assert frame(run([junk]),3)['phase']=='load'
- print('PASS dry dummies, live render, first failure/stop, framed exits 0/2/3/4')
+ missing=work/'missing.bin';assert frame(run([missing]),3)['phase']=='load'
+ junk=work/'bad.bin';junk.write_bytes(b'invalid');assert frame(run([junk]),3)['phase']=='load'
+ # Every file loads before any program runs: a bad later file leaves no output from an earlier one.
+ actual=frame(run([write,junk]),3)
+ assert actual['part']==1 and actual['phase']=='load',actual
+ assert not (work/'must-not-exist.png').exists()
+ actual=frame(run([write,missing]),3)
+ assert actual['part']==1 and actual['phase']=='load',actual
+ assert not (work/'must-not-exist.png').exists()
+ # Exit 4 without an application failure to provoke: the terminal frame cannot be written.
+ lost=''
+ if os.access('/dev/full',os.W_OK):
+  with open('/dev/full','wb') as full:
+   r=subprocess.run([str(HOST),'--lmcode',str(first)],env=env,stdout=full,stderr=subprocess.PIPE,cwd=work)
+  assert r.returncode==4 and b'cannot write envelope' in r.stderr,r
+  lost=', exit 4 for an unwritable frame'
+ print('PASS dry dummies, live render, first failure/stop, framed exits 0/2/3'+lost)
  # More than the old arbitrary 30,000 pixel width, with a small actual allocation.
  large=compile('wide','plot.png("wide.png", 30001, 64); plot.cmd("set margins 0,0,0,0; unset border; unset tics; unset key; plot x"); plot.close();')
  assert frame(run([large]),0)['result'] is None

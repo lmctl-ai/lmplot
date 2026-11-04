@@ -1,5 +1,5 @@
 // lmplot: gnuplot embedded in a single static executable, scriptable from
-// lmscript lmcode bytecode. See durable-memory/ for the design.
+// lmscript lmcode programs. See durable-memory/ for the design.
 #include "dslvm.hpp"
 #include "gp_memory.h"
 #include "memory_budget.hpp"
@@ -14,7 +14,9 @@
 #include <filesystem>
 #include <fstream>
 #include <iostream>
+#include <memory>
 #include <string>
+#include <utility>
 #include <vector>
 #ifdef _WIN32
 #define NOMINMAX
@@ -313,36 +315,58 @@ int host_main(int argc, char **argv) {
   context.set("plot", &host);
   const auto contract = dslvm::ResultContract::from_schema(schema);
   const auto registrations = results.registrations();
-  for (size_t part = 0; part < registrations.size(); ++part) {
-    const auto &registration = registrations[part];
-    std::string phase = "app";
+  // A program that exhausted the memory budget still needs a failure frame, and everything gnuplot
+  // allocated stays live until shutdown: this reserve is released first, so recording the failure
+  // cannot throw out of a handler.
+  auto reserve = std::make_unique<char[]>(1 << 20);
+  // Load and verify every file first: a bad later file must not leave earlier output behind.
+  std::vector<std::pair<size_t, dslvm::Program>> programs;
+  for (const auto &registration : registrations) {
+    // An unreadable program file is a load failure like any other (phase load, exit 3), not an application failure.
+    std::string phase = "load";
     try {
       std::ifstream input(std::filesystem::u8path(registration.file), std::ios::binary);
-      if (!input) throw dslvm::Error("APP_FAIL", "cannot read bytecode file");
+      if (!input) throw dslvm::Error("cannot read bytecode file");
       std::string bytes((std::istreambuf_iterator<char>(input)), {});
-      if (input.bad()) throw dslvm::Error("APP_FAIL", "cannot read bytecode file");
-      phase = "load";
-      auto program = dslvm::Program::load(bytes, schema, reg);
-      phase = "run";
-      results.select(registration.index, reg, contract);
+      if (input.bad()) throw dslvm::Error("cannot read bytecode file");
+      programs.emplace_back(registration.index, dslvm::Program::load(bytes, schema, reg));
+    } catch (const dslvm::Error &error) {
+      reserve.reset();
+      std::cerr << "lmplot: " << error.what() << "\n";
+      results.fail(registration.index, phase, error);
+      return results.write_frame(std::cout);
+    } catch (const std::exception &error) {
+      reserve.reset();
+      std::cerr << "lmplot: " << error.what() << "\n";
+      results.fail(registration.index, phase, dslvm::Error(error.what()));
+      return results.write_frame(std::cout);
+    }
+  }
+  for (size_t part = 0; part < programs.size(); ++part) {
+    const auto &[index, program] = programs[part];
+    std::string phase = "run";
+    try {
+      results.select(index, reg, contract);
       program.run(context, reg);
-      if (part + 1 == registrations.size() && host.ready) {
+      if (part + 1 == programs.size() && host.ready) {
         int fin = lmplot_finish_output();
         if (fin == 1) throw dslvm::Error("gnuplot: multiplot not closed (missing unset multiplot)");
         if (fin == 2) throw dslvm::Error("gnuplot: output file closed with no plots drawn");
         if (fin == 3) throw dslvm::Error("gnuplot: error writing the output file (disk full or I/O error)");
       }
-      results.complete(registration.index);
+      results.complete(index);
     } catch (const dslvm::Error &error) {
       if (host.ready) lmplot_abort_output();
+      reserve.reset();
       if (error.code == "APP_FAIL") phase = "app";
       std::cerr << "lmplot: " << error.what() << "\n";
-      results.fail(registration.index, phase, error);
+      results.fail(index, phase, error);
       break;
     } catch (const std::exception &error) {
       if (host.ready) lmplot_abort_output();
+      reserve.reset();
       std::cerr << "lmplot: " << error.what() << "\n";
-      results.fail(registration.index, phase, dslvm::Error(error.what()));
+      results.fail(index, phase, dslvm::Error(error.what()));
       break;
     }
   }

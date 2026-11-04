@@ -78,7 +78,7 @@ for (m in range(1, 9)) {
   levels = levels + (m > 1 ? "," : "") + str(phi_max * num(m) / 9.0);
 }
 
-p = _lmcode_ cli="lmplot" install="github:lmctl-ai/lmplot@v0.3.0";
+p = _lmcode_ cli="lmplot" install="github:lmctl-ai/lmplot@v0.3.1";
 plot.data("PHI", ${phi_rows});
 plot.data("SRC", ${f_rows});
 plot.echo(${"SOR sweeps = " + str(sweeps) + ", max |phi - exact| = " + str(err) + ", max phi = " + str(phi_max)});

@@ -9,7 +9,7 @@ selectors and schema spellings have no aliases; `--first`, `--last`, and
 `--dry-run` also fail with CLI exit 2 in the native route before dispatch.
 
 The SDK is vendored with sync-sdk.sh at full reviewed C++ SHA
-`eed67ea5f059152809784846d82bd510bb5bcdf2` (wp188 native runtime qualification).
+`93bddf1dadff84791ea90e17d81a7af85a842f40`.
 Per-file SHA256s in sdk.lock verify the unmodified copy. SDK fixes belong to
 its owning lane; do not patch the vendored runtime here.
 
@@ -29,9 +29,10 @@ host preview is registered; dry plotting values are dummies, not predictions.
 
 Exactly one terminal LMCODE_RETURN_BEGIN / LMCODE_RETURN_END frame carries
 success/null/structured results or a structured failure without a partial result.
-Exit codes are 0 success, 2 CLI/manifest, 3 load/runtime and 4 application failure
-(e.g. unreadable bytecode). First failure identifies its original builder part
-and prevents later dispatch. Native output finalization errors remain run errors;
+Exit codes are 0 success, 2 CLI/manifest, 3 load/runtime (including an unreadable
+program file) and 4 application failure or a frame that cannot be written. Every file is read and loaded before any program
+runs, so a bad later file leaves no output from an earlier one. First failure
+identifies its original builder part and prevents later dispatch. Native output finalization errors remain run errors;
 partial output is aborted before terminal framing.
 
 No host deadlines or output-byte ceilings apply. The configurable total-memory
@@ -42,10 +43,12 @@ not a point-count ceiling. Library format/platform representation limits remain.
 
 `test.sh` runs the current compiler/host checks, operation parity and the retained
 rendering/error/PNG/font/budget suite on the same five native CI platforms. The
-compiler is installed in a private prefix, pinned to 0.2.456. Tests construct
-private compiler-library fixtures through compile-test.mjs; ordinary examples
-use only run_lmcode, without exporting bytecode.
+compiler is installed in a private prefix, pinned to 0.2.460. Examples and fixtures
+use only run_lmcode; tests that call the host directly use the private program
+file captured from a dry invocation.
 
 A green main push publishes the version in CMakeLists.txt through the repo's CI.
 Existing release versions are immutable: later documentation pushes never replace
-their assets. Pin `install="github:lmctl-ai/lmplot@v0.3.0"` downstream.
+their assets. Pin `install="github:lmctl-ai/lmplot@v0.3.1"` downstream.
+The pin moves with the version: `install=` binds a PATH build only when versions
+match, so a bump that left examples on the old pin would test the old release.

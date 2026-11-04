@@ -81,7 +81,7 @@ jobs:
         if: env.ONLY_OK == 'true'
         shell: bash
         run: |
-          npm install --prefix "$RUNNER_TEMP/lmplot-compiler" @lmctl-ai/lmctl@0.2.456
+          npm install --prefix "$RUNNER_TEMP/lmplot-compiler" @lmctl-ai/lmctl@0.2.460
           export LMSCRIPT_BIN="$RUNNER_TEMP/lmplot-compiler/node_modules/.bin/lmscript"
           if command -v cygpath >/dev/null 2>&1; then export LMSCRIPT_BIN="$(cygpath -m "$LMSCRIPT_BIN")"; fi
           echo "LMSCRIPT_BIN=$LMSCRIPT_BIN" >> "$GITHUB_ENV"

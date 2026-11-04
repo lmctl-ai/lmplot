@@ -72,7 +72,7 @@ for (i in range(0, n)) {
 let mann_whitney = wins / (num(pos) * num(neg));
 assert(abs(auc - mann_whitney) < 0.000000000001);
 
-p = _lmcode_ cli="lmplot" install="github:lmctl-ai/lmplot@v0.3.0";
+p = _lmcode_ cli="lmplot" install="github:lmctl-ai/lmplot@v0.3.1";
 plot.data("ROC", ${roc});
 plot.echo(${"AUC = " + str(auc) + ", Youden J = " + str(best_j) + " at score " + str(best_t)});
 

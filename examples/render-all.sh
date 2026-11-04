@@ -18,6 +18,8 @@ for tool_dir in "$HOME/.cache/lmscript/tools/github/lmctl-ai"/*/latest; do
 done
 
 LMSCRIPT="$(scripts/select-compiler.sh)"
+# A sibling host counts only when it speaks the current protocol.
+has_host() { command -v "$1" >/dev/null 2>&1 && "$1" --lmcode-schema --json >/dev/null 2>&1; }
 HOST="$BUILD_DIR/lmplot"
 case "$(uname -s)" in MINGW*|MSYS*|CYGWIN*) HOST="$HOST.exe";; esac
 
@@ -27,10 +29,10 @@ if [ ! -x "$HOST" ]; then
   cmake --build "$BUILD_DIR" >/dev/null
 fi
 
-# 1. Compile and self-execute all standalone lmplot examples in examples/*.lms
+# 1. Run all standalone lmplot examples in examples/*.lms
 for src in examples/*.lms; do
   name="$(basename "$src" .lms)"
-  "$LMSCRIPT" "$src" "$BUILD_DIR/$name.dslb" >/dev/null
+  "$LMSCRIPT" "$src" >/dev/null
 done
 mv images/*.png "$BUILD_DIR/examples/"
 
@@ -64,28 +66,28 @@ do
 done
 
 # 2. Multi-host combo examples (lmcad + lmplot, lmdraw + lmplot)
-if command -v lmcad >/dev/null 2>&1; then
+if has_host lmcad; then
   "$LMSCRIPT" examples/combo/nozzle_cad_plot.lms >/dev/null
   mv images/nozzle_cad_plot.png "$BUILD_DIR/examples/nozzle_cad_plot.png"
   cp "$BUILD_DIR/examples/nozzle_cad_plot.png" docs/images/nozzle_cad_plot.png
 else
-  echo "note: skipping nozzle_cad_plot.lms regeneration (lmcad not on PATH)"
+  echo "note: skipping nozzle_cad_plot.lms regeneration (no compatible lmcad on PATH)"
 fi
 
-if command -v lmdraw >/dev/null 2>&1 && command -v ffmpeg >/dev/null 2>&1; then
+if has_host lmdraw && command -v ffmpeg >/dev/null 2>&1; then
   "$LMSCRIPT" examples/combo/sir_epidemic_draw_plot.lms >/dev/null
   mv images/sir_epidemic_draw_plot.png "$BUILD_DIR/examples/sir_epidemic_draw_plot.png"
   cp "$BUILD_DIR/examples/sir_epidemic_draw_plot.png" docs/images/sir_epidemic_draw_plot.png
 else
-  echo "note: skipping sir_epidemic_draw_plot.lms regeneration (lmdraw or ffmpeg not on PATH)"
+  echo "note: skipping sir_epidemic_draw_plot.lms regeneration (no compatible lmdraw or no ffmpeg on PATH)"
 fi
 
-if command -v lmdraw >/dev/null 2>&1; then
+if has_host lmdraw; then
   "$LMSCRIPT" examples/combo/projectile_drag.lms >/dev/null
   mv images/projectile_drag.png "$BUILD_DIR/examples/projectile_drag.png"
   cp "$BUILD_DIR/examples/projectile_drag.png" docs/images/projectile_drag.png
 else
-  echo "note: skipping projectile_drag.lms regeneration (lmdraw not on PATH)"
+  echo "note: skipping projectile_drag.lms regeneration (no compatible lmdraw on PATH)"
 fi
 
 # 3. Video / animation examples via ffmpeg
