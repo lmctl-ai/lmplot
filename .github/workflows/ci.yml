@@ -53,10 +53,6 @@ jobs:
           scripts/sync-gnuplot.sh
           scripts/sync-sdk.sh --verify
 
-      - name: toolchain (linux)
-        if: runner.os == 'Linux' && env.ONLY_OK == 'true'
-        run: sudo apt-get update -qq && sudo apt-get install -y -qq ninja-build
-
       - name: toolchain (macos)
         if: runner.os == 'macOS' && env.ONLY_OK == 'true'
         run: brew install ninja coreutils
@@ -72,13 +68,13 @@ jobs:
           g++ --version | head -1
 
       - name: Private pinned lmscript compiler
-        if: env.ONLY_OK == 'true'
+        if: runner.os != 'Linux' && env.ONLY_OK == 'true'
         uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
           node-version: 24
 
       - name: install and probe the compiler
-        if: env.ONLY_OK == 'true'
+        if: runner.os != 'Linux' && env.ONLY_OK == 'true'
         shell: bash
         run: |
           npm install --prefix "$RUNNER_TEMP/lmplot-compiler" @lmctl-ai/lmctl@0.2.460
@@ -97,8 +93,22 @@ jobs:
           chmod +x .ci-bin/python3
           echo "$PWD/.ci-bin" >> "$GITHUB_PATH"
 
+      # Linux builds and tests inside a glibc 2.28 image (build-time dependency on lmctl-ai/.github, pinned
+      # to a commit), so the binary runs on RHEL 8+, Debian 10+, Ubuntu 18.10+. The action gates the floor.
+      - name: build and test (linux, glibc 2.28 image)
+        if: runner.os == 'Linux' && env.ONLY_OK == 'true'
+        uses: lmctl-ai/.github/actions/oldglibc@08be4ab255c1040796c01df48b0aa5523f5f1268
+        with:
+          lmctl-version: 0.2.460
+          run: |
+            scripts/select-compiler.sh | tee compiler.txt
+            grep -q lmscript compiler.txt || { echo "no current compiler available"; exit 1; }
+            ./test.sh
+          check: build/lmplot
+          max-glibc: '2.28'
+
       - name: build and test
-        if: env.ONLY_OK == 'true'
+        if: runner.os != 'Linux' && env.ONLY_OK == 'true'
         shell: bash
         run: ./test.sh
 
