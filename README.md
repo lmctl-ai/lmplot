@@ -6,6 +6,13 @@
 [![Latest release](https://img.shields.io/github/v/release/lmctl-ai/lmplot?label=release)](https://github.com/lmctl-ai/lmplot/releases)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
+## Documentation
+
+- [Quick reference](https://www.lmctl.com/tools/lmplot/)
+- [LLM skill](https://www.lmctl.com/tools/lmplot/skill.html)
+- [Guide](https://www.lmctl.com/tools/lmplot/guide.html)
+- [Reference](https://www.lmctl.com/tools/lmplot/reference.html)
+
 | Exoplanet Doppler RV & O-C residuals | Landau 3D free-energy surface | Equity OHLC, Bollinger & drawdown |
 | --- | --- | --- |
 | <img src="docs/images/kepler_rv_fit.png" width="290" alt="Exoplanet Doppler RV & O-C residuals"> | <img src="docs/images/potential_vortex_surface.png" width="290" alt="Landau 3D free-energy surface"> | <img src="docs/images/quant_trading_dashboard.png" width="290" alt="Equity OHLC, Bollinger & drawdown"> |
