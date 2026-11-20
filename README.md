@@ -12,6 +12,7 @@
 - [LLM skill](https://www.lmctl.com/tools/lmplot/skill.html)
 - [Guide](https://www.lmctl.com/tools/lmplot/guide.html)
 - [Reference](https://www.lmctl.com/tools/lmplot/reference.html)
+- [Run every example in your browser](https://www.lmctl.com/tools/lmplot/demo.html) (WebAssembly)
 
 | Exoplanet Doppler RV & O-C residuals | Landau 3D free-energy surface | Equity OHLC, Bollinger & drawdown |
 | --- | --- | --- |
@@ -191,6 +192,22 @@ all third-party code is static. `./test.sh` builds and runs the checks
 links and image magic bytes, 45 standalone examples, byte-identical reruns,
 video and multi-host combo pipelines, error paths), and leaves the images in
 `build/examples/`.
+
+## In the browser (WebAssembly)
+
+The same sources build to one fixed WebAssembly host, `lmplot.wasm`: gnuplot, the lmcode VM and the
+`Plot` functions. lmcode programs are application code the page loads at run time as bytecode, so a
+new plot never needs a new wasm build. [The demo](https://www.lmctl.com/tools/lmplot/demo.html)
+runs all 45 examples in a tab; `plot.png` writes SVG there (`LMPLOT_PNG_AS=svg`, which also works
+natively), and the PNG option produces the native rasterizer's bytes.
+
+```sh
+scripts/build-wasm.sh          # build-wasm/lmplot.{js,wasm} (Emscripten 7.0.0, cloned if EMSDK is unset)
+scripts/build-web.sh           # + precompile the examples, run them on wasm, write build-site/
+```
+
+Serving it needs `script-src 'self' 'wasm-unsafe-eval'` in a Content-Security-Policy. Details:
+`durable-memory/12-browser-wasm.md`.
 
 ## Resource limits
 

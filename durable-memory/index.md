@@ -23,5 +23,6 @@ order.
 
 - `10-linux-glibc.md` — dynamic system glibc baseline, dependency policy and rollout evidence.
 - `11-invocation-envelope.md` — run_lmcode, the one-frame envelope, exit codes, dry mode and how tests capture program files.
+- `12-browser-wasm.md` — the WebAssembly host, precompiled lmcode programs, the browser demo book, CSP and site integration.
 
 Compiler >=0.2.420 resolves std from the pinned SDK bundle by default; host schema bytes remain host-only, with full and `--without-std` parity plus a standard-only runtime probe in `test.sh`.

@@ -17,6 +17,13 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
   set(CMAKE_FIND_LIBRARY_SUFFIXES ".a")
 endif()
 
+# Browser build (scripts/build-wasm.sh): one fixed WebAssembly host; lmcode programs are loaded at run time.
+# gnuplot's error recovery is setjmp/longjmp and the host uses C++ exceptions: both use native wasm EH.
+if(EMSCRIPTEN)
+  add_compile_options(-fwasm-exceptions -sSUPPORT_LONGJMP=wasm)
+  add_link_options(-fwasm-exceptions -sSUPPORT_LONGJMP=wasm)
+endif()
+
 set(GP third_party/gnuplot)
 if(NOT EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/${GP}/src/plot.c")
   message(FATAL_ERROR "third_party/gnuplot missing: run scripts/sync-gnuplot.sh")
@@ -91,6 +98,10 @@ add_library(gnuplot_core STATIC ${GP_SRC} cpp/raster/lmraster.cpp cpp/gp_memory.
 set_source_files_properties(cpp/raster/lmraster.cpp PROPERTIES COMPILE_OPTIONS "-w;-O2")
 target_include_directories(gnuplot_core PRIVATE cpp/gpconfig cpp/raster vendor "${GP}/src" "${GP}/term" "${GEN}" cpp)
 target_compile_definitions(gnuplot_core PRIVATE HAVE_CONFIG_H LMPLOT_EMBED LMPLOT_VERSION="${PROJECT_VERSION}")
+if(EMSCRIPTEN)
+  # wasm has no floating-point exception flags (fetestexcept is always 0); complexfun.c only tests underflow.
+  target_compile_definitions(gnuplot_core PRIVATE FE_UNDERFLOW=0)
+endif()
 # Memory budget: gnuplot's malloc/free go through counting wrappers (cpp/gp_memory.h, force-included
 # into the C sources); only gp_alloc/gp_realloc in alloc.c may be refused (NULL -> "out of memory").
 target_compile_options(gnuplot_core PRIVATE "$<$<COMPILE_LANGUAGE:C>:-include>"
@@ -110,7 +121,13 @@ target_compile_definitions(lmplot PRIVATE LMPLOT_VERSION="${PROJECT_VERSION}")
 target_include_directories(lmplot PRIVATE cpp "${GEN}")
 target_link_libraries(lmplot PRIVATE gnuplot_core)
 target_compile_options(lmplot PRIVATE -Wall -Wextra -Wpedantic)
-if((CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang") AND NOT APPLE)
+if(EMSCRIPTEN)
+  # lmplot.js + lmplot.wasm: a factory module the page instantiates once per run (fresh gnuplot state),
+  # writes the program and data into MEMFS, and calls main("--lmcode", FILE).
+  target_link_options(lmplot PRIVATE -sMODULARIZE=1 -sEXPORT_NAME=createLmplot -sENVIRONMENT=web,worker,node
+    -sINVOKE_RUN=0 -sEXIT_RUNTIME=0 -sFORCE_FILESYSTEM=1 -sALLOW_MEMORY_GROWTH=1 -sMAXIMUM_MEMORY=4GB
+    -sSTACK_SIZE=8388608 -sEXPORTED_RUNTIME_METHODS=callMain,FS,ENV -sASSERTIONS=0)
+elseif((CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang") AND NOT APPLE)
   target_link_options(lmplot PRIVATE -static-libstdc++ -static-libgcc)
   if(WIN32)
     target_link_options(lmplot PRIVATE -static)

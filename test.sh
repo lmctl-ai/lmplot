@@ -317,6 +317,23 @@ echo "$out" | grep -q "slope=2" || fail "stats slope: $out"
 echo "$out" | grep -q "4 points" || fail "stats records: $out"
 ok "Plot.num / Plot.str / Plot.data return gnuplot values"
 
+# LMPLOT_PNG_AS=svg (the browser build's default view): the same plot.png call writes FILE.svg instead.
+cat >"$WORK/pngas.lms" <<LMS
+p = _lmcode_ cli="lmplot";
+plot.png("$WORK/pngas.png", 320, 200);
+plot.cmd("plot sin(x)");
+plot.close();
+end _lmcode_
+r = run_lmcode(p);
+println(json_stringify(r));
+LMS
+rm -f "$WORK/pngas.png" "$WORK/pngas.svg"
+LMPLOT_PNG_AS=svg run_lms "$WORK/pngas.lms" >/dev/null || fail "LMPLOT_PNG_AS=svg run (host exit $?)"
+[ -f "$WORK/pngas.svg" ] && [ ! -e "$WORK/pngas.png" ] && grep -q '<svg' "$WORK/pngas.svg" || fail "LMPLOT_PNG_AS=svg did not write pngas.svg"
+set +e; LMPLOT_PNG_AS=gif run_lms "$WORK/pngas.lms" >/dev/null 2>&1; code=$?; set -e
+[ "$code" = 3 ] || fail "LMPLOT_PNG_AS=gif: exit $code, expected 3"
+ok "LMPLOT_PNG_AS=svg turns plot.png into an SVG file; other values are refused"
+
 # Values and writes that used to pass silently: complex or array results of Plot.num, a datablock
 # line starting with EOD (ended the block and ran the rest as commands), output write errors.
 cat >"$WORK/edge.lms" <<LMS
@@ -460,4 +477,13 @@ set +e; run_lms "$WORK/std-probe.lms" >"$WORK/std-run.log" 2>&1; code=$?; set -e
 [ "$code" = 0 ] && grep -q '"ok":true' "$WORK/std-run.log" || { cat "$WORK/std-run.log"; fail "implicit std runtime"; }
 ok "host-only signatures and implicit std runtime"
 
+# WebAssembly host (scripts/build-wasm.sh): when build-wasm/ exists, every example runs on it in SVG
+# and PNG modes from programs precompiled by this build.
+if [ -f build-wasm/lmplot.wasm ] && [ -f build-wasm/lmplot.js ] && command -v node >/dev/null 2>&1; then
+  LMPLOT_HOST="$HOST_ABS" scripts/precompile-examples.sh "$WORK/wasm-pre" >/dev/null || fail "precompile examples for the wasm host"
+  node tests/wasm-examples.mjs build-wasm "$WORK/wasm-pre" "$WORK/wasm-out" >"$WORK/wasm.log" 2>&1 || { tail -20 "$WORK/wasm.log" >&2; fail "examples on the wasm host"; }
+  ok "WebAssembly host: $(tail -1 "$WORK/wasm.log"); $(grep 'byte-identical' "$WORK/wasm.log" | cut -d' ' -f1-8)"
+else
+  ok "WebAssembly host check skipped (no build-wasm/; run scripts/build-wasm.sh)"
+fi
 echo "all $pass checks passed"

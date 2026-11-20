@@ -191,7 +191,18 @@ void register_host(dslvm::Registry &r, Host &h) {
     return Value::none();
   });
   checked(r, "png", {"string", "int", "int"}, "void", [&h](void *, Args &a) {
-    h.run("set terminal png size " + std::to_string(a[1].i) + "," + std::to_string(a[2].i) + "; set output " + quote(a[0].s));
+    const std::string size = std::to_string(a[1].i) + "," + std::to_string(a[2].i);
+    // LMPLOT_PNG_AS=svg (the browser build's default view): the same program renders vector SVG
+    // instead, into FILE with a trailing .png replaced by .svg.
+    const char *as = std::getenv("LMPLOT_PNG_AS");
+    if (as && std::string(as) == "svg") {
+      std::string file = a[0].s;
+      if (file.size() >= 4 && file.compare(file.size() - 4, 4, ".png") == 0) file.replace(file.size() - 4, 4, ".svg");
+      h.run("set terminal svg size " + size + " background '#ffffff'; set output " + quote(file));
+    } else {
+      if (as && *as && std::string(as) != "png") throw dslvm::Error("LMPLOT_PNG_AS must be png or svg");
+      h.run("set terminal png size " + size + "; set output " + quote(a[0].s));
+    }
     return Value::none();
   });
   checked(r, "svg", {"string", "int", "int"}, "void", [&h](void *, Args &a) {
@@ -245,7 +256,8 @@ void register_host(dslvm::Registry &r, Host &h) {
 const char *usage =
     "usage: lmplot --version | --notices | --lmcode-schema [--json] | --lmcode-signatures | --lmcode FILE [--lmcode FILE ...]\n"
     "       lmplot gnuplot [GNUPLOT-OPTIONS] [FILE ...]\n"
-    "environment: LMPLOT_MAX_MEMORY_MB total memory budget in MiB (default 4096)\n";
+    "environment: LMPLOT_MAX_MEMORY_MB total memory budget in MiB (default 4096)\n"
+    "             LMPLOT_PNG_AS=svg makes Plot.png write SVG (FILE.png -> FILE.svg)\n";
 
 int host_main(int argc, char **argv) {
   // Retired host roles/options must never reach the native gnuplot route either.

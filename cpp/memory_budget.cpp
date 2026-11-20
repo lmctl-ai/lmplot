@@ -22,7 +22,11 @@ namespace membudget {
 namespace {
 
 constexpr std::size_t kMiB = std::size_t(1) << 20;
+#if defined(__EMSCRIPTEN__)
+constexpr std::size_t kDefaultMiB = 2048;  // wasm32: size_t is 32 bits and linear memory stops at 4 GiB
+#else
 constexpr std::size_t kDefaultMiB = 4096;
+#endif
 constexpr std::size_t kReserve = 64 * kMiB;  // headroom granted once so the error can be reported
 
 std::atomic<std::int64_t> g_used{0};
